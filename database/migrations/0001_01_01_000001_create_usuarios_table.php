@@ -11,25 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+        Schema::create('usuarios', function (Blueprint $table) {
+            $table->string('cedula', 20)->primary();
+            $table->foreign('cedula')->references('cedula')->on('empleados')->restrictOnDelete();
+            $table->string('nombre_completo', 150);
+            $table->string('contrasena_hash', 255);
+            $table->string('rol', 30);
+            $table->boolean('habilitado')->default(true);
             $table->rememberToken();
             $table->timestamps();
         });
 
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-        });
-
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
+            // Nombre de columna fijo por Illuminate\Session\DatabaseSessionHandler; guarda la cedula, no un id numerico.
+            $table->string('user_id', 20)->nullable()->index();
+            $table->foreign('user_id')->references('cedula')->on('usuarios')->nullOnDelete();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');
@@ -42,8 +39,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('usuarios');
     }
 };
