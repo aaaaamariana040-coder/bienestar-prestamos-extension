@@ -23,6 +23,10 @@
                             <a href="{{ route('tipos-prestamo.index') }}" class="nav-link text-white">Modalidades</a>
                         @endcan
 
+                        @can('viewAny', \App\Models\PresupuestoAnual::class)
+                            <a href="{{ route('presupuestos.index') }}" class="nav-link text-white">Presupuesto</a>
+                        @endcan
+
                         <a href="{{ route('password.edit') }}" class="nav-link text-white">Mi contraseña</a>
 
                         <span class="text-white-50">{{ auth()->user()->nombre_completo }}</span>
