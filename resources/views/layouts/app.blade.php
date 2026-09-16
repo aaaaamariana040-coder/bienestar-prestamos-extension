@@ -15,9 +15,15 @@
                     <div class="d-flex align-items-center gap-3">
                         <a href="{{ route('empleados.index') }}" class="nav-link text-white">Empleados</a>
 
-                        @can('create', \App\Models\Usuario::class)
-                            <a href="{{ route('usuarios.create') }}" class="nav-link text-white">Crear usuario</a>
+                        @can('viewAny', \App\Models\Usuario::class)
+                            <a href="{{ route('usuarios.index') }}" class="nav-link text-white">Usuarios</a>
                         @endcan
+
+                        @can('viewAny', \App\Models\TipoPrestamo::class)
+                            <a href="{{ route('tipos-prestamo.index') }}" class="nav-link text-white">Modalidades</a>
+                        @endcan
+
+                        <a href="{{ route('password.edit') }}" class="nav-link text-white">Mi contraseña</a>
 
                         <span class="text-white-50">{{ auth()->user()->nombre_completo }}</span>
 

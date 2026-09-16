@@ -1,0 +1,53 @@
+@extends('layouts.app')
+
+@section('content')
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Usuarios</h1>
+        <a href="{{ route('usuarios.create') }}" class="btn btn-primary">Nuevo usuario</a>
+    </div>
+
+    <table class="table table-striped bg-white">
+        <thead>
+            <tr>
+                <th>Cédula</th>
+                <th>Nombre</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th class="text-end">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse ($usuarios as $usuario)
+                <tr>
+                    <td>{{ $usuario->cedula }}</td>
+                    <td>{{ $usuario->nombre_completo }}</td>
+                    <td>{{ $usuario->rol->name }}</td>
+                    <td>{{ $usuario->habilitado ? 'Habilitado' : 'Deshabilitado' }}</td>
+                    <td class="text-end">
+                        <a href="{{ route('usuarios.edit', $usuario) }}" class="btn btn-sm btn-outline-secondary">Editar rol</a>
+
+                        @if ($usuario->habilitado)
+                            <form method="POST" action="{{ route('usuarios.deshabilitar', $usuario) }}" class="d-inline">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Deshabilitar</button>
+                            </form>
+                        @else
+                            <form method="POST" action="{{ route('usuarios.habilitar', $usuario) }}" class="d-inline">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="btn btn-sm btn-outline-success">Habilitar</button>
+                            </form>
+                        @endif
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="text-center text-muted">No hay usuarios registrados.</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    {{ $usuarios->links() }}
+@endsection

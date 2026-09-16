@@ -25,5 +25,10 @@ class DatabaseSeeder extends Seeder
             'cedula' => $empleado->cedula,
             'nombre_completo' => $empleado->nombre_completo,
         ]);
+
+        $this->call([
+            TasaVehiculoSeeder::class,
+            TipoPrestamoSeeder::class,
+        ]);
     }
 }

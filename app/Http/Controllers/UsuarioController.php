@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUsuarioRequest;
+use App\Http\Requests\UpdateUsuarioRequest;
 use App\Models\Empleado;
 use App\Models\Usuario;
 use Illuminate\Http\RedirectResponse;
@@ -11,6 +12,15 @@ use Illuminate\View\View;
 
 class UsuarioController extends Controller
 {
+    public function index(): View
+    {
+        $this->authorize('viewAny', Usuario::class);
+
+        $usuarios = Usuario::orderBy('nombre_completo')->paginate(15);
+
+        return view('usuarios.index', compact('usuarios'));
+    }
+
     public function create(): View
     {
         $this->authorize('create', Usuario::class);
@@ -36,5 +46,39 @@ class UsuarioController extends Controller
         ]);
 
         return redirect()->route('empleados.index')->with('status', 'Usuario creado correctamente.');
+    }
+
+    public function edit(Usuario $usuario): View
+    {
+        $this->authorize('update', $usuario);
+
+        return view('usuarios.edit', compact('usuario'));
+    }
+
+    public function update(UpdateUsuarioRequest $request, Usuario $usuario): RedirectResponse
+    {
+        $this->authorize('update', $usuario);
+
+        $usuario->update($request->validated());
+
+        return redirect()->route('usuarios.index')->with('status', 'Usuario actualizado correctamente.');
+    }
+
+    public function habilitar(Usuario $usuario): RedirectResponse
+    {
+        $this->authorize('habilitar', $usuario);
+
+        $usuario->update(['habilitado' => true]);
+
+        return redirect()->route('usuarios.index')->with('status', 'Usuario habilitado correctamente.');
+    }
+
+    public function deshabilitar(Usuario $usuario): RedirectResponse
+    {
+        $this->authorize('deshabilitar', $usuario);
+
+        $usuario->update(['habilitado' => false]);
+
+        return redirect()->route('usuarios.index')->with('status', 'Usuario deshabilitado correctamente.');
     }
 }

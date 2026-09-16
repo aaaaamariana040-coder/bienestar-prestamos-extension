@@ -1,7 +1,12 @@
 <?php
 
+use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\SessionController;
+use App\Http\Controllers\CuantiaSmmlvController;
 use App\Http\Controllers\EmpleadoController;
+use App\Http\Controllers\TasaIntController;
+use App\Http\Controllers\TasaVehiculoController;
+use App\Http\Controllers\TipoPrestamoController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +26,31 @@ Route::middleware('auth')->group(function () {
     Route::get('empleados/{empleado}/eliminar', [EmpleadoController::class, 'confirmarEliminacion'])
         ->name('empleados.confirmar-eliminacion');
 
+    Route::get('usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
     Route::get('usuarios/crear', [UsuarioController::class, 'create'])->name('usuarios.create');
     Route::post('usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
+    Route::get('usuarios/{usuario}/editar', [UsuarioController::class, 'edit'])->name('usuarios.edit');
+    Route::put('usuarios/{usuario}', [UsuarioController::class, 'update'])->name('usuarios.update');
+    Route::patch('usuarios/{usuario}/habilitar', [UsuarioController::class, 'habilitar'])->name('usuarios.habilitar');
+    Route::patch('usuarios/{usuario}/deshabilitar', [UsuarioController::class, 'deshabilitar'])->name('usuarios.deshabilitar');
+
+    Route::get('perfil/contrasena', [PasswordController::class, 'edit'])->name('password.edit');
+    Route::put('perfil/contrasena', [PasswordController::class, 'update'])->name('password.update');
+
+    Route::resource('tipos-prestamo', TipoPrestamoController::class)
+        ->except(['destroy'])
+        ->parameters(['tipos-prestamo' => 'tipo_prestamo']);
+    Route::patch('tipos-prestamo/{tipo_prestamo}/habilitar', [TipoPrestamoController::class, 'habilitar'])
+        ->name('tipos-prestamo.habilitar');
+    Route::patch('tipos-prestamo/{tipo_prestamo}/deshabilitar', [TipoPrestamoController::class, 'deshabilitar'])
+        ->name('tipos-prestamo.deshabilitar');
+
+    Route::post('tipos-prestamo/{tipo_prestamo}/tasas', [TasaIntController::class, 'store'])->name('tasas-int.store');
+
+    Route::post('tipos-prestamo/{tipo_prestamo}/cuantias', [CuantiaSmmlvController::class, 'store'])->name('cuantias-smmlv.store');
+    Route::put('cuantias/{cuantia}', [CuantiaSmmlvController::class, 'update'])->name('cuantias-smmlv.update');
+    Route::delete('cuantias/{cuantia}', [CuantiaSmmlvController::class, 'destroy'])->name('cuantias-smmlv.destroy');
+
+    Route::get('tasa-vehiculo', [TasaVehiculoController::class, 'index'])->name('tasa-vehiculo.index');
+    Route::put('tasa-vehiculo/{tasa_vehiculo}', [TasaVehiculoController::class, 'update'])->name('tasa-vehiculo.update');
 });
