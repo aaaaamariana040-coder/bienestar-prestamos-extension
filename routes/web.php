@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\CuantiaSmmlvController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\PresupuestoAnualController;
+use App\Http\Controllers\SmmlvAnualController;
 use App\Http\Controllers\TasaIntController;
 use App\Http\Controllers\TasaVehiculoController;
 use App\Http\Controllers\TipoPrestamoController;
@@ -54,6 +55,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('tasa-vehiculo', [TasaVehiculoController::class, 'index'])->name('tasa-vehiculo.index');
     Route::put('tasa-vehiculo/{tasa_vehiculo}', [TasaVehiculoController::class, 'update'])->name('tasa-vehiculo.update');
+
+    Route::get('smmlv', [SmmlvAnualController::class, 'index'])->name('smmlv.index');
+    Route::post('smmlv', [SmmlvAnualController::class, 'store'])->name('smmlv.store');
 
     Route::get('presupuestos/sugerencia-vivienda', [PresupuestoAnualController::class, 'sugerenciaVivienda'])
         ->name('presupuestos.sugerencia-vivienda');
