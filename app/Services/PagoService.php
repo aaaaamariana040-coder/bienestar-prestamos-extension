@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\EstadoCuota;
 use App\Enums\EstadoPrestamo;
+use App\Enums\MotivoReliquidacion;
 use App\Enums\TipoPago;
 use App\Models\Cuota;
 use App\Models\Pago;
@@ -14,6 +15,11 @@ use RuntimeException;
 
 class PagoService
 {
+    public function __construct(private readonly ReliquidacionService $reliquidacionService)
+    {
+        //
+    }
+
     /**
      * Pago regular de una cuota. El Art. 12 parágrafo 2 fija cuotas constantes,
      * por lo que un pago regular cubre exactamente el valor de la cuota; el
@@ -50,24 +56,40 @@ class PagoService
 
     /**
      * Abono extraordinario a capital (Art. 12 parágrafos 3 y 4): no está ligado
-     * a una cuota puntual. La reliquidación de cuota o plazo que puede generar
-     * cuando el abono supera 10 cuotas (parágrafo 5) queda fuera de este alcance.
+     * a una cuota puntual. Si supera el valor de 10 cuotas quincenales, dispara
+     * la reliquidación de la cuota o el plazo (parágrafo 5), según elija el
+     * beneficiario en $modoReliquidacion ('cuota' o 'plazo').
      */
-    public function registrarAbonoExtraordinario(Prestamo $prestamo, float $monto, string $fechaPago, Usuario $actor): Pago
+    public function registrarAbonoExtraordinario(Prestamo $prestamo, float $monto, string $fechaPago, Usuario $actor, string $modoReliquidacion = 'plazo'): Pago
     {
         if ($monto <= 0) {
             throw new RuntimeException('El monto del abono debe ser mayor que cero.');
         }
 
-        return $prestamo->pagos()->create([
-            'id_cuota' => null,
-            'fecha_pago' => $fechaPago,
-            'monto' => $monto,
-            'tipo' => TipoPago::AbonoExtraordinario,
-            'monto_aplicado_interes' => 0,
-            'monto_aplicado_capital' => $monto,
-            'cedula_usu' => $actor->cedula,
-        ]);
+        return DB::transaction(function () use ($prestamo, $monto, $fechaPago, $actor, $modoReliquidacion) {
+            $pago = $prestamo->pagos()->create([
+                'id_cuota' => null,
+                'fecha_pago' => $fechaPago,
+                'monto' => $monto,
+                'tipo' => TipoPago::AbonoExtraordinario,
+                'monto_aplicado_interes' => 0,
+                'monto_aplicado_capital' => $monto,
+                'cedula_usu' => $actor->cedula,
+            ]);
+
+            if ($this->reliquidacionService->superaUmbral($prestamo, $monto)) {
+                $this->reliquidacionService->reliquidar(
+                    $prestamo,
+                    $monto,
+                    MotivoReliquidacion::AbonoExtraordinario,
+                    $modoReliquidacion,
+                    $fechaPago,
+                    $actor,
+                );
+            }
+
+            return $pago;
+        });
     }
 
     /**

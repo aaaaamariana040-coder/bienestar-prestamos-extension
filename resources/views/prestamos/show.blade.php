@@ -173,6 +173,7 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <h3 class="h6 mb-3">Registrar abono extraordinario</h3>
+                        <p class="text-muted small">Si supera el valor de 10 cuotas, el sistema reliquida automáticamente (Art. 12 §5).</p>
                         <form method="POST" action="{{ route('pagos.store-abono', $prestamo) }}" class="row g-2 align-items-end">
                             @csrf
                             <div class="col-auto">
@@ -182,6 +183,17 @@
                             <div class="col-auto">
                                 <label for="fecha_pago_abono" class="form-label">Fecha</label>
                                 <input type="date" id="fecha_pago_abono" name="fecha_pago" class="form-control" value="{{ now()->toDateString() }}" required>
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label d-block">Si reliquida, prefiero</label>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" id="modo_plazo" name="modo_reliquidacion" value="plazo" class="form-check-input" checked>
+                                    <label for="modo_plazo" class="form-check-label">Bajar el plazo</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" id="modo_cuota" name="modo_reliquidacion" value="cuota" class="form-check-input">
+                                    <label for="modo_cuota" class="form-check-label">Bajar la cuota</label>
+                                </div>
                             </div>
                             <div class="col-auto">
                                 <button type="submit" class="btn btn-outline-primary">Registrar abono</button>
@@ -204,8 +216,77 @@
                     </div>
                 </div>
             </div>
+
+            @if (str_starts_with($prestamo->tipoPrestamo->nombre, 'Vivienda'))
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h3 class="h6 mb-3">Registrar abono de cesantías</h3>
+                            <p class="text-muted small">Bianual, solo vivienda: 50% de las cesantías del año anterior (Art. 13). Siempre reliquida.</p>
+                            <form method="POST" action="{{ route('cesantias.store', $prestamo) }}" class="row g-2 align-items-end">
+                                @csrf
+                                <div class="col-auto">
+                                    <label for="anio_cesantias" class="form-label">Año de las cesantías</label>
+                                    <input type="number" id="anio_cesantias" name="anio" class="form-control" value="{{ now()->subYear()->year }}" required>
+                                </div>
+                                <div class="col-auto">
+                                    <label for="monto_cesantias" class="form-label">Monto (50%)</label>
+                                    <input type="number" step="0.01" min="0.01" id="monto_cesantias" name="monto" class="form-control" required>
+                                </div>
+                                <div class="col-auto">
+                                    <label for="fecha_abono_cesantias" class="form-label">Fecha</label>
+                                    <input type="date" id="fecha_abono_cesantias" name="fecha_abono" class="form-control" value="{{ now()->toDateString() }}" required>
+                                </div>
+                                <div class="col-auto">
+                                    <label class="form-label d-block">Al reliquidar, prefiero</label>
+                                    <div class="form-check form-check-inline">
+                                        <input type="radio" id="cesantias_modo_plazo" name="modo_reliquidacion" value="plazo" class="form-check-input" checked>
+                                        <label for="cesantias_modo_plazo" class="form-check-label">Bajar el plazo</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input type="radio" id="cesantias_modo_cuota" name="modo_reliquidacion" value="cuota" class="form-check-input">
+                                        <label for="cesantias_modo_cuota" class="form-check-label">Bajar la cuota</label>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-outline-primary">Registrar abono de cesantías</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     @endcan
+
+    <h2 class="h5 mb-3">Historial de reliquidaciones</h2>
+
+    <table class="table table-sm bg-white align-middle mb-4">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Motivo</th>
+                <th>Saldo anterior</th>
+                <th>Saldo nuevo</th>
+                <th>Tasa aplicada</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse ($prestamo->reliquidaciones as $reliquidacion)
+                <tr>
+                    <td>{{ $reliquidacion->fecha->format('Y-m-d') }}</td>
+                    <td>{{ $reliquidacion->motivo->value }}</td>
+                    <td>{{ number_format($reliquidacion->saldo_anterior, 2) }}</td>
+                    <td>{{ number_format($reliquidacion->saldo_nuevo, 2) }}</td>
+                    <td>{{ $reliquidacion->tasa_aplicada !== null ? number_format($reliquidacion->tasa_aplicada, 4).'%' : '—' }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="text-center text-muted">No hay reliquidaciones registradas.</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
 
     <h2 class="h5 mb-3">Historial de pagos</h2>
 

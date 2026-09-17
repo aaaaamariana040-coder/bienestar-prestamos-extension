@@ -36,6 +36,7 @@ class PagoController extends Controller
                 (float) $request->validated('monto'),
                 $request->validated('fecha_pago'),
                 $request->user(),
+                $request->validated('modo_reliquidacion') ?? 'plazo',
             );
         } catch (RuntimeException $e) {
             return back()->with('error', $e->getMessage());

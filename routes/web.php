@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AbonoCesantiasController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\CuantiaSmmlvController;
@@ -79,6 +80,7 @@ Route::middleware('auth')->group(function () {
     Route::post('prestamos/{prestamo}/cuotas/{cuota}/pagos', [PagoController::class, 'storeCuota'])->name('pagos.store-cuota');
     Route::post('prestamos/{prestamo}/abonos', [PagoController::class, 'storeAbono'])->name('pagos.store-abono');
     Route::post('prestamos/{prestamo}/cancelacion', [PagoController::class, 'storeCancelacion'])->name('pagos.store-cancelacion');
+    Route::post('prestamos/{prestamo}/cesantias', [AbonoCesantiasController::class, 'store'])->name('cesantias.store');
 
     Route::get('proveedores', [ProveedorController::class, 'index'])->name('proveedores.index');
     Route::post('proveedores', [ProveedorController::class, 'store'])->name('proveedores.store');

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class PrestamoService
 {
-    private const QUINCENAS_POR_ANIO = 24;
+    public const QUINCENAS_POR_ANIO = 24;
 
     public function __construct(private readonly TasaVehiculoService $tasaVehiculoService)
     {
@@ -93,20 +93,48 @@ class PrestamoService
 
     private function generarTablaAmortizacion(Prestamo $prestamo, float $tasaPeriodica): void
     {
-        $saldo = (float) $prestamo->monto_aprobado;
-        $fecha = Carbon::parse($prestamo->fecha_autorizacion);
-        $cuotaPeriodica = (float) $prestamo->cuota_periodica;
+        $primeraFecha = Carbon::parse($prestamo->fecha_autorizacion)->addDays(15)->toDateString();
 
-        for ($numero = 1; $numero <= $prestamo->num_cuotas; $numero++) {
-            $fecha = $fecha->copy()->addDays(15);
+        $this->generarCuotasDesde(
+            $prestamo,
+            (float) $prestamo->monto_aprobado,
+            $tasaPeriodica,
+            (float) $prestamo->cuota_periodica,
+            $prestamo->num_cuotas,
+            1,
+            $primeraFecha,
+        );
+    }
+
+    /**
+     * Genera cuotas de amortización quincenal a partir de un saldo, tasa y
+     * cuota dados. Lo usa tanto la generación inicial del préstamo como
+     * ReliquidacionService al recalcular las cuotas pendientes.
+     */
+    public function generarCuotasDesde(
+        Prestamo $prestamo,
+        float $saldo,
+        float $tasaPeriodica,
+        float $cuotaPeriodica,
+        int $numCuotas,
+        int $numeroInicial,
+        string $fechaPrimeraCuota,
+    ): void {
+        $fecha = Carbon::parse($fechaPrimeraCuota);
+
+        for ($i = 0; $i < $numCuotas; $i++) {
+            if ($i > 0) {
+                $fecha = $fecha->copy()->addDays(15);
+            }
+
+            $esUltimaCuota = $i === $numCuotas - 1;
             $interes = round($saldo * $tasaPeriodica, 2);
-            $esUltimaCuota = $numero === $prestamo->num_cuotas;
             $capital = $esUltimaCuota ? $saldo : round($cuotaPeriodica - $interes, 2);
             $total = round($capital + $interes, 2);
             $saldo = round($saldo - $capital, 2);
 
             $prestamo->cuotas()->create([
-                'numero_cuota' => $numero,
+                'numero_cuota' => $numeroInicial + $i,
                 'fecha_vencimiento' => $fecha->toDateString(),
                 'valor_capital' => $capital,
                 'valor_interes' => $interes,

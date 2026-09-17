@@ -98,4 +98,20 @@ class Prestamo extends Model
     {
         return $this->hasMany(Pago::class, 'id_prestamo', 'id_prestamo')->orderByDesc('fecha_pago');
     }
+
+    /**
+     * @return HasMany<Reliquidacion, $this>
+     */
+    public function reliquidaciones(): HasMany
+    {
+        return $this->hasMany(Reliquidacion::class, 'id_prestamo', 'id_prestamo')->orderByDesc('fecha');
+    }
+
+    /**
+     * @return HasMany<AbonoCesantias, $this>
+     */
+    public function abonosCesantias(): HasMany
+    {
+        return $this->hasMany(AbonoCesantias::class, 'id_prestamo', 'id_prestamo')->orderByDesc('fecha_abono');
+    }
 }

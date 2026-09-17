@@ -24,7 +24,7 @@ class PrestamoController extends Controller
     {
         $this->authorize('view', $prestamo);
 
-        $prestamo->loadMissing(['empleado', 'tipoPrestamo', 'cuotas', 'desembolsos.proveedor', 'pagos']);
+        $prestamo->loadMissing(['empleado', 'tipoPrestamo', 'cuotas', 'desembolsos.proveedor', 'pagos', 'reliquidaciones', 'abonosCesantias']);
 
         $tramosEsperados = $desembolsoService->tramosEsperados($prestamo);
         $proveedores = Proveedor::orderBy('nombre_empresa')->get();
