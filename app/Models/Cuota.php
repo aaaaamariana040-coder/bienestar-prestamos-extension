@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['numero_cuota', 'fecha_vencimiento', 'valor_capital', 'valor_interes', 'valor_total', 'estado'])]
 class Cuota extends Model
@@ -39,5 +40,13 @@ class Cuota extends Model
     public function prestamo(): BelongsTo
     {
         return $this->belongsTo(Prestamo::class, 'id_prestamo', 'id_prestamo');
+    }
+
+    /**
+     * @return HasMany<Pago, $this>
+     */
+    public function pagos(): HasMany
+    {
+        return $this->hasMany(Pago::class, 'id_cuota', 'id_cuota');
     }
 }

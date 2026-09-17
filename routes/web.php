@@ -3,9 +3,12 @@
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\CuantiaSmmlvController;
+use App\Http\Controllers\DesembolsoController;
 use App\Http\Controllers\EmpleadoController;
+use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\PresupuestoAnualController;
+use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\SmmlvAnualController;
 use App\Http\Controllers\SolicitudCreditoController;
 use App\Http\Controllers\TasaIntController;
@@ -70,6 +73,15 @@ Route::middleware('auth')->group(function () {
 
     Route::get('prestamos', [PrestamoController::class, 'index'])->name('prestamos.index');
     Route::get('prestamos/{prestamo}', [PrestamoController::class, 'show'])->name('prestamos.show');
+
+    Route::post('prestamos/{prestamo}/desembolsos', [DesembolsoController::class, 'store'])->name('desembolsos.store');
+
+    Route::post('prestamos/{prestamo}/cuotas/{cuota}/pagos', [PagoController::class, 'storeCuota'])->name('pagos.store-cuota');
+    Route::post('prestamos/{prestamo}/abonos', [PagoController::class, 'storeAbono'])->name('pagos.store-abono');
+    Route::post('prestamos/{prestamo}/cancelacion', [PagoController::class, 'storeCancelacion'])->name('pagos.store-cancelacion');
+
+    Route::get('proveedores', [ProveedorController::class, 'index'])->name('proveedores.index');
+    Route::post('proveedores', [ProveedorController::class, 'store'])->name('proveedores.store');
 
     Route::get('presupuestos/sugerencia-vivienda', [PresupuestoAnualController::class, 'sugerenciaVivienda'])
         ->name('presupuestos.sugerencia-vivienda');

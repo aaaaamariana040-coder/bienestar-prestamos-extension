@@ -39,6 +39,10 @@
                             <a href="{{ route('prestamos.index') }}" class="nav-link text-white">Préstamos</a>
                         @endcan
 
+                        @can('viewAny', \App\Models\Proveedor::class)
+                            <a href="{{ route('proveedores.index') }}" class="nav-link text-white">Proveedores</a>
+                        @endcan
+
                         <a href="{{ route('password.edit') }}" class="nav-link text-white">Mi contraseña</a>
 
                         <span class="text-white-50">{{ auth()->user()->nombre_completo }}</span>

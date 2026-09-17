@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Prestamo;
+use App\Models\Proveedor;
+use App\Services\DesembolsoService;
 use Illuminate\View\View;
 
 class PrestamoController extends Controller
@@ -18,12 +20,15 @@ class PrestamoController extends Controller
         return view('prestamos.index', compact('prestamos'));
     }
 
-    public function show(Prestamo $prestamo): View
+    public function show(Prestamo $prestamo, DesembolsoService $desembolsoService): View
     {
         $this->authorize('view', $prestamo);
 
-        $prestamo->loadMissing(['empleado', 'tipoPrestamo', 'cuotas']);
+        $prestamo->loadMissing(['empleado', 'tipoPrestamo', 'cuotas', 'desembolsos.proveedor', 'pagos']);
 
-        return view('prestamos.show', compact('prestamo'));
+        $tramosEsperados = $desembolsoService->tramosEsperados($prestamo);
+        $proveedores = Proveedor::orderBy('nombre_empresa')->get();
+
+        return view('prestamos.show', compact('prestamo', 'tramosEsperados', 'proveedores'));
     }
 }
