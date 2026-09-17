@@ -4,8 +4,10 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\CuantiaSmmlvController;
 use App\Http\Controllers\EmpleadoController;
+use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\PresupuestoAnualController;
 use App\Http\Controllers\SmmlvAnualController;
+use App\Http\Controllers\SolicitudCreditoController;
 use App\Http\Controllers\TasaIntController;
 use App\Http\Controllers\TasaVehiculoController;
 use App\Http\Controllers\TipoPrestamoController;
@@ -58,6 +60,16 @@ Route::middleware('auth')->group(function () {
 
     Route::get('smmlv', [SmmlvAnualController::class, 'index'])->name('smmlv.index');
     Route::post('smmlv', [SmmlvAnualController::class, 'store'])->name('smmlv.store');
+
+    Route::get('solicitudes', [SolicitudCreditoController::class, 'index'])->name('solicitudes.index');
+    Route::get('solicitudes/crear', [SolicitudCreditoController::class, 'create'])->name('solicitudes.create');
+    Route::post('solicitudes', [SolicitudCreditoController::class, 'store'])->name('solicitudes.store');
+    Route::get('solicitudes/{solicitud}', [SolicitudCreditoController::class, 'show'])->name('solicitudes.show');
+    Route::patch('solicitudes/{solicitud}/aprobar', [SolicitudCreditoController::class, 'aprobar'])->name('solicitudes.aprobar');
+    Route::patch('solicitudes/{solicitud}/rechazar', [SolicitudCreditoController::class, 'rechazar'])->name('solicitudes.rechazar');
+
+    Route::get('prestamos', [PrestamoController::class, 'index'])->name('prestamos.index');
+    Route::get('prestamos/{prestamo}', [PrestamoController::class, 'show'])->name('prestamos.show');
 
     Route::get('presupuestos/sugerencia-vivienda', [PresupuestoAnualController::class, 'sugerenciaVivienda'])
         ->name('presupuestos.sugerencia-vivienda');

@@ -27,6 +27,18 @@
                             <a href="{{ route('presupuestos.index') }}" class="nav-link text-white">Presupuesto</a>
                         @endcan
 
+                        @can('viewAny', \App\Models\SmmlvAnual::class)
+                            <a href="{{ route('smmlv.index') }}" class="nav-link text-white">SMMLV</a>
+                        @endcan
+
+                        @can('viewAny', \App\Models\SolicitudCredito::class)
+                            <a href="{{ route('solicitudes.index') }}" class="nav-link text-white">Solicitudes</a>
+                        @endcan
+
+                        @can('viewAny', \App\Models\Prestamo::class)
+                            <a href="{{ route('prestamos.index') }}" class="nav-link text-white">Préstamos</a>
+                        @endcan
+
                         <a href="{{ route('password.edit') }}" class="nav-link text-white">Mi contraseña</a>
 
                         <span class="text-white-50">{{ auth()->user()->nombre_completo }}</span>
