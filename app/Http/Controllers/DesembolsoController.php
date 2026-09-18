@@ -15,7 +15,7 @@ class DesembolsoController extends Controller
         $this->authorize('registrarDesembolso', $prestamo);
 
         try {
-            $desembolsoService->registrar($prestamo, $request->validated());
+            $desembolsoService->registrar($prestamo, $request->validated(), $request->user());
         } catch (RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }

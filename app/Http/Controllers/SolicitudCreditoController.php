@@ -37,11 +37,11 @@ class SolicitudCreditoController extends Controller
         return view('solicitudes.create', compact('empleados', 'tiposPrestamo'));
     }
 
-    public function store(StoreSolicitudCreditoRequest $request): RedirectResponse
+    public function store(StoreSolicitudCreditoRequest $request, SolicitudCreditoService $solicitudCreditoService): RedirectResponse
     {
         $this->authorize('create', SolicitudCredito::class);
 
-        $solicitud = SolicitudCredito::create($request->validated());
+        $solicitud = $solicitudCreditoService->crear($request->validated(), $request->user());
 
         return redirect()->route('solicitudes.show', $solicitud)->with('status', 'Solicitud registrada correctamente.');
     }
@@ -76,7 +76,7 @@ class SolicitudCreditoController extends Controller
     {
         $this->authorize('decidir', $solicitud);
 
-        $solicitudCreditoService->rechazar($solicitud, $request->validated('motivo_rechazo'));
+        $solicitudCreditoService->rechazar($solicitud, $request->validated('motivo_rechazo'), $request->user());
 
         return redirect()->route('solicitudes.show', $solicitud)->with('status', 'Solicitud rechazada.');
     }

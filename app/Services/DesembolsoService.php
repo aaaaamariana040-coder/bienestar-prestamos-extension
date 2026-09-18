@@ -5,10 +5,16 @@ namespace App\Services;
 use App\Enums\EstadoDesembolso;
 use App\Models\Desembolso;
 use App\Models\Prestamo;
+use App\Models\Usuario;
 use RuntimeException;
 
 class DesembolsoService
 {
+    public function __construct(private readonly AuditoriaService $auditoriaService)
+    {
+        //
+    }
+
     /**
      * Modalidades que, según el Art. 11 y 23 del Acuerdo 19/2022, se desembolsan
      * en dos tramos iguales: el primero al liquidar el préstamo y el segundo tras
@@ -30,7 +36,7 @@ class DesembolsoService
     /**
      * @param  array<string, mixed>  $datos
      */
-    public function registrar(Prestamo $prestamo, array $datos): Desembolso
+    public function registrar(Prestamo $prestamo, array $datos, Usuario $actor): Desembolso
     {
         $tramosEsperados = $this->tramosEsperados($prestamo);
         $numeroTramo = (int) $datos['numero_tramo'];
@@ -57,7 +63,7 @@ class DesembolsoService
 
         $porcentaje = $tramosEsperados === 1 ? 100 : 50;
 
-        return $prestamo->desembolsos()->create([
+        $desembolso = $prestamo->desembolsos()->create([
             'id_proveedor' => $datos['id_proveedor'] ?? null,
             'numero_tramo' => $numeroTramo,
             'porcentaje' => $porcentaje,
@@ -67,5 +73,13 @@ class DesembolsoService
             'inspeccion_aprobada' => $numeroTramo === 2 ? true : null,
             'estado' => EstadoDesembolso::Realizado,
         ]);
+
+        $this->auditoriaService->registrar(
+            $actor,
+            'Registro de desembolso',
+            "Préstamo #{$prestamo->id_prestamo} — tramo {$numeroTramo} por {$desembolso->valor}",
+        );
+
+        return $desembolso;
     }
 }

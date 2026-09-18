@@ -12,8 +12,10 @@ use RuntimeException;
 
 class ReliquidacionService
 {
-    public function __construct(private readonly PrestamoService $prestamoService)
-    {
+    public function __construct(
+        private readonly PrestamoService $prestamoService,
+        private readonly AuditoriaService $auditoriaService,
+    ) {
         //
     }
 
@@ -89,7 +91,7 @@ class ReliquidacionService
                 'num_cuotas' => $numeroInicial - 1 + $numCuotasRestantes,
             ]);
 
-            return $prestamo->reliquidaciones()->create([
+            $reliquidacion = $prestamo->reliquidaciones()->create([
                 'motivo' => $motivo,
                 'saldo_anterior' => $saldoAnterior,
                 'saldo_nuevo' => $saldoNuevo,
@@ -97,6 +99,14 @@ class ReliquidacionService
                 'fecha' => $fecha,
                 'cedula_usu' => $actor->cedula,
             ]);
+
+            $this->auditoriaService->registrar(
+                $actor,
+                'Reliquidación de préstamo',
+                "Préstamo #{$prestamo->id_prestamo} — saldo {$saldoAnterior} a {$saldoNuevo} (modo: {$modo})",
+            );
+
+            return $reliquidacion;
         });
     }
 

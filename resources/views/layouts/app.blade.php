@@ -43,6 +43,14 @@
                             <a href="{{ route('proveedores.index') }}" class="nav-link text-white">Proveedores</a>
                         @endcan
 
+                        @can('reportes.ver')
+                            <a href="{{ route('reportes.prestamos') }}" class="nav-link text-white">Reportes</a>
+                        @endcan
+
+                        @can('viewAny', \App\Models\Auditoria::class)
+                            <a href="{{ route('auditoria.index') }}" class="nav-link text-white">Auditoría</a>
+                        @endcan
+
                         <a href="{{ route('password.edit') }}" class="nav-link text-white">Mi contraseña</a>
 
                         <span class="text-white-50">{{ auth()->user()->nombre_completo }}</span>

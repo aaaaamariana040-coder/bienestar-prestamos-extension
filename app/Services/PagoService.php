@@ -15,8 +15,10 @@ use RuntimeException;
 
 class PagoService
 {
-    public function __construct(private readonly ReliquidacionService $reliquidacionService)
-    {
+    public function __construct(
+        private readonly ReliquidacionService $reliquidacionService,
+        private readonly AuditoriaService $auditoriaService,
+    ) {
         //
     }
 
@@ -49,6 +51,12 @@ class PagoService
             $cuota->update(['estado' => EstadoCuota::Pagada]);
 
             $this->cerrarSiNoQuedanCuotasPendientes($prestamo);
+
+            $this->auditoriaService->registrar(
+                $actor,
+                'Pago de cuota',
+                "Préstamo #{$prestamo->id_prestamo} — cuota #{$cuota->numero_cuota} por {$pago->monto}",
+            );
 
             return $pago;
         });
@@ -88,6 +96,12 @@ class PagoService
                 );
             }
 
+            $this->auditoriaService->registrar(
+                $actor,
+                'Abono extraordinario',
+                "Préstamo #{$prestamo->id_prestamo} — abono de {$monto}",
+            );
+
             return $pago;
         });
     }
@@ -117,6 +131,12 @@ class PagoService
 
             $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->update(['estado' => EstadoCuota::Pagada]);
             $prestamo->update(['estado' => EstadoPrestamo::Cancelado]);
+
+            $this->auditoriaService->registrar(
+                $actor,
+                'Cancelación de préstamo',
+                "Préstamo #{$prestamo->id_prestamo} cancelado con pago de {$pago->monto}",
+            );
 
             return $pago;
         });

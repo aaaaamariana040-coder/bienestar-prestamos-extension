@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AbonoCesantiasController;
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\CuantiaSmmlvController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\PresupuestoAnualController;
 use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\SmmlvAnualController;
 use App\Http\Controllers\SolicitudCreditoController;
 use App\Http\Controllers\TasaIntController;
@@ -90,4 +92,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('presupuestos', PresupuestoAnualController::class)
         ->only(['index', 'create', 'store', 'show', 'edit', 'update'])
         ->parameters(['presupuestos' => 'presupuesto']);
+
+    Route::get('auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
+
+    Route::get('reportes/prestamos', [ReporteController::class, 'prestamos'])->name('reportes.prestamos');
+    Route::get('reportes/pagos', [ReporteController::class, 'pagos'])->name('reportes.pagos');
+    Route::get('reportes/cartera', [ReporteController::class, 'cartera'])->name('reportes.cartera');
+    Route::get('reportes/presupuesto', [ReporteController::class, 'presupuesto'])->name('reportes.presupuesto');
 });

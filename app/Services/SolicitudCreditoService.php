@@ -13,9 +13,27 @@ use RuntimeException;
 
 class SolicitudCreditoService
 {
-    public function __construct(private readonly PrestamoService $prestamoService)
-    {
+    public function __construct(
+        private readonly PrestamoService $prestamoService,
+        private readonly AuditoriaService $auditoriaService,
+    ) {
         //
+    }
+
+    /**
+     * @param  array<string, mixed>  $datos
+     */
+    public function crear(array $datos, Usuario $actor): SolicitudCredito
+    {
+        $solicitud = SolicitudCredito::create($datos);
+
+        $this->auditoriaService->registrar(
+            $actor,
+            'Registro de solicitud de crédito',
+            "Solicitud #{$solicitud->id_solicitud} — empleado {$solicitud->cedula_empleado}, monto {$solicitud->monto_solicitado}",
+        );
+
+        return $solicitud;
     }
 
     /**
@@ -114,16 +132,28 @@ class SolicitudCreditoService
                 $actor,
             );
 
+            $this->auditoriaService->registrar(
+                $actor,
+                'Aprobación de solicitud de crédito',
+                "Solicitud #{$solicitud->id_solicitud} aprobada — préstamo #{$prestamo->id_prestamo} generado",
+            );
+
             return $prestamo;
         });
     }
 
-    public function rechazar(SolicitudCredito $solicitud, string $motivo): void
+    public function rechazar(SolicitudCredito $solicitud, string $motivo, Usuario $actor): void
     {
         $solicitud->update([
             'estado' => EstadoSolicitud::Rechazada,
             'fecha_decision' => now()->toDateString(),
             'motivo_rechazo' => $motivo,
         ]);
+
+        $this->auditoriaService->registrar(
+            $actor,
+            'Rechazo de solicitud de crédito',
+            "Solicitud #{$solicitud->id_solicitud} rechazada — motivo: {$motivo}",
+        );
     }
 }

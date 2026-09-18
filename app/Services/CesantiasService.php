@@ -13,8 +13,10 @@ class CesantiasService
 {
     private const PORCENTAJE_LEGAL = 50;
 
-    public function __construct(private readonly ReliquidacionService $reliquidacionService)
-    {
+    public function __construct(
+        private readonly ReliquidacionService $reliquidacionService,
+        private readonly AuditoriaService $auditoriaService,
+    ) {
         //
     }
 
@@ -55,6 +57,12 @@ class CesantiasService
                 $modoReliquidacion,
                 $fechaAbono,
                 $actor,
+            );
+
+            $this->auditoriaService->registrar(
+                $actor,
+                'Abono de cesantías',
+                "Préstamo #{$prestamo->id_prestamo} — año {$anio}, monto {$monto}",
             );
 
             return $abono;
