@@ -35,6 +35,8 @@
         </div>
     </form>
 
+    @include('informes._guardar', ['tipo' => 'prestamos', 'parametros' => ['id_tipo' => $idTipo, 'estado' => $estado, 'desde' => $desde, 'hasta' => $hasta]])
+
     <table class="table table-striped bg-white">
         <thead>
             <tr>

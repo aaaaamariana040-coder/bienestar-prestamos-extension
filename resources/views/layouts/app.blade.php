@@ -45,6 +45,7 @@
 
                         @can('reportes.ver')
                             <a href="{{ route('reportes.prestamos') }}" class="nav-link text-white">Reportes</a>
+                            <a href="{{ route('informes.index') }}" class="nav-link text-white">Informes guardados</a>
                         @endcan
 
                         @can('viewAny', \App\Models\Auditoria::class)

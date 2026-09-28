@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\CuantiaSmmlvController;
 use App\Http\Controllers\DesembolsoController;
 use App\Http\Controllers\EmpleadoController;
+use App\Http\Controllers\InformeGuardadoController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\PresupuestoAnualController;
@@ -99,4 +100,8 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
     Route::get('reportes/pagos', [ReporteController::class, 'pagos'])->name('reportes.pagos');
     Route::get('reportes/cartera', [ReporteController::class, 'cartera'])->name('reportes.cartera');
     Route::get('reportes/presupuesto', [ReporteController::class, 'presupuesto'])->name('reportes.presupuesto');
+
+    Route::get('informes', [InformeGuardadoController::class, 'index'])->name('informes.index');
+    Route::post('informes', [InformeGuardadoController::class, 'store'])->name('informes.store');
+    Route::get('informes/{informe}', [InformeGuardadoController::class, 'show'])->name('informes.show');
 });

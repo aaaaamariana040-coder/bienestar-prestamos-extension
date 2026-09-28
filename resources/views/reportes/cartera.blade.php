@@ -3,6 +3,8 @@
 @section('content')
     <h1 class="h3 mb-4">Cartera en mora</h1>
 
+    @include('informes._guardar', ['tipo' => 'cartera', 'parametros' => []])
+
     <table class="table table-striped bg-white">
         <thead>
             <tr>

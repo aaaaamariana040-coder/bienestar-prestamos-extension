@@ -13,6 +13,8 @@
         </div>
     </form>
 
+    @include('informes._guardar', ['tipo' => 'presupuesto', 'parametros' => ['anio' => $anio]])
+
     <table class="table table-striped bg-white">
         <thead>
             <tr>
