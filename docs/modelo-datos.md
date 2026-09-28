@@ -33,7 +33,7 @@ Aplicación de Préstamos de Bienestar Social — versión ampliada según RF-00
 | rol | VARCHAR(30) | No | 'ADMINISTRADOR' \| 'FUNCIONARIO_BIENESTAR' |
 | habilitado | BOOLEAN | No | Para deshabilitar cuentas |
 
-> Solo existen dos roles fijos, con diferencias fijas (el Funcionario tiene todo menos gestión de usuarios). No se modela como tabla de permisos independiente por ahora.
+> Solo existen dos roles fijos, con diferencias fijas: el Funcionario tiene las mismas funciones que el Administrador, salvo la gestión de cuentas de usuario y la consulta de auditoría, que son exclusivas del Administrador. Los reportes e indicadores son para ambos roles. No se modela como tabla de permisos independiente por ahora.
 
 ### empleado
 | Campo | Tipo | Nulo | Descripción |

@@ -24,7 +24,7 @@ Aplicación de Préstamos de Bienestar Social — Politécnico Colombiano Jaime 
 
 ## 4. Restricciones de datos
 - No existe historial de pagos previo que migrar: el AS/400 no conserva histórico de nómina. El historial de la nueva aplicación inicia desde su puesta en funcionamiento.
-- Roles fijos: Administrador y Funcionario Bienestar (el Funcionario tiene todo menos gestión de usuarios).
+- Roles fijos: Administrador y Funcionario Bienestar. El Funcionario tiene las mismas funciones que el Administrador, salvo dos exclusivas del Administrador: la gestión de cuentas de usuario y la consulta de auditoría. Los reportes e indicadores (RF-009) están disponibles para ambos roles.
 
 ## 5. Fuentes normativas
 | Fuente | Uso en el proyecto |
