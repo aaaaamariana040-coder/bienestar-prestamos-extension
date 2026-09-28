@@ -40,7 +40,7 @@ class TasaIntTest extends TestCase
         ])->assertSessionHasErrors('anio');
     }
 
-    public function test_funcionario_bienestar_no_puede_registrar_tasas(): void
+    public function test_funcionario_bienestar_puede_registrar_tasas(): void
     {
         $funcionario = Usuario::factory()->create();
         $tipoPrestamo = TipoPrestamo::factory()->create();
@@ -48,6 +48,26 @@ class TasaIntTest extends TestCase
         $this->actingAs($funcionario)->post(route('tasas-int.store', $tipoPrestamo), [
             'anio' => 2026,
             'tasa_anual' => 4.85,
-        ])->assertForbidden();
+        ])->assertRedirect(route('tipos-prestamo.show', $tipoPrestamo));
+
+        $this->assertDatabaseHas('tasas_int', [
+            'id_tipo' => $tipoPrestamo->id_tipo,
+            'anio' => 2026,
+        ]);
+    }
+
+    public function test_un_usuario_deshabilitado_con_sesion_activa_no_puede_registrar_tasas(): void
+    {
+        $tipoPrestamo = TipoPrestamo::factory()->create();
+
+        foreach ([Usuario::factory()->administrador(), Usuario::factory()] as $factory) {
+            $this->actingAs($factory->create(['habilitado' => false]))
+                ->post(route('tasas-int.store', $tipoPrestamo), [
+                    'anio' => 2026,
+                    'tasa_anual' => 4.85,
+                ])->assertForbidden();
+        }
+
+        $this->assertDatabaseMissing('tasas_int', ['id_tipo' => $tipoPrestamo->id_tipo]);
     }
 }

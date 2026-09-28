@@ -61,7 +61,7 @@ class CuantiaSmmlvTest extends TestCase
         $this->assertDatabaseMissing('cuantias_smmlv', ['id_cuantia' => $cuantia->id_cuantia]);
     }
 
-    public function test_funcionario_bienestar_no_puede_gestionar_cuantias(): void
+    public function test_funcionario_bienestar_puede_gestionar_cuantias(): void
     {
         $funcionario = Usuario::factory()->create();
         $tipoPrestamo = TipoPrestamo::factory()->create();
@@ -70,6 +70,50 @@ class CuantiaSmmlvTest extends TestCase
             'tramo_desde_smmlv' => 0,
             'tramo_hasta_smmlv' => 4,
             'cuantia_maxima_smmlv' => 130,
-        ])->assertForbidden();
+        ])->assertRedirect(route('tipos-prestamo.show', $tipoPrestamo));
+
+        $cuantia = CuantiaSmmlv::where('id_tipo', $tipoPrestamo->id_tipo)->firstOrFail();
+
+        $this->actingAs($funcionario)->put(route('cuantias-smmlv.update', $cuantia), [
+            'tramo_desde_smmlv' => 0,
+            'tramo_hasta_smmlv' => 4,
+            'cuantia_maxima_smmlv' => 150,
+        ])->assertRedirect(route('tipos-prestamo.show', $tipoPrestamo));
+
+        $this->assertSame('150.00', $cuantia->fresh()->cuantia_maxima_smmlv);
+
+        $this->actingAs($funcionario)
+            ->delete(route('cuantias-smmlv.destroy', $cuantia))
+            ->assertRedirect(route('tipos-prestamo.show', $tipoPrestamo));
+
+        $this->assertDatabaseMissing('cuantias_smmlv', ['id_cuantia' => $cuantia->id_cuantia]);
+    }
+
+    public function test_un_usuario_deshabilitado_con_sesion_activa_no_puede_gestionar_cuantias(): void
+    {
+        $cuantia = CuantiaSmmlv::factory()->create();
+
+        foreach ([Usuario::factory()->administrador(), Usuario::factory()] as $factory) {
+            $deshabilitado = $factory->create(['habilitado' => false]);
+
+            $this->actingAs($deshabilitado)->post(route('cuantias-smmlv.store', $cuantia->id_tipo), [
+                'tramo_desde_smmlv' => 0,
+                'tramo_hasta_smmlv' => 4,
+                'cuantia_maxima_smmlv' => 130,
+            ])->assertForbidden();
+
+            $this->actingAs($deshabilitado)->put(route('cuantias-smmlv.update', $cuantia), [
+                'tramo_desde_smmlv' => 0,
+                'tramo_hasta_smmlv' => 4,
+                'cuantia_maxima_smmlv' => 150,
+            ])->assertForbidden();
+
+            $this->actingAs($deshabilitado)
+                ->delete(route('cuantias-smmlv.destroy', $cuantia))
+                ->assertForbidden();
+        }
+
+        $this->assertDatabaseHas('cuantias_smmlv', ['id_cuantia' => $cuantia->id_cuantia]);
+        $this->assertDatabaseCount('cuantias_smmlv', 1);
     }
 }

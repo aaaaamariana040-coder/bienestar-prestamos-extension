@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\RolUsuario;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
 
@@ -20,21 +19,21 @@ class TipoPrestamoPolicy
 
     public function create(Usuario $actor): bool
     {
-        return $actor->rol === RolUsuario::Administrador;
+        return $actor->puedeOperar();
     }
 
     public function update(Usuario $actor, TipoPrestamo $tipoPrestamo): bool
     {
-        return $actor->rol === RolUsuario::Administrador;
+        return $actor->puedeOperar();
     }
 
     public function habilitar(Usuario $actor, TipoPrestamo $tipoPrestamo): bool
     {
-        return $actor->rol === RolUsuario::Administrador;
+        return $actor->puedeOperar();
     }
 
     public function deshabilitar(Usuario $actor, TipoPrestamo $tipoPrestamo): bool
     {
-        return $actor->rol === RolUsuario::Administrador;
+        return $actor->puedeOperar();
     }
 }

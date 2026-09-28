@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\RolUsuario;
 use App\Models\Usuario;
 
 class SmmlvAnualPolicy
@@ -14,6 +13,6 @@ class SmmlvAnualPolicy
 
     public function create(Usuario $actor): bool
     {
-        return $actor->rol === RolUsuario::Administrador;
+        return $actor->puedeOperar();
     }
 }

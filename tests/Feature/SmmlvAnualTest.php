@@ -28,14 +28,29 @@ class SmmlvAnualTest extends TestCase
         ]);
     }
 
-    public function test_funcionario_bienestar_no_puede_registrar_el_valor_del_smmlv(): void
+    public function test_funcionario_bienestar_puede_registrar_el_valor_del_smmlv(): void
     {
         $funcionario = Usuario::factory()->create();
 
         $this->actingAs($funcionario)->post(route('smmlv.store'), [
             'anio' => 2026,
             'valor' => 1_423_500,
-        ])->assertForbidden();
+        ])->assertRedirect(route('smmlv.index'));
+
+        $this->assertDatabaseHas('smmlv_anual', ['anio' => 2026, 'valor' => 1_423_500]);
+    }
+
+    public function test_un_usuario_deshabilitado_con_sesion_activa_no_puede_registrar_el_valor_del_smmlv(): void
+    {
+        foreach ([Usuario::factory()->administrador(), Usuario::factory()] as $factory) {
+            $this->actingAs($factory->create(['habilitado' => false]))
+                ->post(route('smmlv.store'), [
+                    'anio' => 2026,
+                    'valor' => 1_423_500,
+                ])->assertForbidden();
+        }
+
+        $this->assertDatabaseMissing('smmlv_anual', ['anio' => 2026]);
     }
 
     public function test_no_se_puede_registrar_dos_valores_para_el_mismo_anio(): void

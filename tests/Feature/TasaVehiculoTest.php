@@ -25,14 +25,29 @@ class TasaVehiculoTest extends TestCase
         $this->assertSame('4.50', $tasaVehiculo->fresh()->puntos_adicionales_ipc);
     }
 
-    public function test_funcionario_bienestar_no_puede_editar_la_matriz(): void
+    public function test_funcionario_bienestar_puede_editar_la_matriz(): void
     {
         $funcionario = Usuario::factory()->create();
-        $tasaVehiculo = TasaVehiculo::factory()->create();
+        $tasaVehiculo = TasaVehiculo::factory()->create(['puntos_adicionales_ipc' => 4]);
 
         $this->actingAs($funcionario)
             ->put(route('tasa-vehiculo.update', $tasaVehiculo), ['puntos_adicionales_ipc' => 4.5])
-            ->assertForbidden();
+            ->assertRedirect(route('tasa-vehiculo.index'));
+
+        $this->assertSame('4.50', $tasaVehiculo->fresh()->puntos_adicionales_ipc);
+    }
+
+    public function test_un_usuario_deshabilitado_con_sesion_activa_no_puede_editar_la_matriz(): void
+    {
+        $tasaVehiculo = TasaVehiculo::factory()->create(['puntos_adicionales_ipc' => 4]);
+
+        foreach ([Usuario::factory()->administrador(), Usuario::factory()] as $factory) {
+            $this->actingAs($factory->create(['habilitado' => false]))
+                ->put(route('tasa-vehiculo.update', $tasaVehiculo), ['puntos_adicionales_ipc' => 4.5])
+                ->assertForbidden();
+        }
+
+        $this->assertSame('4.00', $tasaVehiculo->fresh()->puntos_adicionales_ipc);
     }
 
     public function test_tasa_efectiva_combina_el_ipc_base_con_los_puntos_del_plazo_y_tipo_de_solicitud(): void

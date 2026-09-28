@@ -46,6 +46,16 @@ class Usuario extends Authenticatable
     }
 
     /**
+     * Cuenta habilitada con un rol que puede operar el sistema (todo salvo
+     * la gestión de usuarios y la consulta de auditoría, que son solo del Administrador).
+     */
+    public function puedeOperar(): bool
+    {
+        return $this->habilitado
+            && in_array($this->rol, [RolUsuario::Administrador, RolUsuario::FuncionarioBienestar], true);
+    }
+
+    /**
      * @return BelongsTo<Empleado, $this>
      */
     public function empleado(): BelongsTo
