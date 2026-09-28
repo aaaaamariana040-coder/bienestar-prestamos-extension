@@ -21,6 +21,7 @@ Aplicación de Préstamos de Bienestar Social — versión ampliada según RF-00
 | reliquidacion | Reliquidaciones (abono, retiro, cambio de condiciones) |
 | abono_cesantias | Abonos bianuales de cesantías |
 | auditoria | Registro de auditoría |
+| informe_guardado | Copia inmutable del resultado de un reporte, para consultarlo por fecha (RF-009, RF-010) |
 
 ## 2. Estructura de cada tabla
 
@@ -215,6 +216,23 @@ Aplicación de Préstamos de Bienestar Social — versión ampliada según RF-00
 | hora | TIME | No | |
 | funcion_realizada | VARCHAR(100) | No | |
 | detalle | TEXT | Sí | |
+
+### informe_guardado
+Tabla física `informes_guardados`. Los registros son inmutables: no hay edición ni borrado, ni por rutas ni por el modelo.
+
+| Campo | Tipo | Nulo | Descripción |
+|---|---|---|---|
+| id_informe | INT | No (PK) | |
+| tipo | VARCHAR(30) | No | 'prestamos' \| 'pagos' \| 'cartera' \| 'presupuesto' |
+| parametros | JSON | No | Filtros con los que se generó el reporte (valores vacíos como null) |
+| datos | JSON | No | Resultado completo: `filas` y `totales`, con los montos como números redondeados a 2 decimales |
+| fecha_corte | DATE | No | Fecha de generación; cartera y presupuesto reflejan el estado de ese día |
+| generado_por | VARCHAR(20) | No (FK -> usuario.cedula, `restrictOnDelete`) | |
+| created_at / updated_at | TIMESTAMP | Sí | |
+
+Índices: (`tipo`, `fecha_corte`) y (`fecha_corte`). Cada generación queda registrada en `auditoria` dentro de la misma transacción.
+
+Limitación conocida: la inmutabilidad del modelo se apoya en los eventos `updating` y `deleting`, que solo se disparan al modificar o borrar una instancia. Una operación masiva como `InformeGuardado::query()->update(...)` o `->delete()` no los dispara y no queda bloqueada. Las rutas no permiten esas operaciones, y no se agregó un trigger en la base de datos; quien escriba código nuevo debe evitar operaciones masivas sobre esta tabla.
 
 ## 3. Puntos pendientes
 - Confirmar si la modalidad de "seguros" requiere tabla de cuantías propia.

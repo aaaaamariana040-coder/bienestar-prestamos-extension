@@ -50,7 +50,7 @@ Code style (must be run after modifying any PHP file):
 vendor/bin/pint --dirty --format agent
 ```
 
-Local DB: SQLite at `database/database.sqlite` (`DB_CONNECTION=sqlite` in `.env`). The target production database per `docs/arquitectura.md` is MariaDB — don't assume SQLite-only SQL when writing migrations/queries meant to ship.
+Local DB: development runs on MariaDB (`DB_CONNECTION=mariadb` in `.env`), the same engine targeted in production per `docs/arquitectura.md`. Tests are the exception and run on in-memory SQLite (`phpunit.xml`) — write migrations/queries that work on both engines, and don't assume SQLite-only or MariaDB-only SQL.
 
 <laravel-boost-guidelines>
 === foundation rules ===
