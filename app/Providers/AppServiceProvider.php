@@ -22,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::define('reportes.ver', fn (Usuario $usuario) => $usuario->rol === RolUsuario::Administrador);
+        Gate::define('reportes.ver', fn (Usuario $usuario) => $usuario->habilitado
+            && in_array($usuario->rol, [RolUsuario::Administrador, RolUsuario::FuncionarioBienestar], true));
     }
 }

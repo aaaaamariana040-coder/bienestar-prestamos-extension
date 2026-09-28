@@ -148,11 +148,38 @@ class ReporteTest extends TestCase
         $response->assertSee('600,000.00');
     }
 
-    public function test_un_funcionario_no_puede_ver_los_reportes(): void
+    public function test_un_funcionario_puede_ver_los_reportes(): void
     {
         $funcionario = Usuario::factory()->create();
 
-        $this->actingAs($funcionario)->get(route('reportes.prestamos'))->assertForbidden();
+        $rutas = [
+            route('reportes.prestamos'),
+            route('reportes.pagos'),
+            route('reportes.cartera'),
+            route('reportes.presupuesto'),
+        ];
+
+        foreach ($rutas as $ruta) {
+            $this->actingAs($funcionario)->get($ruta)->assertOk();
+        }
+    }
+
+    public function test_el_menu_muestra_el_enlace_de_reportes_al_funcionario(): void
+    {
+        $funcionario = Usuario::factory()->create();
+
+        $this->actingAs($funcionario)
+            ->get(route('empleados.index'))
+            ->assertSee('href="'.route('reportes.prestamos').'"', false);
+    }
+
+    public function test_un_usuario_deshabilitado_con_sesion_activa_no_puede_ver_los_reportes(): void
+    {
+        $administradorDeshabilitado = Usuario::factory()->administrador()->create(['habilitado' => false]);
+        $funcionarioDeshabilitado = Usuario::factory()->create(['habilitado' => false]);
+
+        $this->actingAs($administradorDeshabilitado)->get(route('reportes.prestamos'))->assertForbidden();
+        $this->actingAs($funcionarioDeshabilitado)->get(route('reportes.prestamos'))->assertForbidden();
     }
 
     public function test_invitado_es_redirigido_a_login(): void
