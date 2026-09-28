@@ -10,6 +10,7 @@ use App\Models\TipoPrestamo;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
 
 class ReporteTest extends TestCase
@@ -178,8 +179,11 @@ class ReporteTest extends TestCase
         $administradorDeshabilitado = Usuario::factory()->administrador()->create(['habilitado' => false]);
         $funcionarioDeshabilitado = Usuario::factory()->create(['habilitado' => false]);
 
-        $this->actingAs($administradorDeshabilitado)->get(route('reportes.prestamos'))->assertForbidden();
-        $this->actingAs($funcionarioDeshabilitado)->get(route('reportes.prestamos'))->assertForbidden();
+        $this->actingAs($administradorDeshabilitado)->get(route('reportes.prestamos'))->assertRedirect(route('login'));
+        $this->actingAs($funcionarioDeshabilitado)->get(route('reportes.prestamos'))->assertRedirect(route('login'));
+
+        $this->assertFalse(Gate::forUser($administradorDeshabilitado)->allows('reportes.ver'));
+        $this->assertFalse(Gate::forUser($funcionarioDeshabilitado)->allows('reportes.ver'));
     }
 
     public function test_invitado_es_redirigido_a_login(): void

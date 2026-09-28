@@ -47,7 +47,7 @@ class SmmlvAnualTest extends TestCase
                 ->post(route('smmlv.store'), [
                     'anio' => 2026,
                     'valor' => 1_423_500,
-                ])->assertForbidden();
+                ])->assertRedirect(route('login'));
         }
 
         $this->assertDatabaseMissing('smmlv_anual', ['anio' => 2026]);

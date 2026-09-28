@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Enums\RolUsuario;
 use App\Models\Usuario;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -22,7 +21,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::define('reportes.ver', fn (Usuario $usuario) => $usuario->habilitado
-            && in_array($usuario->rol, [RolUsuario::Administrador, RolUsuario::FuncionarioBienestar], true));
+        Gate::define('reportes.ver', fn (Usuario $usuario) => $usuario->puedeOperar());
     }
 }

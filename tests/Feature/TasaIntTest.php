@@ -65,7 +65,7 @@ class TasaIntTest extends TestCase
                 ->post(route('tasas-int.store', $tipoPrestamo), [
                     'anio' => 2026,
                     'tasa_anual' => 4.85,
-                ])->assertForbidden();
+                ])->assertRedirect(route('login'));
         }
 
         $this->assertDatabaseMissing('tasas_int', ['id_tipo' => $tipoPrestamo->id_tipo]);

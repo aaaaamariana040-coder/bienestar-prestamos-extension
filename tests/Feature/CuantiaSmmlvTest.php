@@ -100,17 +100,17 @@ class CuantiaSmmlvTest extends TestCase
                 'tramo_desde_smmlv' => 0,
                 'tramo_hasta_smmlv' => 4,
                 'cuantia_maxima_smmlv' => 130,
-            ])->assertForbidden();
+            ])->assertRedirect(route('login'));
 
             $this->actingAs($deshabilitado)->put(route('cuantias-smmlv.update', $cuantia), [
                 'tramo_desde_smmlv' => 0,
                 'tramo_hasta_smmlv' => 4,
                 'cuantia_maxima_smmlv' => 150,
-            ])->assertForbidden();
+            ])->assertRedirect(route('login'));
 
             $this->actingAs($deshabilitado)
                 ->delete(route('cuantias-smmlv.destroy', $cuantia))
-                ->assertForbidden();
+                ->assertRedirect(route('login'));
         }
 
         $this->assertDatabaseHas('cuantias_smmlv', ['id_cuantia' => $cuantia->id_cuantia]);

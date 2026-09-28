@@ -44,7 +44,7 @@ class TasaVehiculoTest extends TestCase
         foreach ([Usuario::factory()->administrador(), Usuario::factory()] as $factory) {
             $this->actingAs($factory->create(['habilitado' => false]))
                 ->put(route('tasa-vehiculo.update', $tasaVehiculo), ['puntos_adicionales_ipc' => 4.5])
-                ->assertForbidden();
+                ->assertRedirect(route('login'));
         }
 
         $this->assertSame('4.00', $tasaVehiculo->fresh()->puntos_adicionales_ipc);

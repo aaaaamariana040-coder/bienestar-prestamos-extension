@@ -96,21 +96,21 @@ class TipoPrestamoCrudTest extends TestCase
                 'nombre' => 'Educación',
                 'plazo_maximo' => 72,
                 'unidad_plazo' => UnidadPlazo::Meses->value,
-            ])->assertForbidden();
+            ])->assertRedirect(route('login'));
 
             $this->actingAs($deshabilitado)->put(route('tipos-prestamo.update', $tipoPrestamo), [
                 'nombre' => 'Vehículo',
                 'plazo_maximo' => 168,
                 'unidad_plazo' => UnidadPlazo::Anios->value,
-            ])->assertForbidden();
+            ])->assertRedirect(route('login'));
 
             $this->actingAs($deshabilitado)
                 ->patch(route('tipos-prestamo.deshabilitar', $tipoPrestamo))
-                ->assertForbidden();
+                ->assertRedirect(route('login'));
 
             $this->actingAs($deshabilitado)
                 ->patch(route('tipos-prestamo.habilitar', $tipoPrestamo))
-                ->assertForbidden();
+                ->assertRedirect(route('login'));
         }
 
         $this->assertDatabaseMissing('tipos_prestamo', ['nombre' => 'Educación']);
