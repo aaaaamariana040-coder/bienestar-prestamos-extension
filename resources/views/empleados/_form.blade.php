@@ -40,7 +40,7 @@
     <div class="col-md-6 mb-3">
         <label for="estado" class="form-label">Estado</label>
         <select id="estado" name="estado" class="form-select" required>
-            @foreach (['Activo', 'Retirado'] as $opcion)
+            @foreach ((optional($empleado)->exists && $empleado->estado !== 'Retirado' ? ['Activo'] : ['Activo', 'Retirado']) as $opcion)
                 <option value="{{ $opcion }}" @selected(old('estado', optional($empleado)->estado ?? 'Activo') === $opcion)>
                     {{ $opcion }}
                 </option>

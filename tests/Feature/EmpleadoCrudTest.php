@@ -71,6 +71,34 @@ class EmpleadoCrudTest extends TestCase
         $this->assertDatabaseMissing('empleados', ['cedula' => $empleado->cedula]);
     }
 
+    public function test_editar_no_permite_cambiar_el_estado_a_retirado(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        $empleado = Empleado::factory()->create();
+
+        $this->from(route('empleados.edit', $empleado))
+            ->put(route('empleados.update', $empleado), $this->datosEmpleado(['estado' => 'Retirado'], incluirCedula: false))
+            ->assertRedirect(route('empleados.edit', $empleado))
+            ->assertSessionHasErrors('estado');
+
+        $this->assertDatabaseHas('empleados', ['cedula' => $empleado->cedula, 'estado' => 'Activo']);
+        $this->assertDatabaseCount('reliquidaciones', 0);
+    }
+
+    public function test_un_empleado_retirado_se_puede_editar_y_reactivar(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        $empleado = Empleado::factory()->retirado()->create();
+
+        $this->put(route('empleados.update', $empleado), $this->datosEmpleado(['estado' => 'Retirado'], incluirCedula: false))
+            ->assertRedirect(route('empleados.index'));
+        $this->assertDatabaseHas('empleados', ['cedula' => $empleado->cedula, 'estado' => 'Retirado']);
+
+        $this->put(route('empleados.update', $empleado), $this->datosEmpleado(['estado' => 'Activo'], incluirCedula: false))
+            ->assertRedirect(route('empleados.index'));
+        $this->assertDatabaseHas('empleados', ['cedula' => $empleado->cedula, 'estado' => 'Activo']);
+    }
+
     public function test_no_se_puede_eliminar_un_empleado_con_usuario_asociado(): void
     {
         $usuario = Usuario::factory()->create();

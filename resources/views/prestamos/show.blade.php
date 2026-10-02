@@ -277,7 +277,7 @@
                     <td>{{ $reliquidacion->fecha->format('Y-m-d') }}</td>
                     <td>{{ $reliquidacion->motivo->value }}</td>
                     <td>{{ number_format($reliquidacion->saldo_anterior, 2) }}</td>
-                    <td>{{ number_format($reliquidacion->saldo_nuevo, 2) }}</td>
+                    <td>{{ $reliquidacion->saldo_nuevo !== null ? number_format($reliquidacion->saldo_nuevo, 2) : 'Pendiente de cálculo' }}</td>
                     <td>{{ $reliquidacion->tasa_aplicada !== null ? number_format($reliquidacion->tasa_aplicada, 4).'%' : '—' }}</td>
                 </tr>
             @empty
