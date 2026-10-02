@@ -15,6 +15,9 @@ The `docs/` directory contains the requirements/design docs written before imple
 - `docs/requisitos-funcionales.md` — numbered functional requirements (RF-001 to RF-045).
 - `docs/requisitos-no-funcionales.md` — numbered non-functional requirements (RNF-001 to RNF-025): security, integrity, auditability, performance, usability, maintainability, etc.
 - `docs/restricciones.md` — explicit out-of-scope items (no AS/400 integration, no payroll integration, no online payment gateway, committee voting handled by email not in-system, no scoring automation) and technology/delivery constraints.
+- `docs/identidad-visual.md` — institutional visual identity for the web app (color palette and typography), extracted from the Politécnico's *Manual de Identidad Gráfica Institucional 2025*.
+- `docs/plan-pruebas.md` — test plan with numbered cases (PP-xxx) per functional area, covering what is built through Sprint 4; employee withdrawal/settlement cases are marked pending.
+- `docs/plan-sprints-interno.md` — internal-only mapping of the RF-001 to RF-010 work onto the 4 official sprints of the thesis proposal; not an official document.
 
 When implementing a feature, cross-reference the relevant RF-/RNF- IDs and the business-rule source article so behavior stays traceable to the governing Acuerdos.
 
