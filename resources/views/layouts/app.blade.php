@@ -4,10 +4,14 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{{ $title ?? config('app.name', 'Bienestar Préstamos') }}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <link rel="stylesheet" href="{{ asset('css/tema-institucional.css') }}">
     </head>
     <body class="bg-light">
-        <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
+        <nav class="navbar navbar-expand navbar-dark navbar-institucional mb-4">
             <div class="container">
                 <a class="navbar-brand" href="{{ route('empleados.index') }}">Bienestar Préstamos</a>
 
@@ -54,7 +58,7 @@
 
                         <a href="{{ route('password.edit') }}" class="nav-link text-white">Mi contraseña</a>
 
-                        <span class="text-white-50">{{ auth()->user()->nombre_completo }}</span>
+                        <span class="text-white">{{ auth()->user()->nombre_completo }}</span>
 
                         <form method="POST" action="{{ route('logout') }}" class="mb-0">
                             @csrf
