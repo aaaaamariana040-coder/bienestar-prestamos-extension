@@ -178,7 +178,7 @@
                             @csrf
                             <div class="col-auto">
                                 <label for="monto" class="form-label">Monto</label>
-                                <input type="number" step="0.01" min="0.01" id="monto" name="monto" class="form-control" required>
+                                <input type="text" inputmode="decimal" id="monto" name="monto" class="form-control" required>
                             </div>
                             <div class="col-auto">
                                 <label for="fecha_pago_abono" class="form-label">Fecha</label>
@@ -231,7 +231,7 @@
                                 </div>
                                 <div class="col-auto">
                                     <label for="monto_cesantias" class="form-label">Monto (50%)</label>
-                                    <input type="number" step="0.01" min="0.01" id="monto_cesantias" name="monto" class="form-control" required>
+                                    <input type="text" inputmode="decimal" id="monto_cesantias" name="monto" class="form-control" required>
                                 </div>
                                 <div class="col-auto">
                                     <label for="fecha_abono_cesantias" class="form-label">Fecha</label>

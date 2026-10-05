@@ -43,7 +43,7 @@
 
             <div class="col-md-4 mb-3">
                 <label for="monto_solicitado" class="form-label">Monto solicitado</label>
-                <input type="number" step="0.01" min="0" id="monto_solicitado" name="monto_solicitado" class="form-control"
+                <input type="text" inputmode="decimal" id="monto_solicitado" name="monto_solicitado" class="form-control"
                        value="{{ old('monto_solicitado') }}" required>
             </div>
 
