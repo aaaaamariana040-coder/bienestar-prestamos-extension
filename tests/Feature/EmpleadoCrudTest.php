@@ -53,6 +53,41 @@ class EmpleadoCrudTest extends TestCase
         $this->assertArrayNotHasKey('fecha_autorizacion_credito', $empleado->getAttributes());
     }
 
+    public function test_listado_busca_por_cedula_o_nombre_parcial_sin_distinguir_mayusculas(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        Empleado::factory()->create(['cedula' => '1000000009', 'nombre_completo' => 'Prueba Solicitud Lista']);
+        Empleado::factory()->create(['cedula' => '2000000001', 'nombre_completo' => 'Otra Persona']);
+
+        $this->get(route('empleados.index', ['q' => 'SOLICITUD']))
+            ->assertOk()
+            ->assertSee('Prueba Solicitud Lista')
+            ->assertDontSee('Otra Persona');
+
+        $this->get(route('empleados.index', ['q' => '00000009']))
+            ->assertOk()
+            ->assertSee('Prueba Solicitud Lista')
+            ->assertDontSee('Otra Persona');
+    }
+
+    public function test_listado_filtra_por_estado_y_conserva_filtros_en_la_paginacion(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        Empleado::factory()->create(['nombre_completo' => 'Persona Activa', 'estado' => 'Activo']);
+        Empleado::factory()->create(['nombre_completo' => 'Persona Retirada', 'estado' => 'Retirado']);
+        Empleado::factory()->count(16)->create(['estado' => 'Retirado']);
+
+        $this->get(route('empleados.index', ['estado' => 'Retirado']))
+            ->assertOk()
+            ->assertDontSee('Persona Activa')
+            ->assertSee('estado=Retirado', false);
+
+        $this->get(route('empleados.index', ['estado' => 'Activo']))
+            ->assertOk()
+            ->assertSee('Persona Activa')
+            ->assertDontSee('Persona Retirada');
+    }
+
     public function test_puede_ver_editar_y_eliminar_un_empleado(): void
     {
         $this->actingAs(Usuario::factory()->create());

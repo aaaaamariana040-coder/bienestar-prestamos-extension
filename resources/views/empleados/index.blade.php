@@ -6,6 +6,27 @@
         <a href="{{ route('empleados.create') }}" class="btn btn-primary">Nuevo empleado</a>
     </div>
 
+    <form method="GET" action="{{ route('empleados.index') }}" class="row g-2 align-items-end mb-3">
+        <div class="col-md-6">
+            <label for="q" class="form-label">Buscar por cédula o nombre</label>
+            <input type="search" id="q" name="q" class="form-control" value="{{ $busqueda }}" placeholder="Ej. 1000000009 o Solicitud">
+        </div>
+
+        <div class="col-md-3">
+            <label for="estado" class="form-label">Estado</label>
+            <select id="estado" name="estado" class="form-select">
+                <option value="" @selected($estado === '')>Todos</option>
+                <option value="Activo" @selected($estado === 'Activo')>Activo</option>
+                <option value="Retirado" @selected($estado === 'Retirado')>Retirado</option>
+            </select>
+        </div>
+
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+            <a href="{{ route('empleados.index') }}" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
+    </form>
+
     <table class="table table-striped bg-white">
         <thead>
             <tr>
@@ -33,7 +54,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center text-muted">No hay empleados registrados.</td>
+                    <td colspan="6" class="text-center text-muted">{{ $busqueda !== '' || $estado !== '' ? 'Ningún empleado coincide con la búsqueda.' : 'No hay empleados registrados.' }}</td>
                 </tr>
             @endforelse
         </tbody>

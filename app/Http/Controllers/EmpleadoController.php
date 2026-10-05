@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateEmpleadoRequest;
 use App\Models\Empleado;
 use App\Services\EmpleadoService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class EmpleadoController extends Controller
@@ -16,11 +17,30 @@ class EmpleadoController extends Controller
         //
     }
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $empleados = Empleado::orderBy('nombre_completo')->paginate(15);
+        $busqueda = trim((string) $request->query('q', ''));
+        $estado = (string) $request->query('estado', '');
 
-        return view('empleados.index', compact('empleados'));
+        if (! in_array($estado, ['Activo', 'Retirado'], true)) {
+            $estado = '';
+        }
+
+        $empleados = Empleado::query()
+            ->when($busqueda !== '', function ($query) use ($busqueda) {
+                $patron = '%'.addcslashes($busqueda, '\\%_').'%';
+
+                $query->where(function ($query) use ($patron) {
+                    $query->where('cedula', 'like', $patron)
+                        ->orWhere('nombre_completo', 'like', $patron);
+                });
+            })
+            ->when($estado !== '', fn ($query) => $query->where('estado', $estado))
+            ->orderBy('nombre_completo')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('empleados.index', compact('empleados', 'busqueda', 'estado'));
     }
 
     public function create(): View
