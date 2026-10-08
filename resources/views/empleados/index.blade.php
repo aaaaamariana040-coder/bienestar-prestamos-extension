@@ -6,7 +6,7 @@
         <a href="{{ route('empleados.create') }}" class="btn btn-primary">Nuevo empleado</a>
     </div>
 
-    <form method="GET" action="{{ route('empleados.index') }}" class="row g-2 align-items-end mb-3">
+    <form method="GET" action="{{ route('empleados.index') }}" id="filtros-empleados" class="row g-2 align-items-end mb-3">
         <div class="col-md-6">
             <label for="q" class="form-label">Buscar por cédula o nombre</label>
             <input type="search" id="q" name="q" class="form-control" value="{{ $busqueda }}" placeholder="Ej. 1000000009 o Solicitud">
@@ -23,10 +23,10 @@
 
         <div class="col-md-3 d-flex gap-2">
             <button type="submit" class="btn btn-primary">Buscar</button>
-            <a href="{{ route('empleados.index') }}" class="btn btn-outline-secondary">Limpiar</a>
         </div>
     </form>
 
+    <div id="resultados-empleados">
     <table class="table table-striped bg-white">
         <thead>
             <tr>
@@ -63,6 +63,64 @@
     </table>
 
     {{ $empleados->links() }}
+    </div>
 
     <x-confirmar-eliminacion />
+
+    <script>
+        (function () {
+            const formulario = document.getElementById('filtros-empleados');
+            const busqueda = document.getElementById('q');
+            const estado = document.getElementById('estado');
+            let temporizador = null;
+            let peticion = null;
+
+            function filtrar() {
+                const parametros = new URLSearchParams(new FormData(formulario));
+
+                for (const [clave, valor] of Array.from(parametros)) {
+                    if (valor === '') {
+                        parametros.delete(clave);
+                    }
+                }
+
+                const url = formulario.action + (parametros.toString() ? '?' + parametros.toString() : '');
+
+                if (peticion) {
+                    peticion.abort();
+                }
+                peticion = new AbortController();
+
+                fetch(url, { signal: peticion.signal, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function (respuesta) {
+                        if (! respuesta.ok) {
+                            throw new Error('Respuesta inesperada');
+                        }
+
+                        return respuesta.text();
+                    })
+                    .then(function (html) {
+                        const nuevo = new DOMParser().parseFromString(html, 'text/html').getElementById('resultados-empleados');
+
+                        document.getElementById('resultados-empleados').innerHTML = nuevo.innerHTML;
+                        history.replaceState(null, '', url);
+                    })
+                    .catch(function (error) {
+                        if (error.name !== 'AbortError') {
+                            formulario.submit();
+                        }
+                    });
+            }
+
+            busqueda.addEventListener('input', function () {
+                clearTimeout(temporizador);
+                temporizador = setTimeout(filtrar, 300);
+            });
+
+            estado.addEventListener('change', function () {
+                clearTimeout(temporizador);
+                filtrar();
+            });
+        })();
+    </script>
 @endsection

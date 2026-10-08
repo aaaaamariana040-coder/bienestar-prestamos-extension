@@ -123,6 +123,45 @@ class EmpleadoCrudTest extends TestCase
             ->assertDontSee('Otra Persona');
     }
 
+    public function test_listado_filtra_en_vivo_sin_boton_limpiar_y_conserva_el_boton_buscar(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+
+        $this->get(route('empleados.index'))
+            ->assertOk()
+            ->assertSee('id="filtros-empleados"', false)
+            ->assertSee('id="resultados-empleados"', false)
+            ->assertSee('setTimeout(filtrar, 300)', false)
+            ->assertSee('>Buscar</button>', false)
+            ->assertDontSee('Limpiar');
+    }
+
+    public function test_listado_con_busqueda_vacia_devuelve_la_lista_completa(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        Empleado::factory()->create(['nombre_completo' => 'Persona Uno Lista']);
+        Empleado::factory()->create(['nombre_completo' => 'Persona Dos Lista']);
+
+        $this->get(route('empleados.index', ['q' => 'Uno', 'estado' => '']))
+            ->assertSee('Persona Uno Lista')
+            ->assertDontSee('Persona Dos Lista');
+
+        $this->get(route('empleados.index', ['q' => '', 'estado' => '']))
+            ->assertSee('Persona Uno Lista')
+            ->assertSee('Persona Dos Lista');
+    }
+
+    public function test_la_paginacion_conserva_la_busqueda_y_el_estado(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        Empleado::factory()->count(16)->create(['nombre_completo' => 'Paginable Retirado', 'estado' => 'Retirado']);
+
+        $this->get(route('empleados.index', ['q' => 'Paginable', 'estado' => 'Retirado']))
+            ->assertSee('q=Paginable', false)
+            ->assertSee('estado=Retirado', false)
+            ->assertSee('page=2', false);
+    }
+
     public function test_listado_filtra_por_estado_y_conserva_filtros_en_la_paginacion(): void
     {
         $this->actingAs(Usuario::factory()->create());
