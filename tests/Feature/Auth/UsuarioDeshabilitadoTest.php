@@ -128,11 +128,11 @@ class UsuarioDeshabilitadoTest extends TestCase
 
         $this->actingAs($usuario)->put(route('password.update'), [
             'current_password' => 'password',
-            'password' => 'nueva-clave-segura',
-            'password_confirmation' => 'nueva-clave-segura',
+            'password' => 'NuevaClave1',
+            'password_confirmation' => 'NuevaClave1',
         ])->assertRedirect(route('password.edit'));
 
-        $this->assertTrue(Hash::check('nueva-clave-segura', $usuario->fresh()->contrasena_hash));
+        $this->assertTrue(Hash::check('NuevaClave1', $usuario->fresh()->contrasena_hash));
     }
 
     public function test_un_usuario_deshabilitado_no_puede_cambiar_su_contrasena(): void
@@ -141,8 +141,8 @@ class UsuarioDeshabilitadoTest extends TestCase
 
         $this->actingAs($deshabilitado)->put(route('password.update'), [
             'current_password' => 'password',
-            'password' => 'nueva-clave-segura',
-            'password_confirmation' => 'nueva-clave-segura',
+            'password' => 'NuevaClave1',
+            'password_confirmation' => 'NuevaClave1',
         ])->assertRedirect(route('login'));
 
         $this->assertGuest();

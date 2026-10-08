@@ -18,8 +18,39 @@ class UsuarioCreationTest extends TestCase
         $this->actingAs(Usuario::factory()->administrador()->create())
             ->get(route('usuarios.create'))
             ->assertOk()
-            ->assertSee('Mínimo 8 caracteres. La confirmación debe coincidir con la contraseña.')
-            ->assertSee('title="Mínimo 8 caracteres.', false);
+            ->assertSee('Mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número. La confirmación debe coincidir con la contraseña.')
+            ->assertSee('title="Mínimo 8 caracteres, al menos una mayúscula', false);
+    }
+
+    public function test_contrasena_debil_es_rechazada_con_mensajes_en_espanol(): void
+    {
+        $administrador = Usuario::factory()->administrador()->create();
+        $empleado = Empleado::factory()->create();
+
+        $casos = [
+            'Corta1a' => 'La contraseña debe tener mínimo 8 caracteres.',
+            'sinmayuscula1' => 'La contraseña debe contener al menos una letra mayúscula.',
+            'SINMINUSCULA1' => 'La contraseña debe contener al menos una letra minúscula.',
+            'SinNumeroAqui' => 'La contraseña debe contener al menos un número.',
+        ];
+
+        foreach ($casos as $clave => $mensaje) {
+            $this->actingAs($administrador)->post(route('usuarios.store'), [
+                'cedula' => $empleado->cedula,
+                'rol' => RolUsuario::FuncionarioBienestar->value,
+                'password' => $clave,
+                'password_confirmation' => $clave,
+            ])->assertSessionHasErrors(['password' => $mensaje]);
+        }
+
+        $this->actingAs($administrador)->post(route('usuarios.store'), [
+            'cedula' => $empleado->cedula,
+            'rol' => RolUsuario::FuncionarioBienestar->value,
+            'password' => 'ClaveSegura1',
+            'password_confirmation' => 'ClaveSegura2',
+        ])->assertSessionHasErrors(['password' => 'La confirmación de la contraseña no coincide.']);
+
+        $this->assertDatabaseMissing('usuarios', ['cedula' => $empleado->cedula]);
     }
 
     public function test_administrador_puede_crear_usuario_para_un_empleado_existente(): void
@@ -30,12 +61,12 @@ class UsuarioCreationTest extends TestCase
         $this->actingAs($administrador)->post(route('usuarios.store'), [
             'cedula' => $empleado->cedula,
             'rol' => RolUsuario::FuncionarioBienestar->value,
-            'password' => 'clave-segura',
-            'password_confirmation' => 'clave-segura',
+            'password' => 'ClaveSegura1',
+            'password_confirmation' => 'ClaveSegura1',
         ])->assertRedirect(route('empleados.index'));
 
         $usuario = Usuario::findOrFail($empleado->cedula);
-        $this->assertTrue(Hash::check('clave-segura', $usuario->contrasena_hash));
+        $this->assertTrue(Hash::check('ClaveSegura1', $usuario->contrasena_hash));
         $this->assertSame(RolUsuario::FuncionarioBienestar, $usuario->rol);
     }
 
@@ -49,8 +80,8 @@ class UsuarioCreationTest extends TestCase
         $this->actingAs($funcionario)->post(route('usuarios.store'), [
             'cedula' => $empleado->cedula,
             'rol' => RolUsuario::FuncionarioBienestar->value,
-            'password' => 'clave-segura',
-            'password_confirmation' => 'clave-segura',
+            'password' => 'ClaveSegura1',
+            'password_confirmation' => 'ClaveSegura1',
         ])->assertForbidden();
     }
 
