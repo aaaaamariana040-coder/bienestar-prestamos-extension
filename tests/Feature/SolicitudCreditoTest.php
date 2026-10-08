@@ -236,6 +236,42 @@ class SolicitudCreditoTest extends TestCase
         $this->assertDatabaseHas('solicitudes_credito', ['cedula_empleado' => '1098765432', 'id_tipo' => $tipoPrestamo->id_tipo]);
     }
 
+    public function test_un_envio_manual_con_la_cedula_de_un_retirado_se_rechaza_y_no_crea_la_solicitud(): void
+    {
+        $funcionario = Usuario::factory()->create();
+        $retirado = Empleado::factory()->create(['cedula' => '1098700001', 'estado' => 'Retirado']);
+        $tipoPrestamo = TipoPrestamo::factory()->create();
+
+        $this->actingAs($funcionario)->post(route('solicitudes.store'), [
+            'cedula_empleado' => $retirado->cedula,
+            'id_tipo' => $tipoPrestamo->id_tipo,
+            'monto_solicitado' => 2_000_000,
+            'plazo_solicitado' => 24,
+            'fecha_solicitud' => '2026-01-15',
+        ])->assertSessionHasErrors([
+            'cedula_empleado' => 'El empleado con la cédula 1098700001 no está activo y no puede solicitar un crédito.',
+        ]);
+
+        $this->assertDatabaseMissing('solicitudes_credito', ['cedula_empleado' => $retirado->cedula]);
+        $this->assertDatabaseCount('solicitudes_credito', 0);
+    }
+
+    public function test_un_envio_manual_con_una_cedula_inexistente_se_rechaza_con_mensaje(): void
+    {
+        $funcionario = Usuario::factory()->create();
+        $tipoPrestamo = TipoPrestamo::factory()->create();
+
+        $this->actingAs($funcionario)->post(route('solicitudes.store'), [
+            'cedula_empleado' => '5555555555',
+            'id_tipo' => $tipoPrestamo->id_tipo,
+            'monto_solicitado' => 2_000_000,
+            'plazo_solicitado' => 24,
+            'fecha_solicitud' => '2026-01-15',
+        ])->assertSessionHasErrors(['cedula_empleado' => 'No existe un empleado con la cédula 5555555555.']);
+
+        $this->assertDatabaseCount('solicitudes_credito', 0);
+    }
+
     public function test_no_se_puede_aprobar_una_solicitud_sin_presupuesto_disponible(): void
     {
         $administrador = Usuario::factory()->administrador()->create();
