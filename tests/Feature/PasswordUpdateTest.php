@@ -11,6 +11,15 @@ class PasswordUpdateTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_formulario_de_cambio_de_contrasena_muestra_las_reglas(): void
+    {
+        $this->actingAs(Usuario::factory()->create())
+            ->get(route('password.edit'))
+            ->assertOk()
+            ->assertSee('Mínimo 8 caracteres. La confirmación debe coincidir con la contraseña.')
+            ->assertSee('title="Mínimo 8 caracteres.', false);
+    }
+
     public function test_usuario_autenticado_puede_cambiar_su_propia_contrasena(): void
     {
         $usuario = Usuario::factory()->create();

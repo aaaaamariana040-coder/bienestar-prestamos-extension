@@ -13,6 +13,15 @@ class UsuarioCreationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_formulario_de_crear_usuario_muestra_las_reglas_de_contrasena(): void
+    {
+        $this->actingAs(Usuario::factory()->administrador()->create())
+            ->get(route('usuarios.create'))
+            ->assertOk()
+            ->assertSee('Mínimo 8 caracteres. La confirmación debe coincidir con la contraseña.')
+            ->assertSee('title="Mínimo 8 caracteres.', false);
+    }
+
     public function test_administrador_puede_crear_usuario_para_un_empleado_existente(): void
     {
         $administrador = Usuario::factory()->administrador()->create();

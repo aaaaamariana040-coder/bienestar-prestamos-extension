@@ -77,6 +77,41 @@ class UsuarioManagementTest extends TestCase
         $this->assertTrue($administrador->fresh()->habilitado);
     }
 
+    public function test_nadie_puede_deshabilitar_a_otro_administrador(): void
+    {
+        $actor = Usuario::factory()->administrador()->create();
+        $otroAdministrador = Usuario::factory()->administrador()->create();
+
+        $this->actingAs($actor)
+            ->patch(route('usuarios.deshabilitar', $otroAdministrador))
+            ->assertForbidden();
+
+        $this->assertTrue($otroAdministrador->fresh()->habilitado);
+    }
+
+    public function test_listado_muestra_desactivado_y_en_gris_el_boton_del_administrador(): void
+    {
+        $administrador = Usuario::factory()->administrador()->create();
+        Usuario::factory()->create(['nombre_completo' => 'Funcionario Normal']);
+
+        $this->actingAs($administrador)
+            ->get(route('usuarios.index'))
+            ->assertOk()
+            ->assertSee('title="El administrador no se puede deshabilitar"', false)
+            ->assertSee('class="btn btn-sm btn-outline-secondary" disabled>Deshabilitar</button>', false)
+            ->assertSee('btn-outline-danger">Deshabilitar</button>', false);
+    }
+
+    public function test_el_rol_del_administrador_si_se_puede_editar(): void
+    {
+        $actor = Usuario::factory()->administrador()->create();
+        $otroAdministrador = Usuario::factory()->administrador()->create();
+
+        $this->actingAs($actor)
+            ->put(route('usuarios.update', $otroAdministrador), ['rol' => RolUsuario::FuncionarioBienestar->value])
+            ->assertRedirect(route('usuarios.index'));
+    }
+
     public function test_un_usuario_deshabilitado_no_puede_iniciar_sesion(): void
     {
         $usuario = Usuario::factory()->create(['habilitado' => false]);
