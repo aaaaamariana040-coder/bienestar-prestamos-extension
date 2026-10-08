@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EstadoSolicitud;
 use Database\Factories\SolicitudCreditoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -64,5 +65,10 @@ class SolicitudCredito extends Model
     public function prestamo(): HasOne
     {
         return $this->hasOne(Prestamo::class, 'id_solicitud', 'id_solicitud');
+    }
+
+    protected function plazoSolicitadoLegible(): Attribute
+    {
+        return Attribute::get(fn (): string => TipoPrestamo::plazoEnQuincenas((int) $this->plazo_solicitado));
     }
 }

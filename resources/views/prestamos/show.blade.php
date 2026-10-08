@@ -35,8 +35,8 @@
                 <td>{{ number_format($prestamo->cuota_periodica, 2) }}</td>
             </tr>
             <tr>
-                <th>Número de cuotas</th>
-                <td>{{ $prestamo->num_cuotas }}</td>
+                <th>Plazo</th>
+                <td>{{ \App\Models\TipoPrestamo::plazoEnQuincenas($prestamo->num_cuotas) }}</td>
             </tr>
             <tr>
                 <th>Fecha de autorización</th>

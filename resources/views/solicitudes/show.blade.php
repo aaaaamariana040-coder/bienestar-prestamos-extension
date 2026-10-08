@@ -22,7 +22,7 @@
             </tr>
             <tr>
                 <th>Plazo</th>
-                <td>{{ $solicitud->plazo_solicitado }} cuotas</td>
+                <td>{{ $solicitud->plazo_solicitado_legible }}</td>
             </tr>
             <tr>
                 <th>Fecha de solicitud</th>

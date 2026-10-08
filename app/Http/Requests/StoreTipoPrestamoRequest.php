@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\UnidadPlazo;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreTipoPrestamoRequest extends FormRequest
 {
@@ -22,7 +20,6 @@ class StoreTipoPrestamoRequest extends FormRequest
             'nombre' => ['required', 'string', 'max:100', 'unique:tipos_prestamo,nombre'],
             'descripcion' => ['nullable', 'string'],
             'plazo_maximo' => ['required', 'integer', 'min:1'],
-            'unidad_plazo' => ['required', Rule::enum(UnidadPlazo::class)],
             'fuente_normativa' => ['nullable', 'string', 'max:100'],
         ];
     }

@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\UnidadPlazo;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -25,7 +24,6 @@ class UpdateTipoPrestamoRequest extends FormRequest
             ],
             'descripcion' => ['nullable', 'string'],
             'plazo_maximo' => ['required', 'integer', 'min:1'],
-            'unidad_plazo' => ['required', Rule::enum(UnidadPlazo::class)],
             'fuente_normativa' => ['nullable', 'string', 'max:100'],
         ];
     }

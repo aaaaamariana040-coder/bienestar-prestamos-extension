@@ -48,7 +48,7 @@
             </div>
 
             <div class="col-md-4 mb-3">
-                <label for="plazo_solicitado" class="form-label">Plazo (cuotas quincenales)</label>
+                <label for="plazo_solicitado" class="form-label">Plazo (quincenas)</label>
                 <input type="number" min="1" id="plazo_solicitado" name="plazo_solicitado" class="form-control"
                        value="{{ old('plazo_solicitado') }}" required>
             </div>

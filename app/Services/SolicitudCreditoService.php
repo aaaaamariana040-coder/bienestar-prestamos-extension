@@ -55,7 +55,7 @@ class SolicitudCreditoService
         }
 
         if ($solicitud->plazo_solicitado > $tipoPrestamo->plazo_maximo) {
-            $problemas[] = "El plazo solicitado supera el plazo máximo de la modalidad ({$tipoPrestamo->plazo_maximo_legible}).";
+            $problemas[] = "El plazo solicitado ({$solicitud->plazo_solicitado} quincenas) supera el plazo máximo de la modalidad ({$tipoPrestamo->plazo_maximo_legible}).";
         }
 
         $smmlv = SmmlvAnual::valorParaAnio($anio);

@@ -58,7 +58,7 @@ Aplicación de Préstamos de Bienestar Social — versión ampliada según RF-00
 | id_tipo | INT | No (PK) | |
 | nombre | VARCHAR(60) | No | |
 | descripcion | TEXT | Sí | |
-| plazo_maximo | INT | No | |
+| plazo_maximo | INT | No | **Siempre en quincenas** (24 por año): vivienda 480 (20 años), vehículo 168 (7 años), educación y calamidad 72 (36 meses). No hay columna de unidad: la interfaz muestra la equivalencia aproximada (meses hasta 120 quincenas, años desde ahí) |
 | habilitada | BOOLEAN | No | Deshabilitar si se agotó presupuesto |
 | fuente_normativa | VARCHAR(100) | Sí | |
 
@@ -118,7 +118,7 @@ Aplicación de Préstamos de Bienestar Social — versión ampliada según RF-00
 | cedula_empleado | VARCHAR(20) | No (FK) | |
 | id_tipo | INT | No (FK) | |
 | monto_solicitado | DECIMAL(18,2) | No | |
-| plazo_solicitado | INT | No | |
+| plazo_solicitado | INT | No | En quincenas, igual que `tipo_prestamo.plazo_maximo` y `prestamo.num_cuotas` |
 | fecha_solicitud | DATE | No | |
 | estado | VARCHAR(20) | No | Radicada / Aprobada / Rechazada |
 | fecha_decision | DATE | Sí | |

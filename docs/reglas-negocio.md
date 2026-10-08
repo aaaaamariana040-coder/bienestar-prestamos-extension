@@ -29,6 +29,8 @@ Fuente: Acuerdo Directivo No. 19 del 12 de octubre de 2022 (reglamento del Progr
 
 ## 4. Cuantías, plazos y tasas por modalidad
 
+> En el sistema todos los plazos se manejan **en quincenas** (24 por año): vivienda 20 años = 480, vehículo 7 años = 168, educación y calamidad 36 meses = 72. Las pantallas muestran al lado una equivalencia aproximada (meses hasta 120 quincenas, años desde ahí).
+
 ### 4.1 Vivienda
 | Salario del beneficiario | Cuantía máxima | Plazo | Tasa |
 |---|---|---|---|

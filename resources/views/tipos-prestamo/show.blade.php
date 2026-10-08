@@ -18,7 +18,7 @@
                 <dd class="col-sm-9">{{ $tipoPrestamo->descripcion ?? '—' }}</dd>
 
                 <dt class="col-sm-3">Plazo máximo</dt>
-                <dd class="col-sm-9">{{ $tipoPrestamo->plazo_maximo_legible }} ({{ $tipoPrestamo->plazo_maximo }} cuotas quincenales)</dd>
+                <dd class="col-sm-9">{{ $tipoPrestamo->plazo_maximo_legible }}</dd>
 
                 <dt class="col-sm-3">Estado</dt>
                 <dd class="col-sm-9">{{ $tipoPrestamo->habilitada ? 'Habilitada' : 'Deshabilitada' }}</dd>
