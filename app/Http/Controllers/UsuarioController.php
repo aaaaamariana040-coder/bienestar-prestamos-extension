@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUsuarioRequest;
 use App\Http\Requests\UpdateUsuarioRequest;
-use App\Models\Empleado;
 use App\Models\Usuario;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
@@ -16,7 +15,7 @@ class UsuarioController extends Controller
     {
         $this->authorize('viewAny', Usuario::class);
 
-        $usuarios = Usuario::orderBy('nombre_completo')->paginate(15);
+        $usuarios = Usuario::orderBy('nombre')->orderBy('apellido')->paginate(15);
 
         return view('usuarios.index', compact('usuarios'));
     }
@@ -25,9 +24,7 @@ class UsuarioController extends Controller
     {
         $this->authorize('create', Usuario::class);
 
-        $empleados = Empleado::orderBy('nombre_completo')->get();
-
-        return view('usuarios.create', compact('empleados'));
+        return view('usuarios.create');
     }
 
     public function store(StoreUsuarioRequest $request): RedirectResponse
@@ -35,11 +32,11 @@ class UsuarioController extends Controller
         $this->authorize('create', Usuario::class);
 
         $datos = $request->validated();
-        $empleado = Empleado::findOrFail($datos['cedula']);
 
         Usuario::create([
-            'cedula' => $empleado->cedula,
-            'nombre_completo' => $empleado->nombre_completo,
+            'cedula' => $datos['cedula'],
+            'nombre' => $datos['nombre'],
+            'apellido' => $datos['apellido'],
             'contrasena_hash' => Hash::make($datos['password']),
             'rol' => $datos['rol'],
             'habilitado' => true,

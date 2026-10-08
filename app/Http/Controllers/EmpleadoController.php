@@ -59,8 +59,6 @@ class EmpleadoController extends Controller
 
     public function show(Empleado $empleado): View
     {
-        $empleado->loadMissing('usuario');
-
         return view('empleados.show', compact('empleado'));
     }
 
@@ -80,12 +78,6 @@ class EmpleadoController extends Controller
 
     public function destroy(Empleado $empleado): RedirectResponse
     {
-        if ($empleado->usuario()->exists()) {
-            return redirect()
-                ->route('empleados.index')
-                ->with('error', 'No se puede eliminar un empleado con una cuenta de usuario asociada.');
-        }
-
         $empleado->delete();
 
         return redirect()->route('empleados.index')->with('status', 'Empleado eliminado correctamente.');

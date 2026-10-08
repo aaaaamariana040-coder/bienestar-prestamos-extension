@@ -17,15 +17,22 @@
         @csrf
 
         <div class="mb-3">
-            <label for="cedula" class="form-label">Empleado</label>
-            <select id="cedula" name="cedula" class="form-select" required>
-                <option value="">Selecciona un empleado…</option>
-                @foreach ($empleados as $opcion)
-                    <option value="{{ $opcion->cedula }}" @selected(old('cedula') === $opcion->cedula)>
-                        {{ $opcion->nombre_completo }} ({{ $opcion->cedula }})
-                    </option>
-                @endforeach
-            </select>
+            <label for="cedula" class="form-label">Cédula</label>
+            <input type="text" id="cedula" name="cedula" class="form-control" value="{{ old('cedula') }}"
+                   inputmode="numeric" maxlength="10" pattern="[0-9]{1,10}"
+                   title="Solo números, máximo 10 dígitos, sin puntos ni caracteres especiales" required>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="nombre" class="form-label">Nombre</label>
+                <input type="text" id="nombre" name="nombre" class="form-control" maxlength="80" value="{{ old('nombre') }}" required>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label for="apellido" class="form-label">Apellido</label>
+                <input type="text" id="apellido" name="apellido" class="form-control" maxlength="80" value="{{ old('apellido') }}" required>
+            </div>
         </div>
 
         <div class="mb-3">

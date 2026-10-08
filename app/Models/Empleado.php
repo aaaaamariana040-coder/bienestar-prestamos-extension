@@ -6,7 +6,6 @@ use Database\Factories\EmpleadoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'cedula',
@@ -40,13 +39,5 @@ class Empleado extends Model
             'capacidad_endeudamiento' => 'decimal:2',
             'fecha_vinculacion' => 'date',
         ];
-    }
-
-    /**
-     * @return HasOne<Usuario, $this>
-     */
-    public function usuario(): HasOne
-    {
-        return $this->hasOne(Usuario::class, 'cedula', 'cedula');
     }
 }

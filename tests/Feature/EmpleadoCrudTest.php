@@ -226,17 +226,6 @@ class EmpleadoCrudTest extends TestCase
         $this->assertDatabaseHas('empleados', ['cedula' => $empleado->cedula, 'estado' => 'Activo']);
     }
 
-    public function test_no_se_puede_eliminar_un_empleado_con_usuario_asociado(): void
-    {
-        $usuario = Usuario::factory()->create();
-        $this->actingAs($usuario);
-
-        $response = $this->delete(route('empleados.destroy', $usuario->cedula));
-
-        $response->assertRedirect(route('empleados.index'));
-        $this->assertDatabaseHas('empleados', ['cedula' => $usuario->cedula]);
-    }
-
     public function test_listado_ofrece_el_modal_de_confirmacion_con_el_nombre_del_empleado(): void
     {
         $this->actingAs(Usuario::factory()->create());
@@ -272,18 +261,6 @@ class EmpleadoCrudTest extends TestCase
             ->assertSee('Empleado eliminado correctamente.');
 
         $this->assertDatabaseMissing('empleados', ['cedula' => $empleado->cedula]);
-    }
-
-    public function test_el_listado_muestra_el_mensaje_cuando_el_servidor_impide_eliminar(): void
-    {
-        $usuario = Usuario::factory()->create();
-        $this->actingAs($usuario);
-
-        $this->followingRedirects()
-            ->delete(route('empleados.destroy', $usuario->cedula))
-            ->assertSee('No se puede eliminar un empleado con una cuenta de usuario asociada.');
-
-        $this->assertDatabaseHas('empleados', ['cedula' => $usuario->cedula]);
     }
 
     /**

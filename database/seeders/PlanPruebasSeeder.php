@@ -58,8 +58,6 @@ class PlanPruebasSeeder extends Seeder
 
     public const CEDULA_CAPACIDAD_BAJA = '1000000004';
 
-    public const CEDULA_PRESTAMO_SIN_USUARIO = '1000000005';
-
     public const CEDULA_ESTADO_CUENTA = '1000000006';
 
     public const CEDULA_CUOTA_VENCIDA = '1000000007';
@@ -131,7 +129,6 @@ class PlanPruebasSeeder extends Seeder
             $this->sembrarPresupuestoAgotado();
             $this->sembrarVehiculo();
             $this->sembrarCapacidadBaja();
-            $this->sembrarPrestamoSinUsuario();
             $this->sembrarEstadoDeCuenta();
             $this->sembrarCuotaVencida();
             $this->sembrarDeshipoteca();
@@ -208,20 +205,21 @@ class PlanPruebasSeeder extends Seeder
     }
 
     /**
-     * Funcionario Bienestar con usuario y un préstamo vigente (empleado con usuario asociado).
+     * Funcionario Bienestar con usuario y un préstamo vigente (el usuario y el empleado comparten cédula, pero no tienen vínculo).
      */
     private function sembrarFuncionario(): void
     {
         $empleado = $this->crearEmpleado(self::CEDULA_FUNCIONARIO, 'Prueba — Funcionario Bienestar', 6_000_000);
 
         $this->funcionario = Usuario::factory()->create([
-            'cedula' => $empleado->cedula,
-            'nombre_completo' => $empleado->nombre_completo,
+            'cedula' => self::CEDULA_FUNCIONARIO,
+            'nombre' => 'Funcionario',
+            'apellido' => 'Prueba',
         ]);
 
         $this->aprobarPrestamo($empleado, self::MODALIDAD_EDUCACION, 5_000_000, 24, now());
 
-        $this->resumen[] = [$empleado->cedula, 'Funcionario Bienestar con usuario y préstamo', 'PP-006, PP-015, PP-017, PP-053'];
+        $this->resumen[] = [$empleado->cedula, 'Funcionario Bienestar con usuario y préstamo', 'PP-006, PP-017, PP-053, PP-055'];
     }
 
     private function sembrarPresupuestoAgotado(): void
@@ -264,15 +262,6 @@ class PlanPruebasSeeder extends Seeder
         $this->radicarSolicitud($empleado, self::MODALIDAD_EDUCACION, 10_000_000, 24, now());
 
         $this->resumen[] = [$empleado->cedula, 'Capacidad de endeudamiento 100.000 + solicitud radicada', 'PP-029'];
-    }
-
-    private function sembrarPrestamoSinUsuario(): void
-    {
-        $empleado = $this->crearEmpleado(self::CEDULA_PRESTAMO_SIN_USUARIO, 'Prueba — Préstamo Sin Usuario', 6_000_000);
-
-        $this->aprobarPrestamo($empleado, self::MODALIDAD_EDUCACION, 6_000_000, 24, now());
-
-        $this->resumen[] = [$empleado->cedula, 'Préstamo vigente, sin cuenta de usuario', 'PP-017, PP-055'];
     }
 
     /**

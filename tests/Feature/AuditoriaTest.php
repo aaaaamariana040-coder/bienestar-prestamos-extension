@@ -12,6 +12,7 @@ use App\Models\SolicitudCredito;
 use App\Models\TasaInt;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
+use App\Services\AuditoriaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -229,6 +230,23 @@ class AuditoriaTest extends TestCase
         $administrador = Usuario::factory()->administrador()->create();
 
         $this->actingAs($administrador)->get(route('auditoria.index'))->assertOk();
+    }
+
+    public function test_la_auditoria_muestra_el_nombre_y_apellido_de_quien_hizo_la_accion_sin_empleado(): void
+    {
+        $administrador = Usuario::factory()->administrador()->create();
+        $funcionario = Usuario::factory()->create(['nombre' => 'Camila', 'apellido' => 'Ospina']);
+        $this->assertDatabaseMissing('empleados', ['cedula' => $funcionario->cedula]);
+
+        app(AuditoriaService::class)->registrar($funcionario, 'Prueba de actor independiente');
+
+        $this->assertDatabaseHas('auditorias', ['cedula_usu' => $funcionario->cedula, 'funcion_realizada' => 'Prueba de actor independiente']);
+
+        $this->actingAs($administrador)
+            ->get(route('auditoria.index'))
+            ->assertOk()
+            ->assertSee('Camila Ospina')
+            ->assertSee('Prueba de actor independiente');
     }
 
     public function test_invitado_es_redirigido_a_login(): void

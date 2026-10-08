@@ -87,12 +87,6 @@ class PlanPruebasSeederTest extends TestCase
         );
     }
 
-    public function test_hay_un_empleado_con_prestamo_y_sin_usuario(): void
-    {
-        $this->assertNull(Usuario::find(PlanPruebasSeeder::CEDULA_PRESTAMO_SIN_USUARIO));
-        $this->assertTrue(Prestamo::where('cedula_empleado', PlanPruebasSeeder::CEDULA_PRESTAMO_SIN_USUARIO)->exists());
-    }
-
     public function test_el_prestamo_de_estado_de_cuenta_esta_desembolsado_con_tres_cuotas_pagadas_y_sin_mora(): void
     {
         $prestamo = Prestamo::where('cedula_empleado', PlanPruebasSeeder::CEDULA_ESTADO_CUENTA)->firstOrFail();
@@ -127,9 +121,18 @@ class PlanPruebasSeederTest extends TestCase
         $this->assertSame([], app(SolicitudCreditoService::class)->validar($solicitud));
     }
 
+    public function test_los_usuarios_sembrados_tienen_el_nombre_y_apellido_confirmados(): void
+    {
+        $administrador = Usuario::findOrFail(PlanPruebasSeeder::CEDULA_ADMINISTRADOR);
+        $funcionario = Usuario::findOrFail(PlanPruebasSeeder::CEDULA_FUNCIONARIO);
+
+        $this->assertSame(['Administrador', 'Bienestar'], [$administrador->nombre, $administrador->apellido]);
+        $this->assertSame(['Funcionario', 'Prueba'], [$funcionario->nombre, $funcionario->apellido]);
+    }
+
     public function test_crea_empleados_de_volumen_y_trazas_de_auditoria_de_ambos_usuarios(): void
     {
-        $this->assertSame(1 + 10 + PlanPruebasSeeder::CANTIDAD_EMPLEADOS_VOLUMEN, Empleado::count());
+        $this->assertSame(9 + PlanPruebasSeeder::CANTIDAD_EMPLEADOS_VOLUMEN, Empleado::count());
         $this->assertTrue(Auditoria::where('cedula_usu', PlanPruebasSeeder::CEDULA_ADMINISTRADOR)->exists());
         $this->assertTrue(Auditoria::where('cedula_usu', PlanPruebasSeeder::CEDULA_FUNCIONARIO)->exists());
     }

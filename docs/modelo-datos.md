@@ -28,11 +28,14 @@ Aplicación de Préstamos de Bienestar Social — versión ampliada según RF-00
 ### usuario
 | Campo | Tipo | Nulo | Descripción |
 |---|---|---|---|
-| cedula | VARCHAR(20) | No (PK, FK -> empleado.cedula) | Todo usuario corresponde a un empleado |
-| nombre_completo | VARCHAR(150) | No | |
+| cedula | VARCHAR(20) | No (PK) | Llave del usuario. Las demás tablas la referencian como `cedula_usu` (o `generado_por`). Es independiente de `empleado`: ya no es FK hacia `empleado.cedula`, y un usuario no tiene por qué ser un empleado |
+| nombre | VARCHAR(80) | No | Nombre propio del usuario; la barra superior lo muestra junto al apellido |
+| apellido | VARCHAR(80) | No | Apellido(s) del usuario |
 | contrasena_hash | VARCHAR(255) | No | Hash, nunca texto plano |
 | rol | VARCHAR(30) | No | 'ADMINISTRADOR' \| 'FUNCIONARIO_BIENESTAR' |
 | habilitado | BOOLEAN | No | Para deshabilitar cuentas |
+
+> El nombre completo ya no se almacena: el modelo lo compone como `nombre` + `apellido` (accesor `nombre_completo`). La cédula de un usuario sigue la misma regla que la del empleado (solo dígitos, máximo 10).
 
 > Solo existen dos roles fijos, con diferencias fijas: el Funcionario tiene las mismas funciones que el Administrador, salvo la gestión de cuentas de usuario y la consulta de auditoría, que son exclusivas del Administrador. Los reportes e indicadores son para ambos roles. No se modela como tabla de permisos independiente por ahora.
 
