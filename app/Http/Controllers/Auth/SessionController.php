@@ -30,7 +30,7 @@ class SessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->route('empleados.index');
+        return redirect()->route('inicio');
     }
 
     public function destroy(Request $request): RedirectResponse

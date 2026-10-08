@@ -13,6 +13,7 @@
     <body class="bg-light d-flex align-items-center justify-content-center vh-100">
         <div class="card shadow-sm" style="width: 100%; max-width: 24rem;">
             <div class="card-body p-4">
+                <div class="text-center mb-3"><x-logo :alto="72" /></div>
                 <h1 class="h4 mb-4 text-center">Bienestar Préstamos</h1>
 
                 @if ($errors->any())

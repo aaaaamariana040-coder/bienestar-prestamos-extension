@@ -20,10 +20,11 @@ use App\Http\Controllers\TasaIntController;
 use App\Http\Controllers\TasaVehiculoController;
 use App\Http\Controllers\TipoPrestamoController;
 use App\Http\Controllers\UsuarioController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return Auth::check() ? redirect()->route('inicio') : view('welcome');
 });
 
 Route::middleware('guest')->group(function () {
@@ -34,6 +35,8 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->post('logout', [SessionController::class, 'destroy'])->name('logout');
 
 Route::middleware(['auth', 'habilitado'])->group(function () {
+    Route::view('inicio', 'inicio')->name('inicio');
+
     Route::resource('empleados', EmpleadoController::class);
     Route::post('empleados/{empleado}/retiro', [RetiroEmpleadoController::class, 'store'])->name('empleados.retiro');
 

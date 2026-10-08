@@ -103,7 +103,7 @@ class UsuarioDeshabilitadoTest extends TestCase
         $usuario = Usuario::factory()->create();
 
         $this->post(route('login'), ['cedula' => $usuario->cedula, 'password' => 'password'])
-            ->assertRedirect(route('empleados.index'));
+            ->assertRedirect(route('inicio'));
         $this->assertAuthenticatedAs($usuario);
 
         $this->post(route('logout'))->assertRedirect(route('login'));

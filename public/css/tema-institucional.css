@@ -262,3 +262,212 @@ body .alert-warning {
 body .alert-danger {
     border-left: 4px solid var(--color-peligro);
 }
+
+/* ---- Estructura: barra superior, menú lateral y portada ---- */
+body .barra-superior {
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+    min-height: 64px;
+    padding: 0.5rem 1rem;
+    justify-content: space-between;
+}
+
+body .btn-alternar-menu {
+    color: var(--color-texto-claro);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    line-height: 1;
+}
+
+body .btn-alternar-menu:hover,
+body .btn-alternar-menu:focus {
+    color: var(--color-texto-oscuro);
+    background-color: var(--color-acento);
+    border-color: var(--color-acento);
+}
+
+.contenedor-app {
+    display: flex;
+    align-items: stretch;
+    min-height: calc(100vh - 64px);
+}
+
+.contenido-principal {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 1.5rem 1rem 3rem;
+}
+
+.contenido-ancho {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.menu-lateral {
+    flex: 0 0 272px;
+    width: 272px;
+    background-color: var(--color-primario-oscuro);
+    color: var(--color-texto-claro);
+    overflow-y: auto;
+    transition: flex-basis 0.2s ease, width 0.2s ease, transform 0.2s ease;
+}
+
+.menu-lateral-contenido {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem 0;
+}
+
+.menu-grupo-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.7rem 1.1rem;
+    background: transparent;
+    border: 0;
+    border-left: 4px solid transparent;
+    color: var(--color-texto-claro);
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+}
+
+.menu-grupo-titulo:hover,
+.menu-grupo-titulo:focus {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: var(--color-texto-claro);
+}
+
+.menu-grupo-titulo.activo {
+    border-left-color: var(--color-acento);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.icono-menu {
+    flex: 0 0 auto;
+}
+
+.menu-texto {
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.menu-flecha {
+    flex: 0 0 auto;
+    font-size: 1.2rem;
+    line-height: 1;
+    transition: transform 0.15s ease;
+    transform: rotate(90deg);
+}
+
+.menu-grupo-titulo.collapsed .menu-flecha {
+    transform: rotate(0deg);
+}
+
+.menu-submenu {
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.menu-enlace {
+    display: block;
+    padding: 0.5rem 1.1rem 0.5rem 3.1rem;
+    color: var(--color-texto-claro);
+    text-decoration: none;
+    border-left: 4px solid transparent;
+}
+
+.menu-enlace:hover,
+.menu-enlace:focus {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: var(--color-acento);
+}
+
+.menu-enlace.activo {
+    border-left-color: var(--color-acento);
+    background-color: var(--color-acento);
+    color: var(--color-texto-oscuro);
+    font-weight: 600;
+}
+
+.menu-fondo {
+    display: none;
+}
+
+/* Portada */
+.portada {
+    padding: 3rem 1rem;
+}
+
+.portada-logo {
+    margin-bottom: 1.5rem;
+}
+
+.portada-titulo {
+    font-size: clamp(2rem, 5vw, 3rem);
+    border-bottom: 4px solid var(--color-acento);
+    display: inline-block;
+    padding-bottom: 0.25rem;
+}
+
+.portada-subtitulo {
+    margin-top: 1rem;
+    font-size: 1.15rem;
+    color: #495057;
+}
+
+.portada-saludo {
+    margin-top: 2rem;
+    color: var(--color-primario-oscuro);
+}
+
+/* Escritorio: el menú puede colapsar a solo íconos. */
+@media (min-width: 992px) {
+    body.menu-colapsado .menu-lateral {
+        flex-basis: 72px;
+        width: 72px;
+    }
+
+    body.menu-colapsado .menu-texto,
+    body.menu-colapsado .menu-flecha,
+    body.menu-colapsado .menu-submenu {
+        display: none;
+    }
+
+    body.menu-colapsado .menu-grupo-titulo {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+/* Móvil y tableta: el menú se desliza sobre el contenido. */
+@media (max-width: 991.98px) {
+    .menu-lateral {
+        position: fixed;
+        top: 64px;
+        bottom: 0;
+        left: 0;
+        z-index: 1045;
+        transform: translateX(-100%);
+        box-shadow: 0 0 1rem rgba(0, 0, 0, 0.3);
+    }
+
+    body.menu-abierto .menu-lateral {
+        transform: translateX(0);
+    }
+
+    body.menu-abierto .menu-fondo {
+        display: block;
+        position: fixed;
+        inset: 64px 0 0 0;
+        z-index: 1040;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .contenido-principal {
+        padding: 1rem 0.75rem 2.5rem;
+    }
+}

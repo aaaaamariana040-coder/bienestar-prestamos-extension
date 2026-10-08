@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Logo (marcador de posición)">
+    <!-- MARCADOR DE POSICIÓN: no es el escudo oficial. Reemplazar este archivo cuando
+         Comunicaciones autorice el logosímbolo institucional (docs/identidad-visual.md §3). -->
+    <rect x="8" y="8" width="144" height="144" rx="28" fill="#00AB44"/>
+    <rect x="8" y="104" width="144" height="24" fill="#FFD400"/>
+    <text x="80" y="82" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700" fill="#FFFFFF">LOGO</text>
+</svg>

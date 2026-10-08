@@ -15,11 +15,7 @@
             <h1 class="mb-3">{{ config('app.name', 'Laravel') }}</h1>
             <p class="text-muted mb-4">Préstamos de Bienestar Social — Politécnico Colombiano Jaime Isaza Cadavid</p>
 
-            @auth
-                <a href="{{ route('empleados.index') }}" class="btn btn-primary">Ir a empleados</a>
-            @else
-                <a href="{{ route('login') }}" class="btn btn-primary">Iniciar sesión</a>
-            @endauth
+            <a href="{{ route('login') }}" class="btn btn-primary">Iniciar sesión</a>
         </div>
     </body>
 </html>
