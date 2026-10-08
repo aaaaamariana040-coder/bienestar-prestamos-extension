@@ -78,13 +78,6 @@ class EmpleadoController extends Controller
         return redirect()->route('empleados.index')->with('status', 'Empleado actualizado correctamente.');
     }
 
-    public function confirmarEliminacion(Empleado $empleado): View
-    {
-        $empleado->loadMissing('usuario');
-
-        return view('empleados.confirmar-eliminacion', compact('empleado'));
-    }
-
     public function destroy(Empleado $empleado): RedirectResponse
     {
         if ($empleado->usuario()->exists()) {

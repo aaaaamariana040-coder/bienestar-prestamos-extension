@@ -35,8 +35,6 @@ Route::middleware('auth')->post('logout', [SessionController::class, 'destroy'])
 
 Route::middleware(['auth', 'habilitado'])->group(function () {
     Route::resource('empleados', EmpleadoController::class);
-    Route::get('empleados/{empleado}/eliminar', [EmpleadoController::class, 'confirmarEliminacion'])
-        ->name('empleados.confirmar-eliminacion');
     Route::post('empleados/{empleado}/retiro', [RetiroEmpleadoController::class, 'store'])->name('empleados.retiro');
 
     Route::get('usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');

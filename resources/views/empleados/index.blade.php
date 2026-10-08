@@ -49,7 +49,9 @@
                     <td class="text-end">
                         <a href="{{ route('empleados.show', $empleado) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
                         <a href="{{ route('empleados.edit', $empleado) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <a href="{{ route('empleados.confirmar-eliminacion', $empleado) }}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modal-confirmar-eliminacion"
+                                data-eliminar-action="{{ route('empleados.destroy', $empleado) }}"
+                                data-eliminar-nombre="{{ $empleado->nombre_completo }} (cédula {{ $empleado->cedula }})">Eliminar</button>
                     </td>
                 </tr>
             @empty
@@ -61,4 +63,6 @@
     </table>
 
     {{ $empleados->links() }}
+
+    <x-confirmar-eliminacion />
 @endsection

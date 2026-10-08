@@ -198,6 +198,55 @@ class EmpleadoCrudTest extends TestCase
         $this->assertDatabaseHas('empleados', ['cedula' => $usuario->cedula]);
     }
 
+    public function test_listado_ofrece_el_modal_de_confirmacion_con_el_nombre_del_empleado(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        $empleado = Empleado::factory()->create(['cedula' => '1000000123', 'nombre_completo' => 'Persona Para Borrar']);
+
+        $this->get(route('empleados.index'))
+            ->assertOk()
+            ->assertSee('Confirmar eliminación')
+            ->assertSee('id="modal-confirmar-eliminacion"', false)
+            ->assertSee('data-eliminar-action="'.route('empleados.destroy', $empleado).'"', false)
+            ->assertSee('Persona Para Borrar (cédula 1000000123)')
+            ->assertSee('data-bs-dismiss="modal">Cancelar</button>', false);
+    }
+
+    public function test_cancelar_el_modal_no_elimina_al_empleado(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        $empleado = Empleado::factory()->create();
+
+        // Cancelar solo cierra el modal en el navegador: no se envía ninguna petición DELETE.
+        $this->get(route('empleados.index'))->assertOk();
+
+        $this->assertDatabaseHas('empleados', ['cedula' => $empleado->cedula]);
+    }
+
+    public function test_confirmar_el_modal_elimina_al_empleado_y_avisa_en_el_listado(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        $empleado = Empleado::factory()->create();
+
+        $this->followingRedirects()
+            ->delete(route('empleados.destroy', $empleado))
+            ->assertSee('Empleado eliminado correctamente.');
+
+        $this->assertDatabaseMissing('empleados', ['cedula' => $empleado->cedula]);
+    }
+
+    public function test_el_listado_muestra_el_mensaje_cuando_el_servidor_impide_eliminar(): void
+    {
+        $usuario = Usuario::factory()->create();
+        $this->actingAs($usuario);
+
+        $this->followingRedirects()
+            ->delete(route('empleados.destroy', $usuario->cedula))
+            ->assertSee('No se puede eliminar un empleado con una cuenta de usuario asociada.');
+
+        $this->assertDatabaseHas('empleados', ['cedula' => $usuario->cedula]);
+    }
+
     /**
      * @param  array<string, mixed>  $sobrescribir
      * @return array<string, mixed>

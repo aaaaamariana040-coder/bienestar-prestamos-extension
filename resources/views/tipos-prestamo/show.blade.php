@@ -114,7 +114,9 @@
                             @if ($puedeEditarModalidad)
                                 <td class="text-end">
                                     <button type="submit" form="cuantia-editar-{{ $cuantia->id_cuantia }}" class="btn btn-sm btn-outline-secondary">Guardar</button>
-                                    <button type="submit" form="cuantia-eliminar-{{ $cuantia->id_cuantia }}" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modal-confirmar-eliminacion"
+                                            data-eliminar-action="{{ route('cuantias-smmlv.destroy', $cuantia) }}"
+                                            data-eliminar-nombre="el tramo de {{ $cuantia->tramo_desde_smmlv }} a {{ $cuantia->tramo_hasta_smmlv ?? 'sin tope' }} SMMLV (cuantía máxima {{ $cuantia->cuantia_maxima_smmlv }})">Eliminar</button>
                                 </td>
                             @endif
                         </tr>
@@ -132,11 +134,6 @@
                           action="{{ route('cuantias-smmlv.update', $cuantia) }}" class="d-none">
                         @csrf
                         @method('PUT')
-                    </form>
-                    <form id="cuantia-eliminar-{{ $cuantia->id_cuantia }}" method="POST"
-                          action="{{ route('cuantias-smmlv.destroy', $cuantia) }}" class="d-none">
-                        @csrf
-                        @method('DELETE')
                     </form>
                 @endforeach
             @endif
@@ -163,4 +160,7 @@
             @endcan
         </div>
     </div>
+    @if ($puedeEditarModalidad)
+        <x-confirmar-eliminacion />
+    @endif
 @endsection
