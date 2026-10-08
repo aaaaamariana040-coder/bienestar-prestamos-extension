@@ -53,6 +53,59 @@ class EmpleadoCrudTest extends TestCase
         $this->assertArrayNotHasKey('fecha_autorizacion_credito', $empleado->getAttributes());
     }
 
+    public function test_cedula_con_letras_con_puntos_o_de_mas_de_10_digitos_es_rechazada(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        $empleadosAntes = Empleado::count();
+
+        foreach (['12345abc', '1.234.567', '12345678901', '123-456'] as $cedula) {
+            $this->post(route('empleados.store'), $this->datosEmpleado(['cedula' => $cedula]))
+                ->assertSessionHasErrors('cedula');
+        }
+
+        $this->assertSame($empleadosAntes, Empleado::count());
+    }
+
+    public function test_mensaje_de_cedula_invalida_esta_en_espanol(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+
+        $this->post(route('empleados.store'), $this->datosEmpleado(['cedula' => '12345678901']))
+            ->assertSessionHasErrors(['cedula' => 'La cédula debe contener solo números, máximo 10 dígitos, sin puntos ni caracteres especiales.']);
+    }
+
+    public function test_cedula_se_normaliza_quitando_espacios(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+
+        $this->post(route('empleados.store'), $this->datosEmpleado(['cedula' => ' 1234 567890 ']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('empleados', ['cedula' => '1234567890']);
+    }
+
+    public function test_no_se_puede_crear_un_empleado_con_estado_retirado(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        $empleadosAntes = Empleado::count();
+
+        $this->post(route('empleados.store'), $this->datosEmpleado(['estado' => 'Retirado']))
+            ->assertSessionHasErrors(['estado' => 'Un empleado nuevo solo puede crearse con estado Activo.']);
+
+        $this->assertSame($empleadosAntes, Empleado::count());
+    }
+
+    public function test_formulario_de_crear_restringe_la_cedula_y_no_ofrece_retirado(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+
+        $this->get(route('empleados.create'))
+            ->assertSee('inputmode="numeric"', false)
+            ->assertSee('maxlength="10"', false)
+            ->assertSee('pattern="[0-9]{1,10}"', false)
+            ->assertDontSee('<option value="Retirado"', false);
+    }
+
     public function test_listado_busca_por_cedula_o_nombre_parcial_sin_distinguir_mayusculas(): void
     {
         $this->actingAs(Usuario::factory()->create());
