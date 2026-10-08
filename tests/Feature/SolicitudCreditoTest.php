@@ -137,6 +137,105 @@ class SolicitudCreditoTest extends TestCase
         $this->get(route('solicitudes.show', $solicitud))->assertSee('72 quincenas (≈ 36 meses)');
     }
 
+    public function test_formulario_de_solicitud_busca_por_cedula_en_vez_de_listar_empleados(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        Empleado::factory()->create(['nombre_completo' => 'Persona En Lista Vieja']);
+
+        $this->get(route('solicitudes.create'))
+            ->assertOk()
+            ->assertSee('Cédula del empleado')
+            ->assertSee('id="cedula_empleado"', false)
+            ->assertSee('inputmode="numeric"', false)
+            ->assertSee('maxlength="10"', false)
+            ->assertDontSee('Selecciona un empleado')
+            ->assertDontSee('Persona En Lista Vieja')
+            ->assertSee('Selecciona una modalidad')
+            ->assertSee('Monto solicitado')
+            ->assertSee('Plazo (quincenas)')
+            ->assertSee('Crear empleado');
+    }
+
+    public function test_buscar_empleado_activo_por_cedula_devuelve_sus_datos(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        $empleado = Empleado::factory()->create([
+            'cedula' => '1234567890',
+            'nombre_completo' => 'Ana María Gómez',
+            'dependencia' => 'Bienestar Social',
+            'salario' => 4_500_000,
+            'capacidad_endeudamiento' => 2_250_000,
+            'estado' => 'Activo',
+        ]);
+
+        $this->getJson(route('solicitudes.buscar-empleado', $empleado->cedula))
+            ->assertOk()
+            ->assertExactJson([
+                'encontrado' => true,
+                'cedula' => '1234567890',
+                'nombre_completo' => 'Ana María Gómez',
+                'dependencia' => 'Bienestar Social',
+                'salario' => '4,500,000.00',
+                'capacidad_endeudamiento' => '2,250,000.00',
+            ]);
+    }
+
+    public function test_buscar_cedula_inexistente_avisa_que_no_existe(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+
+        $this->getJson(route('solicitudes.buscar-empleado', '999999'))
+            ->assertNotFound()
+            ->assertJson(['encontrado' => false, 'mensaje' => 'No existe un empleado con la cédula 999999.']);
+    }
+
+    public function test_un_empleado_retirado_no_se_puede_buscar(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+        $empleado = Empleado::factory()->create(['estado' => 'Retirado']);
+
+        $this->getJson(route('solicitudes.buscar-empleado', $empleado->cedula))
+            ->assertNotFound()
+            ->assertJson(['encontrado' => false, 'inactivo' => true])
+            ->assertJsonMissing(['nombre_completo' => $empleado->nombre_completo]);
+    }
+
+    public function test_la_busqueda_solo_acepta_cedulas_numericas_de_hasta_10_digitos(): void
+    {
+        $this->actingAs(Usuario::factory()->create());
+
+        $this->getJson('/solicitudes/empleado/12345678901')->assertNotFound();
+        $this->getJson('/solicitudes/empleado/abc')->assertNotFound();
+    }
+
+    public function test_la_busqueda_exige_sesion_y_permiso_para_registrar_solicitudes(): void
+    {
+        $empleado = Empleado::factory()->create();
+
+        $this->getJson(route('solicitudes.buscar-empleado', $empleado->cedula))->assertUnauthorized();
+
+        $this->actingAs(Usuario::factory()->create(['habilitado' => false]))
+            ->get(route('solicitudes.buscar-empleado', $empleado->cedula))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_registrar_solicitud_enviando_la_cedula_escrita_crea_la_solicitud(): void
+    {
+        $funcionario = Usuario::factory()->create();
+        $empleado = Empleado::factory()->create(['cedula' => '1098765432']);
+        $tipoPrestamo = TipoPrestamo::factory()->create();
+
+        $this->actingAs($funcionario)->post(route('solicitudes.store'), [
+            'cedula_empleado' => $empleado->cedula,
+            'id_tipo' => $tipoPrestamo->id_tipo,
+            'monto_solicitado' => 2_000_000,
+            'plazo_solicitado' => 24,
+            'fecha_solicitud' => '2026-01-15',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('solicitudes_credito', ['cedula_empleado' => '1098765432', 'id_tipo' => $tipoPrestamo->id_tipo]);
+    }
+
     public function test_no_se_puede_aprobar_una_solicitud_sin_presupuesto_disponible(): void
     {
         $administrador = Usuario::factory()->administrador()->create();

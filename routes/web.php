@@ -70,6 +70,9 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
 
     Route::get('solicitudes', [SolicitudCreditoController::class, 'index'])->name('solicitudes.index');
     Route::get('solicitudes/crear', [SolicitudCreditoController::class, 'create'])->name('solicitudes.create');
+    Route::get('solicitudes/empleado/{cedula}', [SolicitudCreditoController::class, 'buscarEmpleado'])
+        ->where('cedula', '[0-9]{1,10}')
+        ->name('solicitudes.buscar-empleado');
     Route::post('solicitudes', [SolicitudCreditoController::class, 'store'])->name('solicitudes.store');
     Route::get('solicitudes/{solicitud}', [SolicitudCreditoController::class, 'show'])->name('solicitudes.show');
     Route::patch('solicitudes/{solicitud}/aprobar', [SolicitudCreditoController::class, 'aprobar'])->name('solicitudes.aprobar');

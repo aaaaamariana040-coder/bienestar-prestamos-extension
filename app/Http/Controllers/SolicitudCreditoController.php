@@ -9,6 +9,7 @@ use App\Models\Empleado;
 use App\Models\SolicitudCredito;
 use App\Models\TipoPrestamo;
 use App\Services\SolicitudCreditoService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -31,10 +32,44 @@ class SolicitudCreditoController extends Controller
     {
         $this->authorize('create', SolicitudCredito::class);
 
-        $empleados = Empleado::where('estado', 'Activo')->orderBy('nombre_completo')->get();
         $tiposPrestamo = TipoPrestamo::where('habilitada', true)->orderBy('nombre')->get();
 
-        return view('solicitudes.create', compact('empleados', 'tiposPrestamo'));
+        return view('solicitudes.create', compact('tiposPrestamo'));
+    }
+
+    /**
+     * Búsqueda por cédula para el formulario de solicitud. Solo devuelve
+     * empleados Activos; un empleado retirado no puede solicitar crédito.
+     */
+    public function buscarEmpleado(string $cedula): JsonResponse
+    {
+        $this->authorize('create', SolicitudCredito::class);
+
+        $empleado = Empleado::find($cedula);
+
+        if ($empleado === null) {
+            return response()->json([
+                'encontrado' => false,
+                'mensaje' => "No existe un empleado con la cédula {$cedula}.",
+            ], 404);
+        }
+
+        if ($empleado->estado !== 'Activo') {
+            return response()->json([
+                'encontrado' => false,
+                'inactivo' => true,
+                'mensaje' => "El empleado con la cédula {$cedula} no está activo y no puede solicitar un crédito.",
+            ], 404);
+        }
+
+        return response()->json([
+            'encontrado' => true,
+            'cedula' => $empleado->cedula,
+            'nombre_completo' => $empleado->nombre_completo,
+            'dependencia' => $empleado->dependencia,
+            'salario' => number_format((float) $empleado->salario, 2),
+            'capacidad_endeudamiento' => number_format((float) $empleado->capacidad_endeudamiento, 2),
+        ]);
     }
 
     public function store(StoreSolicitudCreditoRequest $request, SolicitudCreditoService $solicitudCreditoService): RedirectResponse
