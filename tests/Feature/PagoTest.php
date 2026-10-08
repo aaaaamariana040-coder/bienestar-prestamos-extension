@@ -84,7 +84,13 @@ class PagoTest extends TestCase
     public function test_se_registra_un_abono_extraordinario(): void
     {
         $funcionario = Usuario::factory()->create();
-        $prestamo = Prestamo::factory()->create();
+        // Valores fijos: con una cuota aleatoria baja (monto/num_cuotas < 50.000) el abono de 500.000
+        // supera las 10 cuotas, dispara la reliquidación y, al no haber cuotas pendientes, falla.
+        $prestamo = Prestamo::factory()->create([
+            'monto_aprobado' => 2_400_000,
+            'num_cuotas' => 24,
+            'cuota_periodica' => 100_000,
+        ]);
 
         $this->actingAs($funcionario)->post(route('pagos.store-abono', $prestamo), [
             'monto' => 500_000,
