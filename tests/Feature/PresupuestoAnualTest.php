@@ -32,6 +32,31 @@ class PresupuestoAnualTest extends TestCase
         ]);
     }
 
+    public function test_el_disponible_es_asignado_menos_comprometido(): void
+    {
+        $presupuesto = PresupuestoAnual::factory()->create(['monto_asignado' => 10_000_000, 'monto_comprometido' => 2_500_000.50]);
+
+        $this->assertSame(7_499_999.5, $presupuesto->monto_disponible_calculado);
+    }
+
+    public function test_pantalla_de_presupuesto_muestra_lo_que_queda_por_modalidad_o_sin_presupuesto(): void
+    {
+        $this->actingAs(Usuario::factory()->administrador()->create());
+        $conPresupuesto = TipoPrestamo::factory()->create(['nombre' => 'Modalidad Con Fondos']);
+        TipoPrestamo::factory()->create(['nombre' => 'Modalidad Sin Fondos']);
+        PresupuestoAnual::factory()->create([
+            'anio' => now()->year,
+            'id_tipo' => $conPresupuesto->id_tipo,
+            'monto_asignado' => 10_000_000,
+            'monto_comprometido' => 4_000_000,
+        ]);
+
+        $this->get(route('presupuestos.index'))
+            ->assertOk()
+            ->assertSee('Para Modalidad Con Fondos quedan $6,000,000.00')
+            ->assertSee('Sin presupuesto asignado');
+    }
+
     public function test_funcionario_bienestar_tambien_puede_registrar_un_presupuesto(): void
     {
         $funcionario = Usuario::factory()->create();

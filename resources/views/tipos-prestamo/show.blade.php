@@ -60,7 +60,7 @@
                     @csrf
                     <div class="col-auto">
                         <label for="anio" class="form-label">Año</label>
-                        <input type="number" id="anio" name="anio" class="form-control" value="{{ old('anio') }}" required>
+                        <input type="number" id="anio" name="anio" class="form-control" value="{{ old('anio', now()->year) }}" required>
                     </div>
                     <div class="col-auto">
                         <label for="tasa_anual" class="form-label">Tasa anual (%)</label>

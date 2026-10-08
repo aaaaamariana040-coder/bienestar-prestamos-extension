@@ -43,7 +43,7 @@
                     @if ($presupuesto)
                         <td>{{ number_format($presupuesto->monto_asignado, 2) }}</td>
                         <td>{{ number_format($presupuesto->monto_comprometido, 2) }}</td>
-                        <td>{{ number_format($presupuesto->monto_disponible, 2) }}</td>
+                        <td><x-disponible-modalidad :tipo-prestamo="$tipoPrestamo" :presupuesto="$presupuesto" /></td>
                         <td class="text-end">
                             <a href="{{ route('presupuestos.show', $presupuesto) }}" class="btn btn-sm btn-outline-secondary">Ver historial</a>
                             @can('update', $presupuesto)
@@ -51,7 +51,7 @@
                             @endcan
                         </td>
                     @else
-                        <td colspan="3" class="text-muted">Sin presupuesto registrado para este año.</td>
+                        <td colspan="3"><x-disponible-modalidad :tipo-prestamo="$tipoPrestamo" /></td>
                         <td class="text-end">
                             @can('create', \App\Models\PresupuestoAnual::class)
                                 <a href="{{ route('presupuestos.create', ['anio' => $anio, 'id_tipo' => $tipoPrestamo->id_tipo]) }}" class="btn btn-sm btn-primary">Registrar</a>

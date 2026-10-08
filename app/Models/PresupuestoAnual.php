@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\PresupuestoAnualFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,6 +37,14 @@ class PresupuestoAnual extends Model
         static::saving(function (self $presupuesto): void {
             $presupuesto->monto_disponible = $presupuesto->monto_asignado - $presupuesto->monto_comprometido;
         });
+    }
+
+    /**
+     * Lo que queda por prestar: asignado menos comprometido.
+     */
+    protected function montoDisponibleCalculado(): Attribute
+    {
+        return Attribute::get(fn (): float => round((float) $this->monto_asignado - (float) $this->monto_comprometido, 2));
     }
 
     /**

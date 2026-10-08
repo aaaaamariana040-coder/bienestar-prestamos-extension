@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\PresupuestoAnual;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -62,6 +63,31 @@ class TipoPrestamoCrudTest extends TestCase
     public function test_la_tabla_de_modalidades_ya_no_tiene_la_columna_unidad_plazo(): void
     {
         $this->assertFalse(Schema::hasColumn('tipos_prestamo', 'unidad_plazo'));
+    }
+
+    public function test_listado_de_modalidades_muestra_el_disponible_del_anio_vigente(): void
+    {
+        $this->actingAs(Usuario::factory()->administrador()->create());
+        $conPresupuesto = TipoPrestamo::factory()->create(['nombre' => 'Calamidad prueba']);
+        TipoPrestamo::factory()->create(['nombre' => 'Otra modalidad']);
+        PresupuestoAnual::factory()->create(['anio' => now()->year, 'id_tipo' => $conPresupuesto->id_tipo, 'monto_asignado' => 5_000_000, 'monto_comprometido' => 1_250_000]);
+        PresupuestoAnual::factory()->create(['anio' => now()->year - 1, 'id_tipo' => $conPresupuesto->id_tipo, 'monto_asignado' => 99_000_000, 'monto_comprometido' => 0]);
+
+        $this->get(route('tipos-prestamo.index'))
+            ->assertOk()
+            ->assertSee('Disponible '.now()->year)
+            ->assertSee('Para Calamidad prueba quedan $3,750,000.00')
+            ->assertDontSee('99,000,000')
+            ->assertSee('Sin presupuesto asignado');
+    }
+
+    public function test_formulario_de_tasa_trae_el_anio_actual_por_defecto(): void
+    {
+        $this->actingAs(Usuario::factory()->administrador()->create());
+        $tipoPrestamo = TipoPrestamo::factory()->create();
+
+        $this->get(route('tipos-prestamo.show', $tipoPrestamo))
+            ->assertSee('name="anio" class="form-control" value="'.now()->year.'"', false);
     }
 
     public function test_funcionario_bienestar_puede_crear_una_modalidad(): void

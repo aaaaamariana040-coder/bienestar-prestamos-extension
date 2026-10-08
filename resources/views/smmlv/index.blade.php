@@ -56,7 +56,7 @@
                     @csrf
                     <div class="col-auto">
                         <label for="anio" class="form-label">Año</label>
-                        <input type="number" id="anio" name="anio" class="form-control" value="{{ old('anio') }}">
+                        <input type="number" id="anio" name="anio" class="form-control" value="{{ old('anio', now()->year) }}">
                     </div>
                     <div class="col-auto">
                         <label for="valor" class="form-label">Valor</label>

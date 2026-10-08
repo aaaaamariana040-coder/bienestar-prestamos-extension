@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTipoPrestamoRequest;
 use App\Http\Requests\UpdateTipoPrestamoRequest;
+use App\Models\PresupuestoAnual;
 use App\Models\TipoPrestamo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -14,9 +15,12 @@ class TipoPrestamoController extends Controller
     {
         $this->authorize('viewAny', TipoPrestamo::class);
 
-        $tiposPrestamo = TipoPrestamo::orderBy('nombre')->paginate(15);
+        $anio = now()->year;
 
-        return view('tipos-prestamo.index', compact('tiposPrestamo'));
+        $tiposPrestamo = TipoPrestamo::orderBy('nombre')->paginate(15);
+        $presupuestos = PresupuestoAnual::where('anio', $anio)->get()->keyBy('id_tipo');
+
+        return view('tipos-prestamo.index', compact('tiposPrestamo', 'presupuestos', 'anio'));
     }
 
     public function create(): View

@@ -11,6 +11,21 @@ class SmmlvAnualTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_formularios_de_smmlv_y_presupuesto_traen_el_anio_actual_y_permiten_cambiarlo(): void
+    {
+        $this->actingAs(Usuario::factory()->administrador()->create());
+
+        $this->get(route('smmlv.index'))
+            ->assertSee('name="anio" class="form-control" value="'.now()->year.'"', false);
+
+        $this->get(route('presupuestos.create'))
+            ->assertSee('name="anio" class="form-control"', false)
+            ->assertSee('value="'.now()->year.'"', false);
+
+        $this->get(route('presupuestos.create', ['anio' => 2030]))
+            ->assertSee('value="2030"', false);
+    }
+
     public function test_administrador_puede_registrar_el_valor_del_smmlv_de_un_anio(): void
     {
         $administrador = Usuario::factory()->administrador()->create();

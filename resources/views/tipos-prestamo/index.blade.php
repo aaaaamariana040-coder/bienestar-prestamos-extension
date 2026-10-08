@@ -16,6 +16,7 @@
             <tr>
                 <th>Nombre</th>
                 <th>Plazo máximo</th>
+                <th>Disponible {{ $anio }}</th>
                 <th>Estado</th>
                 <th class="text-end">Acciones</th>
             </tr>
@@ -25,6 +26,7 @@
                 <tr>
                     <td>{{ $tipoPrestamo->nombre }}</td>
                     <td>{{ $tipoPrestamo->plazo_maximo_legible }}</td>
+                    <td><x-disponible-modalidad :tipo-prestamo="$tipoPrestamo" :presupuesto="$presupuestos->get($tipoPrestamo->id_tipo)" /></td>
                     <td>{{ $tipoPrestamo->habilitada ? 'Habilitada' : 'Deshabilitada' }}</td>
                     <td class="text-end">
                         <a href="{{ route('tipos-prestamo.show', $tipoPrestamo) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
