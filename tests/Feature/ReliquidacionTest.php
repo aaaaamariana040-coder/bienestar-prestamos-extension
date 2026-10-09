@@ -48,6 +48,32 @@ class ReliquidacionTest extends TestCase
         $this->assertDatabaseHas('prestamos', ['id_prestamo' => $prestamo->id_prestamo, 'num_cuotas' => 24]);
     }
 
+    /**
+     * DIAGNÓSTICO, NO ES EL COMPORTAMIENTO DESEADO: documenta el estado actual
+     * de un abono por debajo del umbral de 10 cuotas. Hoy solo se registra el
+     * pago; la tabla de cuotas pendientes no se toca, así que ni el saldo
+     * pendiente ni el interés futuro bajan. Cuando se corrija, esta prueba debe
+     * fallar y reemplazarse por una que exija que el abono reduzca ambos.
+     */
+    public function test_diagnostico_un_abono_menor_al_umbral_no_reduce_saldo_ni_interes_futuro(): void
+    {
+        $funcionario = Usuario::factory()->create();
+        $prestamo = $this->crearPrestamoConTablaReal();
+        $cuotaOriginal = (float) $prestamo->cuota_periodica;
+
+        $saldoAntes = (float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_capital');
+        $interesFuturoAntes = (float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_interes');
+
+        $this->actingAs($funcionario)->post(route('pagos.store-abono', $prestamo), [
+            'monto' => round($cuotaOriginal * 5, 2),
+            'fecha_pago' => '2026-02-01',
+        ])->assertRedirect(route('prestamos.show', $prestamo));
+
+        $this->assertDatabaseHas('pagos', ['id_prestamo' => $prestamo->id_prestamo, 'tipo' => 'Abono extraordinario']);
+        $this->assertEqualsWithDelta($saldoAntes, (float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_capital'), 0.01);
+        $this->assertEqualsWithDelta($interesFuturoAntes, (float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_interes'), 0.01);
+    }
+
     public function test_un_abono_que_supera_10_cuotas_reliquida_bajando_el_plazo(): void
     {
         $funcionario = Usuario::factory()->create();

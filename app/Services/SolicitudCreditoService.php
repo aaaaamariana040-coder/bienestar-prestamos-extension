@@ -15,6 +15,7 @@ class SolicitudCreditoService
 {
     public function __construct(
         private readonly PrestamoService $prestamoService,
+        private readonly CalculoFinancieroService $calculoFinanciero,
         private readonly AuditoriaService $auditoriaService,
     ) {
         //
@@ -90,8 +91,8 @@ class SolicitudCreditoService
         if ($tasaAnual === null) {
             $problemas[] = 'No hay una tasa de interés registrada para esta modalidad y año.';
         } else {
-            $tasaPeriodica = $this->prestamoService->tasaPeriodica($tasaAnual);
-            $cuotaTentativa = $this->prestamoService->calcularCuotaFrancesa(
+            $tasaPeriodica = $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaAnual);
+            $cuotaTentativa = $this->calculoFinanciero->cuotaFija(
                 (float) $solicitud->monto_solicitado,
                 $tasaPeriodica,
                 $solicitud->plazo_solicitado,

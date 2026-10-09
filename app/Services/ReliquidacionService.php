@@ -14,6 +14,7 @@ class ReliquidacionService
 {
     public function __construct(
         private readonly PrestamoService $prestamoService,
+        private readonly CalculoFinancieroService $calculoFinanciero,
         private readonly AuditoriaService $auditoriaService,
     ) {
         //
@@ -67,7 +68,7 @@ class ReliquidacionService
 
             if ($modo === 'cuota') {
                 $numCuotasRestantes = $cuotasPendientes->count();
-                $nuevaCuotaPeriodica = $this->prestamoService->calcularCuotaFrancesa($saldoNuevo, $tasaPeriodica, $numCuotasRestantes);
+                $nuevaCuotaPeriodica = $this->calculoFinanciero->cuotaFija($saldoNuevo, $tasaPeriodica, $numCuotasRestantes);
             } else {
                 $cuotaActual = (float) $prestamo->cuota_periodica;
                 $numCuotasRestantes = $this->numCuotasParaCuotaFija($saldoNuevo, $tasaPeriodica, $cuotaActual);
@@ -95,7 +96,7 @@ class ReliquidacionService
                 'motivo' => $motivo,
                 'saldo_anterior' => $saldoAnterior,
                 'saldo_nuevo' => $saldoNuevo,
-                'tasa_aplicada' => round($tasaPeriodica * PrestamoService::QUINCENAS_POR_ANIO * 100, 4),
+                'tasa_aplicada' => round($this->calculoFinanciero->tasaNominalDesdePeriodica($tasaPeriodica), 4),
                 'fecha' => $fecha,
                 'cedula_usu' => $actor->cedula,
             ]);
