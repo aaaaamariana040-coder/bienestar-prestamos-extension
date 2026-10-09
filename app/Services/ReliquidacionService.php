@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\EstadoCuota;
 use App\Enums\MotivoReliquidacion;
+use App\Models\Cuota;
 use App\Models\Prestamo;
 use App\Models\Reliquidacion;
 use App\Models\Usuario;
@@ -60,7 +61,7 @@ class ReliquidacionService
         }
 
         $primeraPendiente = $cuotasPendientes->first();
-        $tasaPeriodica = $saldoAnterior > 0 ? (float) $primeraPendiente->valor_interes / $saldoAnterior : 0.0;
+        $tasaPeriodica = $this->tasaPeriodicaDelPrestamo($prestamo, $primeraPendiente, $saldoAnterior);
         $saldoNuevo = round($saldoAnterior - $montoAbono, 2);
 
         return DB::transaction(function () use ($prestamo, $cuotasPendientes, $primeraPendiente, $saldoAnterior, $saldoNuevo, $tasaPeriodica, $motivo, $modo, $fecha, $actor) {
@@ -109,6 +110,20 @@ class ReliquidacionService
 
             return $reliquidacion;
         });
+    }
+
+    /**
+     * Usa la tasa efectiva guardada en el préstamo. Los préstamos anteriores a
+     * esa columna no la tienen: para ellos se deduce de la primera cuota
+     * pendiente (interés ÷ saldo), que es aproximada por el redondeo a centavos.
+     */
+    private function tasaPeriodicaDelPrestamo(Prestamo $prestamo, Cuota $primeraPendiente, float $saldoAnterior): float
+    {
+        if ($prestamo->tasa_efectiva_anual !== null) {
+            return $this->calculoFinanciero->tasaPeriodicaQuincenal((float) $prestamo->tasa_efectiva_anual);
+        }
+
+        return $saldoAnterior > 0 ? (float) $primeraPendiente->valor_interes / $saldoAnterior : 0.0;
     }
 
     private function numCuotasParaCuotaFija(float $saldo, float $tasaPeriodica, float $cuotaFija): int

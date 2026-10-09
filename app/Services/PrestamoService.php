@@ -39,6 +39,7 @@ class PrestamoService
                 'cedula_empleado' => $solicitud->cedula_empleado,
                 'id_tipo' => $solicitud->id_tipo,
                 'id_tasa' => $idTasa,
+                'tasa_efectiva_anual' => $tasaAnual,
                 'monto_aprobado' => $solicitud->monto_solicitado,
                 'num_cuotas' => $numCuotas,
                 'cuota_periodica' => $cuotaPeriodica,

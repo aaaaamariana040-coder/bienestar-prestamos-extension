@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'cedula_empleado',
     'id_tipo',
     'id_tasa',
+    'tasa_efectiva_anual',
     'monto_aprobado',
     'num_cuotas',
     'cuota_periodica',
@@ -36,6 +37,7 @@ class Prestamo extends Model
     protected function casts(): array
     {
         return [
+            'tasa_efectiva_anual' => 'decimal:4',
             'monto_aprobado' => 'decimal:2',
             'cuota_periodica' => 'decimal:2',
             'fecha_autorizacion' => 'date',
