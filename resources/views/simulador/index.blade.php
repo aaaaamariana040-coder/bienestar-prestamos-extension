@@ -34,6 +34,7 @@
                                 <th class="text-end">Monto desembolsado</th>
                                 <th class="text-end">Saldo pendiente</th>
                                 <th class="text-end">Cuota quincenal</th>
+                                <th>Cuotas pagadas</th>
                             </tr>
                         </thead>
                         <tbody id="tabla-prestamos"></tbody>
@@ -116,7 +117,8 @@
                     cuerpo.insertAdjacentHTML('beforeend', '<tr><td>' + escapar(p.modalidad) + '</td>'
                         + '<td class="text-end">' + dinero(p.monto_desembolsado) + '</td>'
                         + '<td class="text-end">' + dinero(p.saldo_pendiente) + '</td>'
-                        + '<td class="text-end">' + dinero(p.cuota_quincenal) + '</td></tr>');
+                        + '<td class="text-end">' + dinero(p.cuota_quincenal) + '</td>'
+                        + '<td>' + escapar(p.progreso_cuotas) + '</td></tr>');
                 });
 
                 seccionPrestamos.classList.toggle('d-none', prestamos.length === 0);
