@@ -222,7 +222,7 @@ class SolicitudCreditoTest extends TestCase
     public function test_registrar_solicitud_enviando_la_cedula_escrita_crea_la_solicitud(): void
     {
         $funcionario = Usuario::factory()->create();
-        $empleado = Empleado::factory()->create(['cedula' => '1098765432']);
+        $empleado = Empleado::factory()->create(['cedula' => '1098765432', 'estado' => 'Activo']);
         $tipoPrestamo = TipoPrestamo::factory()->create();
 
         $this->actingAs($funcionario)->post(route('solicitudes.store'), [
