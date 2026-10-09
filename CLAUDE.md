@@ -55,6 +55,12 @@ vendor/bin/pint --dirty --format agent
 
 Local DB: development runs on MariaDB (`DB_CONNECTION=mariadb` in `.env`), the same engine targeted in production per `docs/arquitectura.md`. Tests are the exception and run on in-memory SQLite (`phpunit.xml`) — write migrations/queries that work on both engines, and don't assume SQLite-only or MariaDB-only SQL.
 
+## Safety rules (do not delete user data)
+
+- Never run `rm -rf`, bulk deletes, or "clean up" folders inside `storage/`, in backup folders (for example `storage/app/private/backups`), or in any other user data without first listing the folder's contents and asking the user for confirmation.
+- To clean up empty test folders, delete only files you created yourself, by their exact path. Never delete a whole directory because it looks like test leftovers: files in `storage/app/private/` (uploaded documents, backups) may belong to the user's development database.
+- Before deleting any file or database row you did not create in this session, look at it and ask first.
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
