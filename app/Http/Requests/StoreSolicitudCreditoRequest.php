@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\NormalizaMontos;
+use App\Http\Requests\Concerns\ValidaDocumentosSolicitud;
 use App\Models\Empleado;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
@@ -10,6 +11,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class StoreSolicitudCreditoRequest extends FormRequest
 {
     use NormalizaMontos;
+    use ValidaDocumentosSolicitud;
 
     public function authorize(): bool
     {
@@ -32,7 +34,16 @@ class StoreSolicitudCreditoRequest extends FormRequest
             'monto_solicitado' => ['required', 'numeric', 'min:1000'],
             'plazo_solicitado' => ['required', 'integer', 'min:1'],
             'fecha_solicitud' => ['required', 'date'],
+            ...$this->reglasDocumentos(obligatorios: false),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->mensajesDocumentos();
     }
 
     /**
