@@ -7,7 +7,9 @@ use App\Http\Requests\RechazarSolicitudCreditoRequest;
 use App\Http\Requests\StoreSolicitudCreditoRequest;
 use App\Models\Empleado;
 use App\Models\SolicitudCredito;
+use App\Models\TipoDocumento;
 use App\Models\TipoPrestamo;
+use App\Services\DocumentoSolicitudService;
 use App\Services\SolicitudCreditoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -33,8 +35,9 @@ class SolicitudCreditoController extends Controller
         $this->authorize('create', SolicitudCredito::class);
 
         $tiposPrestamo = TipoPrestamo::where('habilitada', true)->orderBy('nombre')->get();
+        $tiposDocumento = TipoDocumento::where('activo', true)->orderBy('nombre')->get();
 
-        return view('solicitudes.create', compact('tiposPrestamo'));
+        return view('solicitudes.create', compact('tiposPrestamo', 'tiposDocumento'));
     }
 
     /**
@@ -72,11 +75,20 @@ class SolicitudCreditoController extends Controller
         ]);
     }
 
-    public function store(StoreSolicitudCreditoRequest $request, SolicitudCreditoService $solicitudCreditoService): RedirectResponse
+    public function store(StoreSolicitudCreditoRequest $request, SolicitudCreditoService $solicitudCreditoService, DocumentoSolicitudService $documentoSolicitudService): RedirectResponse
     {
         $this->authorize('create', SolicitudCredito::class);
 
-        $solicitud = $solicitudCreditoService->crear($request->validated(), $request->user());
+        $solicitud = $solicitudCreditoService->crear($request->safe()->except(['archivos', 'id_tipo_documento']), $request->user());
+
+        if ($request->hasFile('archivos')) {
+            $documentoSolicitudService->subir(
+                $solicitud,
+                TipoDocumento::findOrFail($request->validated('id_tipo_documento')),
+                $request->file('archivos'),
+                $request->user(),
+            );
+        }
 
         return redirect()->route('solicitudes.show', $solicitud)->with('status', 'Solicitud registrada correctamente.');
     }
@@ -86,12 +98,14 @@ class SolicitudCreditoController extends Controller
         $this->authorize('view', $solicitud);
 
         $solicitud->loadMissing(['empleado', 'tipoPrestamo', 'prestamo']);
+        $documentos = $solicitud->documentos()->with(['tipoDocumento', 'subidoPor'])->orderBy('created_at')->get();
+        $tiposDocumento = TipoDocumento::where('activo', true)->orderBy('nombre')->get();
 
         $problemas = $solicitud->estado === EstadoSolicitud::Radicada
             ? $solicitudCreditoService->validar($solicitud)
             : [];
 
-        return view('solicitudes.show', compact('solicitud', 'problemas'));
+        return view('solicitudes.show', compact('solicitud', 'problemas', 'documentos', 'tiposDocumento'));
     }
 
     public function aprobar(Request $request, SolicitudCredito $solicitud, SolicitudCreditoService $solicitudCreditoService): RedirectResponse

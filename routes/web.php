@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\CuantiaSmmlvController;
 use App\Http\Controllers\DesembolsoController;
+use App\Http\Controllers\DocumentoSolicitudController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\InformeGuardadoController;
 use App\Http\Controllers\PagoController;
@@ -79,6 +80,9 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
         ->name('solicitudes.buscar-empleado');
     Route::post('solicitudes', [SolicitudCreditoController::class, 'store'])->name('solicitudes.store');
     Route::get('solicitudes/{solicitud}', [SolicitudCreditoController::class, 'show'])->name('solicitudes.show');
+    Route::post('solicitudes/{solicitud}/documentos', [DocumentoSolicitudController::class, 'store'])->name('documentos.store');
+    Route::get('documentos/{documento}/descargar', [DocumentoSolicitudController::class, 'download'])->name('documentos.download');
+    Route::delete('documentos/{documento}', [DocumentoSolicitudController::class, 'destroy'])->name('documentos.destroy');
     Route::patch('solicitudes/{solicitud}/aprobar', [SolicitudCreditoController::class, 'aprobar'])->name('solicitudes.aprobar');
     Route::patch('solicitudes/{solicitud}/rechazar', [SolicitudCreditoController::class, 'rechazar'])->name('solicitudes.rechazar');
 

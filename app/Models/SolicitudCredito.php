@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
@@ -70,5 +71,13 @@ class SolicitudCredito extends Model
     protected function plazoSolicitadoLegible(): Attribute
     {
         return Attribute::get(fn (): string => TipoPrestamo::plazoEnQuincenas((int) $this->plazo_solicitado));
+    }
+
+    /**
+     * @return HasMany<DocumentoSolicitud, $this>
+     */
+    public function documentos(): HasMany
+    {
+        return $this->hasMany(DocumentoSolicitud::class, 'id_solicitud', 'id_solicitud');
     }
 }

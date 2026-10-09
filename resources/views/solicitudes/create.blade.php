@@ -13,7 +13,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('solicitudes.store') }}">
+    <form method="POST" action="{{ route('solicitudes.store') }}" enctype="multipart/form-data">
         @csrf
 
         <div class="row">
@@ -53,6 +53,26 @@
                        value="{{ old('fecha_solicitud', now()->toDateString()) }}" required>
             </div>
         </div>
+
+        <fieldset class="border rounded p-3 mb-3">
+            <legend class="float-none w-auto px-2 fs-6">Documentos (opcional)</legend>
+            <p class="small text-muted mb-2">Puedes adjuntarlos ahora o después, desde el detalle de la solicitud. Solo PDF, JPG o PNG; máximo 5 MB por archivo y 15 por solicitud.</p>
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <label for="id_tipo_documento" class="form-label">Tipo de documento</label>
+                    <select id="id_tipo_documento" name="id_tipo_documento" class="form-select">
+                        <option value="">Selecciona un tipo…</option>
+                        @foreach ($tiposDocumento as $tipoDocumento)
+                            <option value="{{ $tipoDocumento->id_tipo_documento }}" @selected((string) old('id_tipo_documento') === (string) $tipoDocumento->id_tipo_documento)>{{ $tipoDocumento->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-8 mb-2">
+                    <label for="archivos" class="form-label">Archivos</label>
+                    <input type="file" id="archivos" name="archivos[]" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+                </div>
+            </div>
+        </fieldset>
 
         <button type="submit" id="registrar-solicitud" class="btn btn-primary">Registrar</button>
         <a href="{{ route('solicitudes.index') }}" class="btn btn-outline-secondary">Cancelar</a>

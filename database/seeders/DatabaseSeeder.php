@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             TasaVehiculoSeeder::class,
             TipoPrestamoSeeder::class,
+            TipoDocumentoSeeder::class,
         ]);
     }
 }
