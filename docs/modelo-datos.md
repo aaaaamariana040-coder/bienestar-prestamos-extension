@@ -2,6 +2,8 @@
 Aplicación de Préstamos de Bienestar Social — versión ampliada según RF-001 a RF-045 y RNF-001 a RNF-025.
 
 ## 1. Listado de tablas
+El sistema tiene **20 tablas propias** (verificadas contra las migraciones). Los nombres de abajo son lógicos, en singular; las tablas físicas van en plural (`usuarios`, `empleados`, `tipos_prestamo`, `tasas_int`, `tasas_vehiculo`, `tasas_dtf`, `cuantias_smmlv`, `presupuestos_anuales`, `solicitudes_credito`, `prestamos`, `cuotas`, `pagos`, `desembolsos`, `proveedores`, `reliquidaciones`, `abonos_cesantias`, `auditorias`, `informes_guardados`), salvo `presupuesto_historial` y `smmlv_anual`, que ya se llaman así. Además existen las tablas de infraestructura de Laravel (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`), que no forman parte del modelo de negocio.
+
 | Tabla | Propósito |
 |---|---|
 | usuario | Cuentas de acceso, con rol |
@@ -10,6 +12,8 @@ Aplicación de Préstamos de Bienestar Social — versión ampliada según RF-00
 | tasa_int | Tasa vigente por modalidad y año |
 | tasa_vehiculo | Tasa especial de vehículo (plazo + primera/segunda solicitud) |
 | cuantia_smmlv | Cuantía máxima por tramo de SMMLV y modalidad |
+| smmlv_anual | Valor del salario mínimo (SMMLV) por año |
+| tasa_dtf | Tasa DTF por fecha de vigencia, usada en la reliquidación por retiro |
 | presupuesto_anual | Presupuesto asignado/comprometido/disponible |
 | presupuesto_historial | Historial de modificaciones al presupuesto |
 | solicitud_credito | Solicitudes antes de ser aprobadas |
@@ -22,6 +26,9 @@ Aplicación de Préstamos de Bienestar Social — versión ampliada según RF-00
 | abono_cesantias | Abonos bianuales de cesantías |
 | auditoria | Registro de auditoría |
 | informe_guardado | Copia inmutable del resultado de un reporte, para consultarlo por fecha (RF-009, RF-010) |
+
+### Relaciones de usuario y empleado
+`usuario` y `empleado` son entidades independientes y no están relacionadas por llave foránea. Un empleado es un beneficiario de préstamos (`solicitud_credito`, `prestamo` lo referencian por `cedula_empleado`); un usuario es quien opera el sistema y deja rastro en `presupuesto_historial`, `pago`, `reliquidacion`, `auditoria` e `informe_guardado` (por `cedula_usu` o `generado_por`). Una misma cédula puede existir en ambas tablas, pero el sistema no lo exige ni lo comprueba.
 
 ## 2. Estructura de cada tabla
 
@@ -89,6 +96,28 @@ Aplicación de Préstamos de Bienestar Social — versión ampliada según RF-00
 | tramo_desde_smmlv | DECIMAL(6,2) | No | |
 | tramo_hasta_smmlv | DECIMAL(6,2) | Sí | Nulo = sin tope superior |
 | cuantia_maxima_smmlv | DECIMAL(8,2) | No | |
+
+### smmlv_anual
+Tabla física `smmlv_anual`.
+
+| Campo | Tipo | Nulo | Descripción |
+|---|---|---|---|
+| id_smmlv | INT | No (PK) | |
+| anio | SMALLINT | No (único) | |
+| valor | DECIMAL(18,2) | No | Valor del SMMLV en pesos |
+| fuente_normativa | VARCHAR(100) | Sí | |
+| created_at / updated_at | TIMESTAMP | Sí | |
+
+### tasa_dtf
+Tabla física `tasas_dtf`.
+
+| Campo | Tipo | Nulo | Descripción |
+|---|---|---|---|
+| id_tasa_dtf | INT | No (PK) | |
+| fecha_vigencia | DATE | No (único) | |
+| valor | DECIMAL(7,4) | No | Tasa DTF; se usa como `reliquidacion.tasa_aplicada` en el retiro |
+| fuente_normativa | VARCHAR(100) | Sí | |
+| created_at / updated_at | TIMESTAMP | Sí | |
 
 ### presupuesto_anual
 | Campo | Tipo | Nulo | Descripción |
