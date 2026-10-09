@@ -14,6 +14,7 @@ use App\Http\Controllers\PresupuestoAnualController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RetiroEmpleadoController;
+use App\Http\Controllers\SimuladorController;
 use App\Http\Controllers\SmmlvAnualController;
 use App\Http\Controllers\SolicitudCreditoController;
 use App\Http\Controllers\TasaIntController;
@@ -80,6 +81,14 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
     Route::get('solicitudes/{solicitud}', [SolicitudCreditoController::class, 'show'])->name('solicitudes.show');
     Route::patch('solicitudes/{solicitud}/aprobar', [SolicitudCreditoController::class, 'aprobar'])->name('solicitudes.aprobar');
     Route::patch('solicitudes/{solicitud}/rechazar', [SolicitudCreditoController::class, 'rechazar'])->name('solicitudes.rechazar');
+
+    Route::get('simulador', [SimuladorController::class, 'index'])->name('simulador.index');
+    Route::get('simulador/empleado/{cedula}', [SimuladorController::class, 'empleado'])
+        ->where('cedula', '[0-9]{1,10}')
+        ->name('simulador.empleado');
+    Route::get('simulador/empleado/{cedula}/modalidad/{tipo_prestamo}', [SimuladorController::class, 'modalidad'])
+        ->where('cedula', '[0-9]{1,10}')
+        ->name('simulador.modalidad');
 
     Route::get('prestamos', [PrestamoController::class, 'index'])->name('prestamos.index');
     Route::get('prestamos/{prestamo}', [PrestamoController::class, 'show'])->name('prestamos.show');

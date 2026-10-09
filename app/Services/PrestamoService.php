@@ -15,8 +15,10 @@ class PrestamoService
 {
     public const QUINCENAS_POR_ANIO = 24;
 
-    public function __construct(private readonly TasaVehiculoService $tasaVehiculoService)
-    {
+    public function __construct(
+        private readonly TasaVehiculoService $tasaVehiculoService,
+        private readonly CalculoFinancieroService $calculoFinanciero,
+    ) {
         //
     }
 
@@ -37,6 +39,7 @@ class PrestamoService
                 'cedula_empleado' => $solicitud->cedula_empleado,
                 'id_tipo' => $solicitud->id_tipo,
                 'id_tasa' => $idTasa,
+                'tasa_efectiva_anual' => $tasaAnual,
                 'monto_aprobado' => $solicitud->monto_solicitado,
                 'num_cuotas' => $numCuotas,
                 'cuota_periodica' => $cuotaPeriodica,
@@ -59,36 +62,43 @@ class PrestamoService
      */
     public function resolverTasa(SolicitudCredito $solicitud, TipoPrestamo $tipoPrestamo, int $anio): array
     {
-        if ($tipoPrestamo->nombre === 'Vehículo') {
-            $esPrimeraSolicitud = ! Prestamo::where('cedula_empleado', $solicitud->cedula_empleado)
-                ->where('id_tipo', $solicitud->id_tipo)
-                ->exists();
+        $esPrimeraSolicitud = ! Prestamo::where('cedula_empleado', $solicitud->cedula_empleado)
+            ->where('id_tipo', $solicitud->id_tipo)
+            ->exists();
 
-            $plazoAnios = intdiv($solicitud->plazo_solicitado, self::QUINCENAS_POR_ANIO);
-            $tasaEfectiva = $this->tasaVehiculoService->tasaEfectiva($anio, $plazoAnios, $esPrimeraSolicitud);
+        return $this->resolverTasaPara($tipoPrestamo, $anio, $solicitud->plazo_solicitado, $esPrimeraSolicitud);
+    }
 
-            return [null, $tasaEfectiva];
+    /**
+     * Misma resolución de tasa que resolverTasa(), sin necesitar una solicitud
+     * guardada: la usa también el simulador.
+     *
+     * @return array{0: ?int, 1: ?float} [id_tasa, tasa_anual_porcentaje]
+     */
+    public function resolverTasaPara(TipoPrestamo $tipoPrestamo, int $anio, int $plazoQuincenas, bool $esPrimeraSolicitud): array
+    {
+        if ($tipoPrestamo->esVehiculo()) {
+            $plazoAnios = intdiv($plazoQuincenas, self::QUINCENAS_POR_ANIO);
+
+            return [null, $this->tasaVehiculoService->tasaEfectiva($anio, $plazoAnios, $esPrimeraSolicitud)];
         }
 
-        $tasaInt = TasaInt::where('id_tipo', $solicitud->id_tipo)->where('anio', $anio)->first();
+        $tasaInt = TasaInt::where('id_tipo', $tipoPrestamo->id_tipo)->where('anio', $anio)->first();
 
         return [$tasaInt?->id_tasa, $tasaInt !== null ? (float) $tasaInt->tasa_anual : null];
     }
 
+    /**
+     * Tasa periódica quincenal a partir de la tasa efectiva anual (porcentaje).
+     */
     public function tasaPeriodica(float $tasaAnualPorcentaje): float
     {
-        return $tasaAnualPorcentaje / 100 / self::QUINCENAS_POR_ANIO;
+        return $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaAnualPorcentaje);
     }
 
     public function calcularCuotaFrancesa(float $monto, float $tasaPeriodica, int $numCuotas): float
     {
-        if ($tasaPeriodica <= 0) {
-            return round($monto / $numCuotas, 2);
-        }
-
-        $factor = $tasaPeriodica / (1 - (1 + $tasaPeriodica) ** -$numCuotas);
-
-        return round($monto * $factor, 2);
+        return $this->calculoFinanciero->cuotaFija($monto, $tasaPeriodica, $numCuotas);
     }
 
     private function generarTablaAmortizacion(Prestamo $prestamo, float $tasaPeriodica): void
@@ -122,23 +132,17 @@ class PrestamoService
     ): void {
         $fecha = Carbon::parse($fechaPrimeraCuota);
 
-        for ($i = 0; $i < $numCuotas; $i++) {
+        foreach ($this->calculoFinanciero->tablaAmortizacion($saldo, $tasaPeriodica, $numCuotas, $cuotaPeriodica) as $i => $fila) {
             if ($i > 0) {
                 $fecha = $fecha->copy()->addDays(15);
             }
 
-            $esUltimaCuota = $i === $numCuotas - 1;
-            $interes = round($saldo * $tasaPeriodica, 2);
-            $capital = $esUltimaCuota ? $saldo : round($cuotaPeriodica - $interes, 2);
-            $total = round($capital + $interes, 2);
-            $saldo = round($saldo - $capital, 2);
-
             $prestamo->cuotas()->create([
                 'numero_cuota' => $numeroInicial + $i,
                 'fecha_vencimiento' => $fecha->toDateString(),
-                'valor_capital' => $capital,
-                'valor_interes' => $interes,
-                'valor_total' => $total,
+                'valor_capital' => $fila['capital'],
+                'valor_interes' => $fila['interes'],
+                'valor_total' => $fila['cuota'],
                 'estado' => EstadoCuota::Pendiente,
             ]);
         }

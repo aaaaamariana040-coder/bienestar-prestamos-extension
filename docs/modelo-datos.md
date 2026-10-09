@@ -163,6 +163,7 @@ Tabla física `tasas_dtf`.
 | cedula_empleado | VARCHAR(20) | No (FK) | |
 | id_tipo | INT | No (FK) | |
 | id_tasa | INT | Sí (FK) | Nulo si vehículo |
+| tasa_efectiva_anual | DECIMAL(7,4) | Sí | Tasa E.A. (porcentaje) con la que se liquidó el préstamo, ya con los puntos adicionales en vehículo. Nulo en los préstamos anteriores a esta columna, que no se recalculan; en ellos la reliquidación deduce la tasa de la primera cuota pendiente |
 | monto_aprobado | DECIMAL(18,2) | No | |
 | num_cuotas | INT | No | |
 | cuota_periodica | DECIMAL(18,2) | No | |
@@ -268,5 +269,5 @@ Limitación conocida: la inmutabilidad del modelo se apoya en los eventos `updat
 
 ## 3. Puntos pendientes
 - Confirmar si la modalidad de "seguros" requiere tabla de cuantías propia.
-- Sistema de puntaje de convocatorias (Art. 17): no automatizado — confirmar si se necesita.
+- Sistema de puntaje de convocatorias (Art. 17): no automatizado hoy; alcance por decidir (detalle en `docs/reglas-negocio.md`, sección 15).
 - Detalle del cálculo de mora según el Manual de Cartera institucional (no revisado).

@@ -6,14 +6,40 @@ Fuente: Acuerdo Directivo No. 19 del 12 de octubre de 2022 (reglamento del Progr
 ## 1. Tasa de interés
 - La tasa de interés de los créditos de vivienda corresponde al IPC del año inmediatamente anterior, certificado por el DANE, sin superar el 5% anual (Acuerdo 11/2023, Art. 1 y 2, que modifica los artículos 10 y 14 del Acuerdo 19/2022).
 - La tasa se fija con base en el año en que se presenta la solicitud del crédito, y no cambia posteriormente para ese préstamo.
+- La tasa es el IPC del año anterior al año de la **solicitud**, no del desembolso. Una solicitud puede desembolsarse en otro año (ejemplo confirmado con documentos reales: solicitud en 2018, desembolso en febrero de 2019, tasa de 2018). Por eso la fecha de solicitud y la de desembolso se guardan por separado.
+- Tope del 5 % anual (Acuerdo 11/2023). **Por confirmar (reunión 14-oct):** una solicitud de 2025 figura con 5,20 %, por encima del tope.
 - Cada año debe revisarse la tasa de interés, el impacto de los recursos y la ejecución del Programa (Acuerdo 11/2023, Art. 2, parágrafo).
 
 > Para las modalidades distintas a vivienda (educación, calamidad doméstica, vehículo) el Acuerdo 19/2022 define tasas propias — ver secciones 3 y 4.
+
+### 1.1 Cálculo del interés
+La tasa del crédito es una tasa efectiva anual (E.A.). Confirmado con documentos reales de Bienestar:
+- **Tasa periódica quincenal** = (1 + E.A.)^(1/24) − 1.
+- **Tasa nominal anual** = tasa periódica quincenal × 24.
+- La **cuota es fija** (amortización gradual, sistema francés); el interés de cada periodo se calcula sobre el saldo.
+- **Retirados** (ver sección 11): el plazo restante en quincenas ÷ 2 equivale a meses; las cuotas son mensuales y la tasa mensual = (1 + E.A.)^(1/12) − 1. No se fija un número de cuotas como "12".
+
+Casos reales para verificar el cálculo (coinciden al centavo con los Excel de Bienestar):
+
+| Saldo | E.A. | Plazo | Cuota fija | Interés del primer periodo |
+|---|---|---|---|---|
+| 1.158.589 | 1,61 % | 7 quincenas | 165.953,74 | 771,29 |
+| 2.251.738 | 10,22 % | 5 meses | 461.407,23 | 18.333,61 |
+| 29.087.609 | 10,22 % | 47 meses | 747.320,44 | 236.830,80 |
 
 ## 2. Capacidad de endeudamiento
 - Un funcionario tiene capacidad de pago cuando, después de las deducciones voluntarias, las ordenadas por autoridad competente y la cuota del préstamo (capital, intereses y seguros), le queda libre el 50% de su salario (Acuerdo 19/2022, Art. 10, parágrafo 3).
 - No se tienen en cuenta las deducciones de seguridad social ni retención en la fuente para este cálculo.
 - La cuantía del préstamo está sujeta a esta capacidad de endeudamiento, sin superar los topes máximos por modalidad.
+- **Cómo lo aplica el sistema:** la cuota de la solicitud (cuota quincenal × 2, o sea la cuota mensual) debe caber en la capacidad **disponible** del empleado = capacidad total − capacidad comprometida. La comprometida es la suma de las cuotas quincenales de sus préstamos en estado Vigente y En mora × 2; los cancelados no cuentan, y un préstamo recién aprobado entra a la cuenta de inmediato. La misma cuenta la usan la aprobación de solicitudes y el simulador. El rechazo informa la capacidad total, la comprometida, la disponible y la cuota solicitada.
+- **Por confirmar (reunión 14-oct):** cómo se descuentan otras deducciones (judiciales, voluntarias, etc.). Hoy el sistema solo resta los préstamos que maneja.
+
+### 2.1 Elegibilidad: año de servicio
+- Para las modalidades de **vivienda** (compra, construcción, deshipoteca, reparaciones o mejoras, cambio de vivienda) y **vehículo**, el empleado debe tener al menos **un año completo de servicio**, contado desde su fecha de vinculación hasta la fecha de la solicitud. Exactamente un año cumple.
+- Las demás modalidades (educación, calamidad doméstica) no exigen antigüedad.
+- Si el empleado no tiene fecha de vinculación registrada, el sistema no puede comprobar la antigüedad y rechaza la solicitud de estas modalidades.
+- El sistema reconoce las modalidades de vivienda porque su nombre empieza por «Vivienda»; no hay un campo de categoría.
+- **Por confirmar (reunión 14-oct):** cómo cuenta el periodo de prueba.
 
 ## 3. Modalidades de crédito
 - Vivienda — compra de inmueble
@@ -78,7 +104,7 @@ Puede reliquidarse semestralmente si al momento de la solicitud el empleado tien
 - Decisiones por mayoría de los asistentes a la reunión — no por un número fijo de votos (Art. 6, parágrafo 3).
 - Constancia en actas firmadas por Presidente y Secretario.
 - La notificación de rechazo se envía por correo electrónico (confirmado en la entrevista).
-- Las solicitudes se ordenan por puntaje (antigüedad, composición familiar, salario, destinación, cabeza de familia) — Art. 16 y 17. **No automatizado en el alcance actual.**
+- Las solicitudes se ordenan por puntaje (antigüedad, composición familiar, salario, destinación, cabeza de familia) — Art. 16 y 17; ver el detalle en la sección 15. **Alcance por decidir: no automatizado.**
 
 ## 7. Desembolso
 - Solo se hace efectivo cuando el beneficiario haya constituido la garantía y el contrato de mutuo esté formalizado (Art. 23).
@@ -94,7 +120,9 @@ Puede reliquidarse semestralmente si al momento de la solicitud el empleado tien
 
 ## 9. Abonos extraordinarios y reliquidación
 - El beneficiario puede abonar total o parcialmente el capital en cualquier momento, eligiendo entre disminuir cuota o plazo (Art. 12, parágrafos 3 y 4).
-- Si el abono supera 10 cuotas quincenales, se genera nueva liquidación de la cuota según el plazo pendiente (Art. 12, parágrafo 5).
+- El Acuerdo (Art. 12, parágrafo 5) dice que, si el abono es "superior a diez (10) cuotas quincenales", se genera nueva liquidación de la cuota según el plazo pendiente; en esos casos el empleado elige entre bajar la cuota o el plazo.
+- **Por confirmar (reunión 14-oct):** si el umbral es "superior a" 10 cuotas o "desde" 10 cuotas.
+- **Por confirmar (reunión 14-oct):** cómo se aplica un abono menor al umbral. Hoy el sistema solo registra el pago; no baja el saldo pendiente ni el interés futuro.
 - Los abonos con liquidaciones de cesantías también generan reliquidación (Art. 12, parágrafo 6).
 
 ## 10. Cesantías
@@ -104,11 +132,15 @@ Puede reliquidarse semestralmente si al momento de la solicitud el empleado tien
 ## 11. Retiro del empleado y liquidación
 - Si al retirarse (salvo por pensión) queda saldo, se imputa contra la liquidación de prestaciones sociales (primas, vacaciones, bonificaciones, indemnizaciones, cesantías e intereses) (Art. 40).
 - Si persiste saldo, se reliquida a tasa DTF trimestre anticipado equivalente mes vencido, en cuotas constantes mensuales (Art. 40).
+- Cálculo confirmado con documentos reales: el plazo restante en quincenas ÷ 2 da el número de meses (cuotas mensuales); la tasa mensual es (1 + E.A.)^(1/12) − 1 (sección 1.1). **Por confirmar (reunión 14-oct):** cómo se obtiene la E.A. a partir de la DTF trimestre anticipado.
 - La tasa DTF se actualiza el 1 de enero de cada año, con base en el cierre de diciembre 31 del año anterior, certificada por la Superfinanciera (Art. 40, parágrafo 2).
 - El crédito de vehículo se reliquida, en caso de retiro, a tasa DTF más los puntos adicionales del IPC de esa modalidad (Art. 40, parágrafo 1).
 
 ## 12. Seguros
 - Seguro de vida deudor (prima mensual sobre saldo de la deuda) y seguro de incendio/terremoto para vivienda (prima anual sobre valor comercial) (Art. 15).
+- **Prima del seguro de vida deudor:** mensual = saldo × 0,00034516 (0,0041419 ÷ 12). Se aplica al saldo de todos los créditos de la persona. **Por confirmar (reunión 14-oct):** si cubre todas las modalidades.
+- El listado para el seguro se genera en la segunda quincena de cada mes.
+- Hay dos pólizas: la anual **VGD0099** y la mensual **VGD00100**.
 - Beneficiario del seguro de vida: la institución. Beneficiario del seguro de incendio/terremoto: el propio empleado, para reconstrucción (Art. 15, parágrafo 2).
 
 ## 13. Garantías
@@ -125,7 +157,47 @@ Causales de terminación anticipada, con exigibilidad total del crédito (Art. 2
 - Desmejora o depreciación del inmueble que lo vuelva garantía insuficiente.
 - Gravamen adicional no autorizado sobre el inmueble.
 
-## 15. Trazabilidad de la normativa
+## 15. Puntaje de vivienda (formato FGH83, Art. 17)
+**Alcance por decidir: no automatizado.** Se documenta como referencia; hoy el Comité ordena las solicitudes fuera del sistema.
+
+| Criterio | Puntos |
+|---|---|
+| Tiempo de servicio | 3 por año completo de servicio (máximo 60) |
+| Composición familiar: cónyuge | 3 |
+| Composición familiar: hijo hasta 25 años estudiando | 3 |
+| Composición familiar: otras personas a cargo | 1 (máximo 3) |
+| Composición familiar: tope total | 18 |
+| Salario hasta 4 SMMLV | 8 |
+| Salario entre 4 y 8 SMMLV | 6 |
+| Salario de más de 8 SMMLV | 4 |
+| Destinación: compra | 5 |
+| Destinación: construcción | 4 |
+| Destinación: deshipoteca | 3 |
+| Destinación: reparaciones | 2 |
+| Destinación: cambio de vivienda | 1 |
+| Cabeza de familia | 5 |
+
+Desempate (Art. 16, parágrafo 1): primero el tiempo de servicio, luego la composición familiar y por último el ingreso salarial.
+
+## 16. Conceptos del AS/400
+Conceptos de descuento conocidos en el manual de novedades del AS/400:
+
+| Concepto | Significado |
+|---|---|
+| 10 | Seguros |
+| 15 | Calamidad |
+| 16 | Vehículo |
+| 19 | Computador |
+| 26 | Vehículo, segunda vez |
+| 30 | Compra de vivienda |
+| 33 | Deshipoteca |
+
+**Por confirmar (reunión 14-oct):** el significado de los conceptos 14, 31 y 34 y de la columna TIPO. El concepto 19 (computador) no corresponde a ninguna de las modalidades de la sección 3.
+
+## 17. Informe quincenal de cartera
+Columnas del informe que usa Bienestar: cédula, nombre, concepto, fecha del préstamo, valor del monto, total de quincenas, quincena (cuotas pagadas), saldo, valor de la cuota, amortización a capital, interés, año de solicitud y tipo.
+
+## 18. Trazabilidad de la normativa
 | Documento | Fecha | Contenido |
 |---|---|---|
 | Acuerdo Directivo No. 19 | 12 de octubre de 2022 | Reglamento del Programa de Bienestar Social |

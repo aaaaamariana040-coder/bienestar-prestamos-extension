@@ -50,6 +50,19 @@ class TipoPrestamo extends Model
     }
 
     /**
+     * Tramo de cuantía máxima que corresponde a un salario expresado en SMMLV.
+     */
+    public function tramoCuantiaPara(float $salarioEnSmmlv): ?CuantiaSmmlv
+    {
+        return $this->cuantias()
+            ->where('tramo_desde_smmlv', '<=', $salarioEnSmmlv)
+            ->where(function ($query) use ($salarioEnSmmlv) {
+                $query->whereNull('tramo_hasta_smmlv')->orWhere('tramo_hasta_smmlv', '>=', $salarioEnSmmlv);
+            })
+            ->first();
+    }
+
+    /**
      * El plazo se maneja siempre en quincenas (24 por año). Hasta 120 quincenas
      * (5 años) la equivalencia aproximada se da en meses; desde ahí, en años,
      * redondeando al entero más cercano.
@@ -86,6 +99,30 @@ class TipoPrestamo extends Model
                 return $this->esCalamidadDomestica() ? "Hasta {$texto}" : $texto;
             },
         );
+    }
+
+    /**
+     * Las modalidades de vivienda no tienen un campo de categoría: se
+     * reconocen por el nombre, que siempre empieza por «Vivienda» (compra,
+     * construcción, deshipoteca, reparaciones y cambio).
+     */
+    public function esVivienda(): bool
+    {
+        return str_starts_with($this->nombre, 'Vivienda');
+    }
+
+    public function esVehiculo(): bool
+    {
+        return $this->nombre === 'Vehículo';
+    }
+
+    /**
+     * Vivienda y vehículo exigen al menos un año de servicio; las demás
+     * modalidades no exigen antigüedad.
+     */
+    public function exigeAnioDeServicio(): bool
+    {
+        return $this->esVivienda() || $this->esVehiculo();
     }
 
     private function esCalamidadDomestica(): bool

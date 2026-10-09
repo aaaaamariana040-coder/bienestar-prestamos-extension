@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\EstadoPrestamo;
 use Database\Factories\EmpleadoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'cedula',
@@ -39,5 +41,24 @@ class Empleado extends Model
             'capacidad_endeudamiento' => 'decimal:2',
             'fecha_vinculacion' => 'date',
         ];
+    }
+
+    /**
+     * @return HasMany<Prestamo, $this>
+     */
+    public function prestamos(): HasMany
+    {
+        return $this->hasMany(Prestamo::class, 'cedula_empleado', 'cedula');
+    }
+
+    /**
+     * Préstamos que siguen comprometiendo la capacidad de endeudamiento:
+     * Vigente y En mora.
+     *
+     * @return HasMany<Prestamo, $this>
+     */
+    public function prestamosActivos(): HasMany
+    {
+        return $this->prestamos()->whereIn('estado', [EstadoPrestamo::Vigente, EstadoPrestamo::EnMora]);
     }
 }

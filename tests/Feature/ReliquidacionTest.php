@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Enums\EstadoCuota;
+use App\Enums\MotivoReliquidacion;
 use App\Models\Prestamo;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
+use App\Services\CalculoFinancieroService;
 use App\Services\PrestamoService;
+use App\Services\ReliquidacionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -33,6 +36,65 @@ class ReliquidacionTest extends TestCase
         return $prestamo;
     }
 
+    private function crearPrestamoRealSinTasaGuardada(?float $tasaEfectivaAnual): Prestamo
+    {
+        $calculo = new CalculoFinancieroService;
+        $monto = 1_258_589;
+        $tasaPeriodica = $calculo->tasaPeriodicaQuincenal(1.61);
+        $cuota = $calculo->cuotaFija($monto, $tasaPeriodica, 7);
+
+        $prestamo = Prestamo::factory()->create([
+            'id_tipo' => TipoPrestamo::factory()->create(['nombre' => 'Educación'])->id_tipo,
+            'monto_aprobado' => $monto,
+            'num_cuotas' => 7,
+            'cuota_periodica' => $cuota,
+            'tasa_efectiva_anual' => $tasaEfectivaAnual,
+        ]);
+
+        app(PrestamoService::class)->generarCuotasDesde($prestamo, $monto, $tasaPeriodica, $cuota, 7, 1, '2026-01-15');
+
+        return $prestamo;
+    }
+
+    public function test_reliquidar_con_la_tasa_guardada_da_la_cuota_exacta_del_caso_real(): void
+    {
+        $prestamo = $this->crearPrestamoRealSinTasaGuardada(1.61);
+
+        // Saldo 1.258.589 menos un abono de 100.000 deja el saldo real del Excel: 1.158.589.
+        $reliquidacion = app(ReliquidacionService::class)->reliquidar(
+            $prestamo,
+            100_000,
+            MotivoReliquidacion::AbonoExtraordinario,
+            'cuota',
+            '2026-02-01',
+            Usuario::factory()->create(),
+        );
+
+        $this->assertEqualsWithDelta(1_158_589, (float) $reliquidacion->saldo_nuevo, 0.01);
+        $this->assertEqualsWithDelta(165_953.74, (float) $prestamo->fresh()->cuota_periodica, 0.01);
+        $this->assertEqualsWithDelta(771.29, (float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->orderBy('numero_cuota')->first()->valor_interes, 0.01);
+        $this->assertEqualsWithDelta((new CalculoFinancieroService)->tasaNominalAnual(1.61), (float) $reliquidacion->tasa_aplicada, 0.0001);
+    }
+
+    public function test_un_prestamo_sin_tasa_guardada_se_reliquida_deduciendo_la_tasa_de_la_primera_cuota(): void
+    {
+        $prestamo = $this->crearPrestamoRealSinTasaGuardada(null);
+
+        $reliquidacion = app(ReliquidacionService::class)->reliquidar(
+            $prestamo,
+            100_000,
+            MotivoReliquidacion::AbonoExtraordinario,
+            'cuota',
+            '2026-02-01',
+            Usuario::factory()->create(),
+        );
+
+        // Respaldo: la tasa deducida del interés redondeado es aproximada, de ahí la tolerancia de 0,05.
+        $this->assertEqualsWithDelta(1_158_589, (float) $reliquidacion->saldo_nuevo, 0.01);
+        $this->assertEqualsWithDelta(165_953.74, (float) $prestamo->fresh()->cuota_periodica, 0.05);
+        $this->assertSame(7, $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->count());
+    }
+
     public function test_un_abono_pequeno_no_dispara_reliquidacion(): void
     {
         $funcionario = Usuario::factory()->create();
@@ -46,6 +108,32 @@ class ReliquidacionTest extends TestCase
 
         $this->assertDatabaseCount('reliquidaciones', 0);
         $this->assertDatabaseHas('prestamos', ['id_prestamo' => $prestamo->id_prestamo, 'num_cuotas' => 24]);
+    }
+
+    /**
+     * DIAGNÓSTICO, NO ES EL COMPORTAMIENTO DESEADO: documenta el estado actual
+     * de un abono por debajo del umbral de 10 cuotas. Hoy solo se registra el
+     * pago; la tabla de cuotas pendientes no se toca, así que ni el saldo
+     * pendiente ni el interés futuro bajan. Cuando se corrija, esta prueba debe
+     * fallar y reemplazarse por una que exija que el abono reduzca ambos.
+     */
+    public function test_diagnostico_un_abono_menor_al_umbral_no_reduce_saldo_ni_interes_futuro(): void
+    {
+        $funcionario = Usuario::factory()->create();
+        $prestamo = $this->crearPrestamoConTablaReal();
+        $cuotaOriginal = (float) $prestamo->cuota_periodica;
+
+        $saldoAntes = (float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_capital');
+        $interesFuturoAntes = (float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_interes');
+
+        $this->actingAs($funcionario)->post(route('pagos.store-abono', $prestamo), [
+            'monto' => round($cuotaOriginal * 5, 2),
+            'fecha_pago' => '2026-02-01',
+        ])->assertRedirect(route('prestamos.show', $prestamo));
+
+        $this->assertDatabaseHas('pagos', ['id_prestamo' => $prestamo->id_prestamo, 'tipo' => 'Abono extraordinario']);
+        $this->assertEqualsWithDelta($saldoAntes, (float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_capital'), 0.01);
+        $this->assertEqualsWithDelta($interesFuturoAntes, (float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_interes'), 0.01);
     }
 
     public function test_un_abono_que_supera_10_cuotas_reliquida_bajando_el_plazo(): void

@@ -93,6 +93,7 @@ class SolicitudCreditoTest extends TestCase
 
         $prestamo = $solicitud->prestamo()->firstOrFail();
         $this->assertSame(24, $prestamo->cuotas()->count());
+        $this->assertSame('4.8500', $prestamo->tasa_efectiva_anual);
 
         $this->assertDatabaseHas('presupuestos_anuales', [
             'id_tipo' => $tipoPrestamo->id_tipo,
