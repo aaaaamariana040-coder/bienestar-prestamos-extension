@@ -12,9 +12,9 @@ class SistemaUsuarioSeeder extends Seeder
     /**
      * Crea el usuario «Sistema» (cédula reservada 0000000000), a cuyo nombre
      * quedan las acciones automáticas. Está deshabilitado y con una contraseña
-     * aleatoria que nadie conoce, para que no pueda iniciar sesión. Es
-     * idempotente: si ya existe no cambia su contraseña, solo se asegura de que
-     * siga deshabilitado.
+     * aleatoria que nadie conoce, para que no pueda iniciar sesión. Se llama
+     * «Sistema» (sin apellido). Es idempotente: si ya existe no cambia su
+     * contraseña, solo se asegura de que siga deshabilitado y con ese nombre.
      */
     public function run(): void
     {
@@ -22,15 +22,17 @@ class SistemaUsuarioSeeder extends Seeder
             ['cedula' => Usuario::CEDULA_SISTEMA],
             [
                 'nombre' => 'Sistema',
-                'apellido' => 'Automático',
+                'apellido' => '',
                 'contrasena_hash' => Str::random(64),
                 'rol' => RolUsuario::FuncionarioBienestar,
                 'habilitado' => false,
             ],
         );
 
-        if ($sistema->habilitado) {
-            $sistema->update(['habilitado' => false]);
+        $sistema->fill(['nombre' => 'Sistema', 'apellido' => '', 'habilitado' => false]);
+
+        if ($sistema->isDirty()) {
+            $sistema->save();
         }
     }
 }

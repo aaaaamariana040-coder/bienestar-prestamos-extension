@@ -31,7 +31,7 @@ class UsuarioSistemaYOrigenPagoTest extends TestCase
 
         $sistema = Usuario::sistema();
         $this->assertSame('0000000000', $sistema->cedula);
-        $this->assertSame('Sistema Automático', $sistema->nombre_completo);
+        $this->assertSame('Sistema', $sistema->nombre_completo);
         $this->assertFalse($sistema->habilitado);
         $this->assertFalse($sistema->puedeOperar());
     }

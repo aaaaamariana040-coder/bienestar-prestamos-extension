@@ -6,9 +6,11 @@ use App\Enums\RolUsuario;
 use Database\Factories\UsuarioFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use LogicException;
 use RuntimeException;
 
 #[Fillable(['cedula', 'nombre', 'apellido', 'contrasena_hash', 'rol', 'habilitado'])]
@@ -49,6 +51,34 @@ class Usuario extends Authenticatable
     {
         return static::find(self::CEDULA_SISTEMA)
             ?? throw new RuntimeException('No existe el usuario Sistema: corre php artisan db:seed --class=SistemaUsuarioSeeder.');
+    }
+
+    /**
+     * El usuario «Sistema» está protegido: no se lista, no se edita, no se
+     * habilita ni se elimina (ver UsuarioPolicy y el evento deleting).
+     */
+    public function esSistema(): bool
+    {
+        return $this->cedula === self::CEDULA_SISTEMA;
+    }
+
+    /**
+     * Excluye al usuario «Sistema» de los listados de gestión de cuentas.
+     *
+     * @param  Builder<Usuario>  $consulta
+     */
+    public function scopeSinSistema(Builder $consulta): void
+    {
+        $consulta->where('cedula', '!=', self::CEDULA_SISTEMA);
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Usuario $usuario): void {
+            if ($usuario->esSistema()) {
+                throw new LogicException('No se puede eliminar al usuario Sistema.');
+            }
+        });
     }
 
     public function getAuthPassword(): string

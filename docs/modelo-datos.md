@@ -44,7 +44,7 @@ El sistema tiene **20 tablas propias** (verificadas contra las migraciones). Los
 
 > El nombre completo ya no se almacena: el modelo lo compone como `nombre` + `apellido` (accesor `nombre_completo`). La cédula de un usuario sigue la misma regla que la del empleado (solo dígitos, máximo 10).
 
-> El usuario «Sistema» (cédula reservada `0000000000`) existe para registrar a su nombre las acciones automáticas en auditoría y, más adelante, los pagos automáticos. Está deshabilitado y con una contraseña aleatoria desconocida, así que no puede iniciar sesión; lo crea `SistemaUsuarioSeeder`.
+> El usuario «Sistema» (cédula reservada `0000000000`) existe para registrar a su nombre las acciones automáticas en auditoría y, más adelante, los pagos automáticos. Se llama «Sistema» (sin apellido), está deshabilitado y con una contraseña aleatoria desconocida, así que no puede iniciar sesión; lo crea `SistemaUsuarioSeeder`. Está protegido: no aparece en el listado de usuarios, no se puede editar, habilitar, cambiarle el rol o la contraseña ni eliminar (por pantalla o por rutas directas), y no se puede crear otro usuario con esa cédula. Sigue apareciendo como autor en la auditoría y en los pagos automáticos.
 
 > Solo existen dos roles fijos, con diferencias fijas: el Funcionario tiene las mismas funciones que el Administrador, salvo la gestión de cuentas de usuario y la consulta de auditoría, que son exclusivas del Administrador. Los reportes e indicadores son para ambos roles. No se modela como tabla de permisos independiente por ahora.
 
