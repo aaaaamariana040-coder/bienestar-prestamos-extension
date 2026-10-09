@@ -111,7 +111,7 @@ class MontosFormatoTest extends TestCase
     }
 
     #[DataProvider('formatosValidos')]
-    public function test_abono_de_cesantias_acepta_los_formatos_de_monto(string $escrito): void
+    public function test_abono_de_cesantias_acepta_los_formatos_de_monto(string $escrito, string $guardado): void
     {
         $prestamo = Prestamo::factory()->create(['monto_aprobado' => 50_000_000, 'cuota_periodica' => 5_000_000]);
 
