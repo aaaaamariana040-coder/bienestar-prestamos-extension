@@ -44,6 +44,8 @@ El sistema tiene **20 tablas propias** (verificadas contra las migraciones). Los
 
 > El nombre completo ya no se almacena: el modelo lo compone como `nombre` + `apellido` (accesor `nombre_completo`). La cédula de un usuario sigue la misma regla que la del empleado (solo dígitos, máximo 10).
 
+> El usuario «Sistema» (cédula reservada `0000000000`) existe para registrar a su nombre las acciones automáticas en auditoría y, más adelante, los pagos automáticos. Está deshabilitado y con una contraseña aleatoria desconocida, así que no puede iniciar sesión; lo crea `SistemaUsuarioSeeder`.
+
 > Solo existen dos roles fijos, con diferencias fijas: el Funcionario tiene las mismas funciones que el Administrador, salvo la gestión de cuentas de usuario y la consulta de auditoría, que son exclusivas del Administrador. Los reportes e indicadores son para ambos roles. No se modela como tabla de permisos independiente por ahora.
 
 ### empleado
@@ -191,6 +193,7 @@ Tabla física `tasas_dtf`.
 | fecha_pago | DATE | No | |
 | monto | DECIMAL(18,2) | No | |
 | tipo | VARCHAR(20) | No | Regular / Abono extraordinario / Cancelación |
+| origen | VARCHAR(20) | No | Manual (registrado por una persona desde la pantalla) / Automático (proceso de la quincena). Por defecto Manual; los pagos anteriores a la columna quedan como Manual |
 | monto_aplicado_interes | DECIMAL(18,2) | No | Se aplica primero a intereses |
 | monto_aplicado_capital | DECIMAL(18,2) | No | |
 | cedula_usu | VARCHAR(20) | No (FK) | Quien registró el pago |

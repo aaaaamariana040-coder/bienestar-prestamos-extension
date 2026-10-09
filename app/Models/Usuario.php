@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use RuntimeException;
 
 #[Fillable(['cedula', 'nombre', 'apellido', 'contrasena_hash', 'rol', 'habilitado'])]
 #[Hidden(['contrasena_hash', 'remember_token'])]
@@ -16,6 +17,12 @@ class Usuario extends Authenticatable
 {
     /** @use HasFactory<UsuarioFactory> */
     use HasFactory;
+
+    /**
+     * Cédula reservada del usuario «Sistema», a cuyo nombre se registran las
+     * acciones automáticas. Nunca puede iniciar sesión.
+     */
+    public const CEDULA_SISTEMA = '0000000000';
 
     protected $primaryKey = 'cedula';
 
@@ -33,6 +40,15 @@ class Usuario extends Authenticatable
             'habilitado' => 'boolean',
             'rol' => RolUsuario::class,
         ];
+    }
+
+    /**
+     * El usuario «Sistema». Se crea con SistemaUsuarioSeeder.
+     */
+    public static function sistema(): self
+    {
+        return static::find(self::CEDULA_SISTEMA)
+            ?? throw new RuntimeException('No existe el usuario Sistema: corre php artisan db:seed --class=SistemaUsuarioSeeder.');
     }
 
     public function getAuthPassword(): string
