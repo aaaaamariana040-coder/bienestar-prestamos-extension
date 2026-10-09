@@ -77,7 +77,7 @@ class PrestamoService
      */
     public function resolverTasaPara(TipoPrestamo $tipoPrestamo, int $anio, int $plazoQuincenas, bool $esPrimeraSolicitud): array
     {
-        if ($tipoPrestamo->nombre === 'Vehículo') {
+        if ($tipoPrestamo->esVehiculo()) {
             $plazoAnios = intdiv($plazoQuincenas, self::QUINCENAS_POR_ANIO);
 
             return [null, $this->tasaVehiculoService->tasaEfectiva($anio, $plazoAnios, $esPrimeraSolicitud)];

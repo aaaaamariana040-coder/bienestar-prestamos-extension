@@ -101,6 +101,30 @@ class TipoPrestamo extends Model
         );
     }
 
+    /**
+     * Las modalidades de vivienda no tienen un campo de categoría: se
+     * reconocen por el nombre, que siempre empieza por «Vivienda» (compra,
+     * construcción, deshipoteca, reparaciones y cambio).
+     */
+    public function esVivienda(): bool
+    {
+        return str_starts_with($this->nombre, 'Vivienda');
+    }
+
+    public function esVehiculo(): bool
+    {
+        return $this->nombre === 'Vehículo';
+    }
+
+    /**
+     * Vivienda y vehículo exigen al menos un año de servicio; las demás
+     * modalidades no exigen antigüedad.
+     */
+    public function exigeAnioDeServicio(): bool
+    {
+        return $this->esVivienda() || $this->esVehiculo();
+    }
+
     private function esCalamidadDomestica(): bool
     {
         return $this->nombre === 'Calamidad doméstica y necesidades especiales';

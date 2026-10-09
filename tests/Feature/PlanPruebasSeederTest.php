@@ -81,10 +81,10 @@ class PlanPruebasSeederTest extends TestCase
 
         $solicitud = SolicitudCredito::where('cedula_empleado', PlanPruebasSeeder::CEDULA_CAPACIDAD_BAJA)->firstOrFail();
 
-        $this->assertContains(
-            'La cuota resultante supera la capacidad de endeudamiento del empleado.',
-            app(SolicitudCreditoService::class)->validar($solicitud),
-        );
+        $mensajes = implode(' ', app(SolicitudCreditoService::class)->validar($solicitud));
+
+        $this->assertStringContainsString('supera la capacidad de endeudamiento disponible del empleado', $mensajes);
+        $this->assertStringContainsString('Capacidad total: $100.000; comprometida con préstamos vigentes: $0; disponible: $100.000.', $mensajes);
     }
 
     public function test_el_prestamo_de_estado_de_cuenta_esta_desembolsado_con_tres_cuotas_pagadas_y_sin_mora(): void

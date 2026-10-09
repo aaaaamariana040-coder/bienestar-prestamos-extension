@@ -31,6 +31,15 @@ Casos reales para verificar el cálculo (coinciden al centavo con los Excel de B
 - Un funcionario tiene capacidad de pago cuando, después de las deducciones voluntarias, las ordenadas por autoridad competente y la cuota del préstamo (capital, intereses y seguros), le queda libre el 50% de su salario (Acuerdo 19/2022, Art. 10, parágrafo 3).
 - No se tienen en cuenta las deducciones de seguridad social ni retención en la fuente para este cálculo.
 - La cuantía del préstamo está sujeta a esta capacidad de endeudamiento, sin superar los topes máximos por modalidad.
+- **Cómo lo aplica el sistema:** la cuota de la solicitud (cuota quincenal × 2, o sea la cuota mensual) debe caber en la capacidad **disponible** del empleado = capacidad total − capacidad comprometida. La comprometida es la suma de las cuotas quincenales de sus préstamos en estado Vigente y En mora × 2; los cancelados no cuentan, y un préstamo recién aprobado entra a la cuenta de inmediato. La misma cuenta la usan la aprobación de solicitudes y el simulador. El rechazo informa la capacidad total, la comprometida, la disponible y la cuota solicitada.
+- **Por confirmar (reunión 14-oct):** cómo se descuentan otras deducciones (judiciales, voluntarias, etc.). Hoy el sistema solo resta los préstamos que maneja.
+
+### 2.1 Elegibilidad: año de servicio
+- Para las modalidades de **vivienda** (compra, construcción, deshipoteca, reparaciones o mejoras, cambio de vivienda) y **vehículo**, el empleado debe tener al menos **un año completo de servicio**, contado desde su fecha de vinculación hasta la fecha de la solicitud. Exactamente un año cumple.
+- Las demás modalidades (educación, calamidad doméstica) no exigen antigüedad.
+- Si el empleado no tiene fecha de vinculación registrada, el sistema no puede comprobar la antigüedad y rechaza la solicitud de estas modalidades.
+- El sistema reconoce las modalidades de vivienda porque su nombre empieza por «Vivienda»; no hay un campo de categoría.
+- **Por confirmar (reunión 14-oct):** cómo cuenta el periodo de prueba.
 
 ## 3. Modalidades de crédito
 - Vivienda — compra de inmueble

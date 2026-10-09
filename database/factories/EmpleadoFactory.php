@@ -27,7 +27,7 @@ class EmpleadoFactory extends Factory
             'cargo' => fake()->jobTitle(),
             'dependencia' => fake()->word(),
             'salario' => $salario,
-            'fecha_vinculacion' => fake()->dateTimeBetween('-15 years', '-1 month'),
+            'fecha_vinculacion' => fake()->dateTimeBetween('-15 years', '-2 years'),
             'estado' => 'Activo',
             'capacidad_endeudamiento' => app(EmpleadoService::class)->capacidadEndeudamientoSugerida($salario),
         ];

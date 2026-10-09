@@ -4,13 +4,11 @@ namespace App\Services;
 
 use App\Enums\EstadoCuota;
 use App\Enums\EstadoDesembolso;
-use App\Enums\EstadoPrestamo;
 use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\SmmlvAnual;
 use App\Models\SolicitudCredito;
 use App\Models\TipoPrestamo;
-use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Simulador de crédito: calcula sin guardar nada. Reutiliza la resolución de
@@ -69,28 +67,8 @@ class SimuladorCreditoService
         return $datos + [
             'mensaje' => null,
             'prestamos' => $this->prestamosVigentes($empleado),
-            'capacidad' => $this->capacidad($empleado),
+            'capacidad' => $this->empleadoService->capacidadEndeudamiento($empleado),
             'modalidades' => TipoPrestamo::where('habilitada', true)->orderBy('nombre')->get(['id_tipo', 'nombre'])->all(),
-        ];
-    }
-
-    /**
-     * Capacidad de endeudamiento: el total es el guardado en el empleado (la
-     * misma cifra que usa SolicitudCreditoService); lo comprometido son las
-     * cuotas vigentes, dos quincenas por mes, igual que esa validación.
-     *
-     * @return array{total: float, comprometida: float, disponible: float}
-     */
-    public function capacidad(Empleado $empleado): array
-    {
-        $total = (float) $empleado->capacidad_endeudamiento;
-        $cuotasVigentes = (float) $this->prestamosActivos($empleado)->sum('cuota_periodica');
-        $comprometida = round($cuotasVigentes * 2, 2);
-
-        return [
-            'total' => $total,
-            'comprometida' => $comprometida,
-            'disponible' => round($total - $comprometida, 2),
         ];
     }
 
@@ -123,13 +101,18 @@ class SimuladorCreditoService
 
         [, $tasaAnual] = $this->prestamoService->resolverTasa($solicitud, $modalidad, $anio);
         $tasaPeriodica = $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaAnual);
-        $capacidad = $this->capacidad($empleado);
+        $capacidad = $this->empleadoService->capacidadEndeudamiento($empleado);
 
         if ($capacidad['disponible'] <= 0) {
             return $this->noPuede('capacidad_agotada', 'La capacidad de endeudamiento está agotada: las cuotas vigentes ya la comprometen por completo.');
         }
 
         $montoPorCapacidad = floor($this->calculoFinanciero->montoMaximoParaCuota($capacidad['disponible'] / 2, $tasaPeriodica, $plazo));
+
+        // La cuota se redondea a centavos: se baja el monto hasta que quepa en la capacidad disponible.
+        while ($montoPorCapacidad > 0 && $this->calculoFinanciero->cuotaFija($montoPorCapacidad, $tasaPeriodica, $plazo) * 2 > $capacidad['disponible']) {
+            $montoPorCapacidad--;
+        }
 
         if ($montoPorCapacidad < self::MONTO_MINIMO_SOLICITUD) {
             return $this->noPuede('capacidad_insuficiente', 'La capacidad de endeudamiento disponible ($'.number_format($capacidad['disponible'], 0, ',', '.').') no alcanza para el monto mínimo de una solicitud ($'.number_format(self::MONTO_MINIMO_SOLICITUD, 0, ',', '.').').');
@@ -183,11 +166,17 @@ class SimuladorCreditoService
      */
     private function noPuedeDesde(array $incumplimientos): array
     {
-        $prioridad = ['empleado_inactivo', 'sin_smmlv', 'sin_tasa', 'sin_cuantia', 'plazo_excedido', 'sin_presupuesto', 'cuantia_excedida', 'capacidad_excedida'];
+        $prioridad = ['empleado_inactivo', 'antiguedad_insuficiente', 'sin_smmlv', 'sin_tasa', 'sin_cuantia', 'plazo_excedido', 'sin_presupuesto', 'cuantia_excedida', 'capacidad_excedida'];
 
         usort($incumplimientos, fn (array $a, array $b): int => array_search($a['codigo'], $prioridad, true) <=> array_search($b['codigo'], $prioridad, true));
 
-        return $this->noPuede($incumplimientos[0]['codigo'], $incumplimientos[0]['mensaje'], array_column($incumplimientos, 'mensaje'));
+        $mensajes = array_column($incumplimientos, 'mensaje');
+
+        if ($incumplimientos[0]['codigo'] === 'antiguedad_insuficiente') {
+            $mensajes[0] = 'No cumple el tiempo de servicio exigido. '.$mensajes[0];
+        }
+
+        return $this->noPuede($incumplimientos[0]['codigo'], $mensajes[0], $mensajes);
     }
 
     /**
@@ -211,22 +200,11 @@ class SimuladorCreditoService
     }
 
     /**
-     * @return Collection<int, Prestamo>
-     */
-    private function prestamosActivos(Empleado $empleado): Collection
-    {
-        return $empleado->prestamos()
-            ->whereIn('estado', [EstadoPrestamo::Vigente, EstadoPrestamo::EnMora])
-            ->with('tipoPrestamo')
-            ->get();
-    }
-
-    /**
      * @return list<array{modalidad: string, monto_desembolsado: float, saldo_pendiente: float, cuota_quincenal: float}>
      */
     private function prestamosVigentes(Empleado $empleado): array
     {
-        return $this->prestamosActivos($empleado)->map(fn (Prestamo $prestamo): array => [
+        return $empleado->prestamosActivos()->with('tipoPrestamo')->get()->map(fn (Prestamo $prestamo): array => [
             'modalidad' => $prestamo->tipoPrestamo->nombre,
             'monto_desembolsado' => (float) $prestamo->desembolsos()->where('estado', EstadoDesembolso::Realizado)->sum('valor'),
             'saldo_pendiente' => (float) $prestamo->cuotas()->where('estado', '!=', EstadoCuota::Pagada)->sum('valor_capital'),

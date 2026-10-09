@@ -3,11 +3,13 @@
 namespace App\Services;
 
 use App\Enums\EstadoSolicitud;
+use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\PresupuestoAnual;
 use App\Models\SmmlvAnual;
 use App\Models\SolicitudCredito;
 use App\Models\Usuario;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -16,6 +18,7 @@ class SolicitudCreditoService
     public function __construct(
         private readonly PrestamoService $prestamoService,
         private readonly CalculoFinancieroService $calculoFinanciero,
+        private readonly EmpleadoService $empleadoService,
         private readonly AuditoriaService $auditoriaService,
     ) {
         //
@@ -67,6 +70,14 @@ class SolicitudCreditoService
             $problemas[] = ['codigo' => 'empleado_inactivo', 'mensaje' => 'El empleado no está activo.'];
         }
 
+        if ($tipoPrestamo->exigeAnioDeServicio()) {
+            $mensajeAntiguedad = $this->mensajeSiNoCumpleAntiguedad($empleado, $solicitud->fecha_solicitud);
+
+            if ($mensajeAntiguedad !== null) {
+                $problemas[] = ['codigo' => 'antiguedad_insuficiente', 'mensaje' => $mensajeAntiguedad];
+            }
+        }
+
         if ($solicitud->plazo_solicitado > $tipoPrestamo->plazo_maximo) {
             $problemas[] = ['codigo' => 'plazo_excedido', 'mensaje' => "El plazo solicitado ({$solicitud->plazo_solicitado} quincenas) supera el plazo máximo de la modalidad ({$tipoPrestamo->plazo_maximo_legible})."];
         }
@@ -105,12 +116,51 @@ class SolicitudCreditoService
                 $solicitud->plazo_solicitado,
             );
 
-            if ($cuotaTentativa * 2 > (float) $empleado->capacidad_endeudamiento) {
-                $problemas[] = ['codigo' => 'capacidad_excedida', 'mensaje' => 'La cuota resultante supera la capacidad de endeudamiento del empleado.'];
+            $capacidad = $this->empleadoService->capacidadEndeudamiento($empleado);
+
+            if ($cuotaTentativa * 2 > $capacidad['disponible']) {
+                $problemas[] = ['codigo' => 'capacidad_excedida', 'mensaje' => $this->mensajeCapacidadExcedida($cuotaTentativa, $capacidad)];
             }
         }
 
         return $problemas;
+    }
+
+    /**
+     * Exige al menos un año completo de servicio desde la fecha de vinculación
+     * hasta la fecha de la solicitud; exactamente un año cumple.
+     */
+    private function mensajeSiNoCumpleAntiguedad(Empleado $empleado, Carbon $fechaSolicitud): ?string
+    {
+        $prefijo = 'Para esta modalidad se exige al menos un año de servicio;';
+
+        if ($empleado->fecha_vinculacion === null) {
+            return "{$prefijo} el empleado no tiene fecha de vinculación registrada.";
+        }
+
+        if ($empleado->fecha_vinculacion->copy()->addYearNoOverflow()->startOfDay()->lte($fechaSolicitud->copy()->startOfDay())) {
+            return null;
+        }
+
+        $meses = max(0, (int) floor($empleado->fecha_vinculacion->diffInMonths($fechaSolicitud)));
+        $lleva = match (true) {
+            $meses === 0 => 'menos de un mes',
+            $meses === 1 => '1 mes',
+            default => "{$meses} meses",
+        };
+
+        return "{$prefijo} el empleado lleva {$lleva}.";
+    }
+
+    /**
+     * @param  array{total: float, comprometida: float, disponible: float}  $capacidad
+     */
+    private function mensajeCapacidadExcedida(float $cuotaQuincenal, array $capacidad): string
+    {
+        $pesos = fn (float $valor): string => '$'.number_format($valor, 0, ',', '.');
+
+        return 'La cuota solicitada ('.$pesos($cuotaQuincenal).' por quincena, '.$pesos($cuotaQuincenal * 2).' al mes) supera la capacidad de endeudamiento disponible del empleado. '
+            .'Capacidad total: '.$pesos($capacidad['total']).'; comprometida con préstamos vigentes: '.$pesos($capacidad['comprometida']).'; disponible: '.$pesos($capacidad['disponible']).'.';
     }
 
     public function aprobar(SolicitudCredito $solicitud, Usuario $actor): Prestamo
