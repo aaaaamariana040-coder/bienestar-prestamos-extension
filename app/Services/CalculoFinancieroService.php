@@ -60,6 +60,20 @@ class CalculoFinancieroService
     }
 
     /**
+     * Monto máximo que una cuota fija puede amortizar en un número de periodos
+     * (valor presente de la anualidad). Es la inversa de cuotaFija(), sin
+     * redondear: el llamador decide cómo redondear el monto.
+     */
+    public function montoMaximoParaCuota(float $cuota, float $tasaPeriodica, int $numPeriodos): float
+    {
+        if ($tasaPeriodica <= 0) {
+            return $cuota * $numPeriodos;
+        }
+
+        return $cuota * (1 - (1 + $tasaPeriodica) ** -$numPeriodos) / $tasaPeriodica;
+    }
+
+    /**
      * Tabla de amortización con cuota fija. Si no se indica la cuota se calcula.
      * El interés se redondea a 2 decimales en cada periodo y la última cuota
      * absorbe el saldo restante, de modo que la tabla cierra en cero.

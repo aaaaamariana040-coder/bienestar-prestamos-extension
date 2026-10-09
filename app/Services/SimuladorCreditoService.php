@@ -2,8 +2,15 @@
 
 namespace App\Services;
 
+use App\Enums\EstadoCuota;
+use App\Enums\EstadoDesembolso;
+use App\Enums\EstadoPrestamo;
+use App\Models\Empleado;
+use App\Models\Prestamo;
 use App\Models\SmmlvAnual;
+use App\Models\SolicitudCredito;
 use App\Models\TipoPrestamo;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Simulador de crédito: calcula sin guardar nada. Reutiliza la resolución de
@@ -13,12 +20,218 @@ use App\Models\TipoPrestamo;
  */
 class SimuladorCreditoService
 {
+    /**
+     * Monto mínimo de una solicitud: el mismo `min` de StoreSolicitudCreditoRequest.
+     */
+    public const MONTO_MINIMO_SOLICITUD = 1000;
+
     public function __construct(
         private readonly PrestamoService $prestamoService,
         private readonly CalculoFinancieroService $calculoFinanciero,
         private readonly EmpleadoService $empleadoService,
+        private readonly SolicitudCreditoService $solicitudCreditoService,
     ) {
         //
+    }
+
+    /**
+     * Datos del empleado para la pantalla del simulador: estado, préstamos
+     * vigentes, capacidad de endeudamiento y modalidades habilitadas.
+     *
+     * @return array<string, mixed>
+     */
+    public function consultarEmpleado(string $cedula): array
+    {
+        $empleado = Empleado::find($cedula);
+
+        if ($empleado === null) {
+            return ['encontrado' => false, 'mensaje' => "No existe un empleado con la cédula {$cedula}."];
+        }
+
+        $datos = [
+            'encontrado' => true,
+            'cedula' => $empleado->cedula,
+            'nombre_completo' => $empleado->nombre_completo,
+            'salario' => (float) $empleado->salario,
+            'estado' => $empleado->estado,
+            'elegible' => $empleado->estado === 'Activo',
+        ];
+
+        if (! $datos['elegible']) {
+            return $datos + [
+                'mensaje' => 'El empleado está retirado y no puede solicitar un crédito.',
+                'prestamos' => [],
+                'capacidad' => null,
+                'modalidades' => [],
+            ];
+        }
+
+        return $datos + [
+            'mensaje' => null,
+            'prestamos' => $this->prestamosVigentes($empleado),
+            'capacidad' => $this->capacidad($empleado),
+            'modalidades' => TipoPrestamo::where('habilitada', true)->orderBy('nombre')->get(['id_tipo', 'nombre'])->all(),
+        ];
+    }
+
+    /**
+     * Capacidad de endeudamiento: el total es el guardado en el empleado (la
+     * misma cifra que usa SolicitudCreditoService); lo comprometido son las
+     * cuotas vigentes, dos quincenas por mes, igual que esa validación.
+     *
+     * @return array{total: float, comprometida: float, disponible: float}
+     */
+    public function capacidad(Empleado $empleado): array
+    {
+        $total = (float) $empleado->capacidad_endeudamiento;
+        $cuotasVigentes = (float) $this->prestamosActivos($empleado)->sum('cuota_periodica');
+        $comprometida = round($cuotasVigentes * 2, 2);
+
+        return [
+            'total' => $total,
+            'comprometida' => $comprometida,
+            'disponible' => round($total - $comprometida, 2),
+        ];
+    }
+
+    /**
+     * ¿Puede el empleado pedir un crédito de esta modalidad? Si puede, devuelve
+     * el monto máximo, y si no, el motivo. Reutiliza las verificaciones de
+     * SolicitudCreditoService::incumplimientos() con una solicitud sin guardar.
+     *
+     * @return array<string, mixed>
+     */
+    public function evaluarModalidad(Empleado $empleado, TipoPrestamo $modalidad): array
+    {
+        if (! $modalidad->habilitada) {
+            return $this->noPuede('modalidad_deshabilitada', 'La modalidad está deshabilitada.');
+        }
+
+        $anio = now()->year;
+        $plazo = (int) $modalidad->plazo_maximo;
+        $solicitud = $this->solicitudHipotetica($empleado, $modalidad, 1, $plazo);
+
+        // Con un monto simbólico solo quedan los faltantes de configuración; la capacidad se evalúa aparte.
+        $estructurales = array_values(array_filter(
+            $this->solicitudCreditoService->incumplimientos($solicitud),
+            fn (array $incumplimiento): bool => $incumplimiento['codigo'] !== 'capacidad_excedida',
+        ));
+
+        if ($estructurales !== []) {
+            return $this->noPuedeDesde($estructurales);
+        }
+
+        [, $tasaAnual] = $this->prestamoService->resolverTasa($solicitud, $modalidad, $anio);
+        $tasaPeriodica = $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaAnual);
+        $capacidad = $this->capacidad($empleado);
+
+        if ($capacidad['disponible'] <= 0) {
+            return $this->noPuede('capacidad_agotada', 'La capacidad de endeudamiento está agotada: las cuotas vigentes ya la comprometen por completo.');
+        }
+
+        $montoPorCapacidad = floor($this->calculoFinanciero->montoMaximoParaCuota($capacidad['disponible'] / 2, $tasaPeriodica, $plazo));
+
+        if ($montoPorCapacidad < self::MONTO_MINIMO_SOLICITUD) {
+            return $this->noPuede('capacidad_insuficiente', 'La capacidad de endeudamiento disponible ($'.number_format($capacidad['disponible'], 0, ',', '.').') no alcanza para el monto mínimo de una solicitud ($'.number_format(self::MONTO_MINIMO_SOLICITUD, 0, ',', '.').').');
+        }
+
+        $smmlv = SmmlvAnual::valorParaAnio($anio);
+        $tramo = $modalidad->tramoCuantiaPara((float) $empleado->salario / $smmlv);
+        $cuantiaMaxima = floor((float) $tramo->cuantia_maxima_smmlv * $smmlv);
+        $montoMaximo = min($cuantiaMaxima, $montoPorCapacidad);
+
+        $finales = $this->solicitudCreditoService->incumplimientos(
+            $this->solicitudHipotetica($empleado, $modalidad, $montoMaximo, $plazo),
+        );
+
+        if ($finales !== []) {
+            return $this->noPuedeDesde($finales);
+        }
+
+        return [
+            'puede' => true,
+            'motivo' => null,
+            'mensaje' => null,
+            'mensajes' => [],
+            'monto_maximo' => $montoMaximo,
+            'limitado_por' => $montoPorCapacidad < $cuantiaMaxima ? 'capacidad' : 'cuantia',
+            'plazo_quincenas' => $plazo,
+            'plazo_legible' => $modalidad->plazo_maximo_legible,
+            'tasa_efectiva_anual' => $tasaAnual,
+            'cuota_quincenal' => $this->calculoFinanciero->cuotaFija($montoMaximo, $tasaPeriodica, $plazo),
+        ];
+    }
+
+    private function solicitudHipotetica(Empleado $empleado, TipoPrestamo $modalidad, float $monto, int $plazo): SolicitudCredito
+    {
+        $solicitud = new SolicitudCredito([
+            'cedula_empleado' => $empleado->cedula,
+            'id_tipo' => $modalidad->id_tipo,
+            'monto_solicitado' => $monto,
+            'plazo_solicitado' => $plazo,
+            'fecha_solicitud' => now()->toDateString(),
+        ]);
+
+        return $solicitud->setRelation('empleado', $empleado)->setRelation('tipoPrestamo', $modalidad);
+    }
+
+    /**
+     * El motivo principal sale del primer incumplimiento según este orden.
+     *
+     * @param  array<int, array{codigo: string, mensaje: string}>  $incumplimientos
+     * @return array<string, mixed>
+     */
+    private function noPuedeDesde(array $incumplimientos): array
+    {
+        $prioridad = ['empleado_inactivo', 'sin_smmlv', 'sin_tasa', 'sin_cuantia', 'plazo_excedido', 'sin_presupuesto', 'cuantia_excedida', 'capacidad_excedida'];
+
+        usort($incumplimientos, fn (array $a, array $b): int => array_search($a['codigo'], $prioridad, true) <=> array_search($b['codigo'], $prioridad, true));
+
+        return $this->noPuede($incumplimientos[0]['codigo'], $incumplimientos[0]['mensaje'], array_column($incumplimientos, 'mensaje'));
+    }
+
+    /**
+     * @param  list<string>  $mensajes
+     * @return array<string, mixed>
+     */
+    private function noPuede(string $motivo, string $mensaje, array $mensajes = []): array
+    {
+        return [
+            'puede' => false,
+            'motivo' => $motivo,
+            'mensaje' => $mensaje,
+            'mensajes' => $mensajes === [] ? [$mensaje] : $mensajes,
+            'monto_maximo' => null,
+            'limitado_por' => null,
+            'plazo_quincenas' => null,
+            'plazo_legible' => null,
+            'tasa_efectiva_anual' => null,
+            'cuota_quincenal' => null,
+        ];
+    }
+
+    /**
+     * @return Collection<int, Prestamo>
+     */
+    private function prestamosActivos(Empleado $empleado): Collection
+    {
+        return $empleado->prestamos()
+            ->whereIn('estado', [EstadoPrestamo::Vigente, EstadoPrestamo::EnMora])
+            ->with('tipoPrestamo')
+            ->get();
+    }
+
+    /**
+     * @return list<array{modalidad: string, monto_desembolsado: float, saldo_pendiente: float, cuota_quincenal: float}>
+     */
+    private function prestamosVigentes(Empleado $empleado): array
+    {
+        return $this->prestamosActivos($empleado)->map(fn (Prestamo $prestamo): array => [
+            'modalidad' => $prestamo->tipoPrestamo->nombre,
+            'monto_desembolsado' => (float) $prestamo->desembolsos()->where('estado', EstadoDesembolso::Realizado)->sum('valor'),
+            'saldo_pendiente' => (float) $prestamo->cuotas()->where('estado', '!=', EstadoCuota::Pagada)->sum('valor_capital'),
+            'cuota_quincenal' => (float) $prestamo->cuota_periodica,
+        ])->all();
     }
 
     /**

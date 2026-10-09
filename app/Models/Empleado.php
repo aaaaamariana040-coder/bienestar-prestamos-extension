@@ -6,6 +6,7 @@ use Database\Factories\EmpleadoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'cedula',
@@ -39,5 +40,13 @@ class Empleado extends Model
             'capacidad_endeudamiento' => 'decimal:2',
             'fecha_vinculacion' => 'date',
         ];
+    }
+
+    /**
+     * @return HasMany<Prestamo, $this>
+     */
+    public function prestamos(): HasMany
+    {
+        return $this->hasMany(Prestamo::class, 'cedula_empleado', 'cedula');
     }
 }

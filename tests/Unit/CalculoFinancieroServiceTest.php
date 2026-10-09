@@ -87,6 +87,18 @@ class CalculoFinancieroServiceTest extends TestCase
         $this->assertEqualsWithDelta($esperada, $calculo->tasaNominalDesdePeriodica($calculo->tasaPeriodicaQuincenal(5)), 1e-9);
     }
 
+    #[DataProvider('casosReales')]
+    public function test_el_monto_maximo_para_una_cuota_es_la_inversa_de_la_cuota_fija(string $periodicidad, float $monto, float $tasaEfectivaAnual, int $periodos): void
+    {
+        $calculo = new CalculoFinancieroService;
+        $tasaPeriodica = $this->tasaPeriodica($calculo, $periodicidad, $tasaEfectivaAnual);
+        $cuota = $calculo->cuotaFija($monto, $tasaPeriodica, $periodos);
+
+        // La cuota está redondeada a centavos, de ahí la tolerancia de un peso.
+        $this->assertEqualsWithDelta($monto, $calculo->montoMaximoParaCuota($cuota, $tasaPeriodica, $periodos), 1.0);
+        $this->assertSame(1_000_000.0, $calculo->montoMaximoParaCuota(250_000, 0.0, 4));
+    }
+
     public function test_con_tasa_cero_la_cuota_es_el_monto_dividido_en_los_periodos(): void
     {
         $calculo = new CalculoFinancieroService;

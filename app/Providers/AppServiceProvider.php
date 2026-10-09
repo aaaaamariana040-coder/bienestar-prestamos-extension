@@ -22,5 +22,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::define('reportes.ver', fn (Usuario $usuario) => $usuario->puedeOperar());
+        Gate::define('simulador.usar', fn (Usuario $usuario) => $usuario->puedeOperar());
     }
 }

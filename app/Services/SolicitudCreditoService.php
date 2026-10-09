@@ -45,6 +45,18 @@ class SolicitudCreditoService
      */
     public function validar(SolicitudCredito $solicitud): array
     {
+        return array_column($this->incumplimientos($solicitud), 'mensaje');
+    }
+
+    /**
+     * Las mismas verificaciones de validar(), con un código estable por cada
+     * incumplimiento. Funciona también con una solicitud sin guardar, que es
+     * como el simulador pregunta si un empleado podría pedir un crédito.
+     *
+     * @return array<int, array{codigo: string, mensaje: string}>
+     */
+    public function incumplimientos(SolicitudCredito $solicitud): array
+    {
         $problemas = [];
 
         $empleado = $solicitud->empleado;
@@ -52,39 +64,39 @@ class SolicitudCreditoService
         $anio = $solicitud->fecha_solicitud->year;
 
         if ($empleado->estado !== 'Activo') {
-            $problemas[] = 'El empleado no está activo.';
+            $problemas[] = ['codigo' => 'empleado_inactivo', 'mensaje' => 'El empleado no está activo.'];
         }
 
         if ($solicitud->plazo_solicitado > $tipoPrestamo->plazo_maximo) {
-            $problemas[] = "El plazo solicitado ({$solicitud->plazo_solicitado} quincenas) supera el plazo máximo de la modalidad ({$tipoPrestamo->plazo_maximo_legible}).";
+            $problemas[] = ['codigo' => 'plazo_excedido', 'mensaje' => "El plazo solicitado ({$solicitud->plazo_solicitado} quincenas) supera el plazo máximo de la modalidad ({$tipoPrestamo->plazo_maximo_legible})."];
         }
 
         $smmlv = SmmlvAnual::valorParaAnio($anio);
 
         if ($smmlv === null) {
-            $problemas[] = "No se ha registrado el valor del SMMLV para el año {$anio}.";
+            $problemas[] = ['codigo' => 'sin_smmlv', 'mensaje' => "No se ha registrado el valor del SMMLV para el año {$anio}."];
         } else {
             $salarioEnSmmlv = (float) $empleado->salario / $smmlv;
 
             $tramo = $tipoPrestamo->tramoCuantiaPara($salarioEnSmmlv);
 
             if ($tramo === null) {
-                $problemas[] = 'No hay una cuantía máxima configurada para el tramo salarial del empleado en esta modalidad.';
+                $problemas[] = ['codigo' => 'sin_cuantia', 'mensaje' => 'No hay una cuantía máxima configurada para el tramo salarial del empleado en esta modalidad.'];
             } elseif ((float) $solicitud->monto_solicitado > (float) $tramo->cuantia_maxima_smmlv * $smmlv) {
-                $problemas[] = 'El monto solicitado supera la cuantía máxima permitida para el tramo salarial del empleado.';
+                $problemas[] = ['codigo' => 'cuantia_excedida', 'mensaje' => 'El monto solicitado supera la cuantía máxima permitida para el tramo salarial del empleado.'];
             }
         }
 
         $presupuesto = PresupuestoAnual::where('id_tipo', $solicitud->id_tipo)->where('anio', $anio)->first();
 
         if ($presupuesto === null || (float) $solicitud->monto_solicitado > (float) $presupuesto->monto_disponible) {
-            $problemas[] = 'No hay disponibilidad presupuestal suficiente para esta modalidad en el año de la solicitud.';
+            $problemas[] = ['codigo' => 'sin_presupuesto', 'mensaje' => 'No hay disponibilidad presupuestal suficiente para esta modalidad en el año de la solicitud.'];
         }
 
         [, $tasaAnual] = $this->prestamoService->resolverTasa($solicitud, $tipoPrestamo, $anio);
 
         if ($tasaAnual === null) {
-            $problemas[] = 'No hay una tasa de interés registrada para esta modalidad y año.';
+            $problemas[] = ['codigo' => 'sin_tasa', 'mensaje' => 'No hay una tasa de interés registrada para esta modalidad y año.'];
         } else {
             $tasaPeriodica = $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaAnual);
             $cuotaTentativa = $this->calculoFinanciero->cuotaFija(
@@ -94,7 +106,7 @@ class SolicitudCreditoService
             );
 
             if ($cuotaTentativa * 2 > (float) $empleado->capacidad_endeudamiento) {
-                $problemas[] = 'La cuota resultante supera la capacidad de endeudamiento del empleado.';
+                $problemas[] = ['codigo' => 'capacidad_excedida', 'mensaje' => 'La cuota resultante supera la capacidad de endeudamiento del empleado.'];
             }
         }
 

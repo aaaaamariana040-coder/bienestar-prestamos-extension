@@ -19,10 +19,8 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label for="cedula_empleado" class="form-label">Cédula del empleado</label>
-                <input type="text" id="cedula_empleado" name="cedula_empleado" class="form-control"
-                       value="{{ old('cedula_empleado') }}" inputmode="numeric" maxlength="10" pattern="[0-9]{1,10}"
-                       title="Solo números, máximo 10 dígitos" autocomplete="off" placeholder="Escribe la cédula" required>
-                <div id="resultado-empleado" class="mt-2" aria-live="polite"></div>
+                <x-buscador-cedula :url="url('solicitudes/empleado')" id="cedula_empleado" name="cedula_empleado"
+                                   :valor="old('cedula_empleado')" requerido />
             </div>
 
             <div class="col-md-6 mb-3">
@@ -65,10 +63,7 @@
             const campo = document.getElementById('cedula_empleado');
             const resultado = document.getElementById('resultado-empleado');
             const boton = document.getElementById('registrar-solicitud');
-            const urlBase = @json(url('solicitudes/empleado'));
             const urlCrear = @json(route('empleados.create'));
-            let temporizador = null;
-            let peticion = null;
 
             function escapar(texto) {
                 const nodo = document.createElement('div');
@@ -96,58 +91,35 @@
                 boton.disabled = true;
             }
 
-            function buscar() {
-                const cedula = campo.value.replace(/\s+/g, '');
-
-                if (peticion) {
-                    peticion.abort();
-                }
-
-                if (cedula === '') {
-                    resultado.innerHTML = '';
-                    boton.disabled = true;
-
-                    return;
-                }
-
-                if (! /^[0-9]{1,10}$/.test(cedula)) {
-                    mostrarMensaje('La cédula debe contener solo números, máximo 10 dígitos.', false);
-
-                    return;
-                }
-
-                peticion = new AbortController();
-
-                fetch(urlBase + '/' + cedula, { signal: peticion.signal, headers: { 'Accept': 'application/json' } })
-                    .then(function (respuesta) {
-                        return respuesta.json().then(function (datos) {
-                            return { ok: respuesta.ok, datos: datos };
-                        });
-                    })
-                    .then(function (r) {
-                        if (r.ok && r.datos.encontrado) {
-                            mostrarEmpleado(r.datos);
-                        } else {
-                            mostrarMensaje(r.datos.mensaje || 'No se pudo consultar el empleado.', ! r.datos.inactivo);
-                        }
-                    })
-                    .catch(function (error) {
-                        if (error.name !== 'AbortError') {
-                            mostrarMensaje('No se pudo consultar el empleado. Inténtalo de nuevo.', false);
-                        }
-                    });
-            }
-
-            campo.addEventListener('input', function () {
-                clearTimeout(temporizador);
+            campo.addEventListener('cedula:escribiendo', function () {
                 boton.disabled = true;
-                temporizador = setTimeout(buscar, 250);
+            });
+
+            campo.addEventListener('cedula:vacia', function () {
+                resultado.innerHTML = '';
+                boton.disabled = true;
+            });
+
+            campo.addEventListener('cedula:invalida', function (evento) {
+                mostrarMensaje(evento.detail.mensaje, false);
+            });
+
+            campo.addEventListener('cedula:encontrada', function (evento) {
+                if (evento.detail.encontrado) {
+                    mostrarEmpleado(evento.detail);
+                } else {
+                    mostrarMensaje(evento.detail.mensaje || 'No se pudo consultar el empleado.', ! evento.detail.inactivo);
+                }
+            });
+
+            campo.addEventListener('cedula:error', function (evento) {
+                mostrarMensaje(evento.detail.mensaje || 'No se pudo consultar el empleado.', ! evento.detail.inactivo);
             });
 
             boton.disabled = true;
 
             if (campo.value !== '') {
-                buscar();
+                campo.buscarAhora();
             }
         })();
     </script>

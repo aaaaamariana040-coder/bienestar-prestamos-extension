@@ -40,6 +40,7 @@
             'items' => [
                 ['texto' => 'Solicitudes', 'ruta' => 'solicitudes.index', 'activo' => ['solicitudes.index', 'solicitudes.show'], 'visible' => $usuario->can('viewAny', \App\Models\SolicitudCredito::class)],
                 ['texto' => 'Registrar solicitud', 'ruta' => 'solicitudes.create', 'activo' => 'solicitudes.create', 'visible' => $usuario->can('create', \App\Models\SolicitudCredito::class)],
+                ['texto' => 'Simulador de crédito', 'ruta' => 'simulador.index', 'activo' => 'simulador.*', 'visible' => $usuario->can('simulador.usar')],
                 ['texto' => 'Préstamos', 'ruta' => 'prestamos.index', 'activo' => 'prestamos.*', 'visible' => $usuario->can('viewAny', \App\Models\Prestamo::class)],
                 ['texto' => 'Proveedores', 'ruta' => 'proveedores.index', 'activo' => 'proveedores.*', 'visible' => $usuario->can('viewAny', \App\Models\Proveedor::class)],
             ],
