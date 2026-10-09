@@ -6,7 +6,7 @@ Aplicación de Préstamos de Bienestar Social — Politécnico Colombiano Jaime 
 - No hay integración directa con el módulo de nómina.
 - No hay pasarela de pago en línea; los pagos se registran manualmente.
 - La votación individual del Comité no se registra en el sistema; se gestiona por correo. El sistema solo registra la solicitud y su resultado final.
-- El sistema de puntaje de convocatorias (Art. 17) no está automatizado.
+- El sistema de puntaje de convocatorias (Art. 17) no está automatizado hoy. Alcance por decidir; el detalle del puntaje está en `docs/reglas-negocio.md`, sección 15.
 - La gestión de pólizas de seguro no tiene módulo propio más allá de las reglas de negocio documentadas.
 - Los casos especiales del Art. 24 (desastre natural, amenaza de ruina, alteración de orden público, FOVIS, terrorismo) no tienen flujo automatizado; se gestionan como excepciones manuales del Comité.
 - No se incluyen funcionalidades de IA de tipo predictivo dentro de la aplicación entregada.
@@ -39,6 +39,7 @@ Aplicación de Préstamos de Bienestar Social — Politécnico Colombiano Jaime 
 
 ## 6. Pendientes de validar con el área
 - Cálculo exacto de mora según el Manual de Cartera institucional (no revisado).
-- Proceso de reliquidación paso a paso (pendiente de próxima entrevista).
+- Proceso de reliquidación paso a paso: el cálculo del interés y del retiro está confirmado (`docs/reglas-negocio.md`, secciones 1.1 y 11); el resto, por confirmar (reunión 14-oct).
+- Por confirmar (reunión 14-oct): tasa de 5,20 % en una solicitud de 2025 frente al tope del 5 %, umbral y aplicación de abonos menores a 10 cuotas, cobertura del seguro de vida deudor, conceptos 14, 31 y 34 del AS/400 y la columna TIPO.
 - Cantidad aproximada de empleados y préstamos vigentes.
 - Calendario académico real del trabajo de grado.
