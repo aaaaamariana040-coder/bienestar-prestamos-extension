@@ -19,9 +19,11 @@ Aplicación de Préstamos de Bienestar Social — Politécnico Colombiano Jaime 
 - Asistencia de desarrollo: Claude Code, durante la construcción del software — no como funcionalidad del sistema entregado.
 
 ## 3. Restricciones de entrega
-- La entrega es el repositorio de GitHub documentado más la instalación del aplicativo en el equipo de la jefatura de Bienestar Social. No se entrega a Informática corporativa.
-- El aplicativo se instala de forma local, con acceso opcional por red local; no se despliega en un servidor institucional. HTTPS queda como trabajo futuro para una eventual publicación en servidor.
-- El respaldo de la base de datos es una copia automática mediante una tarea programada en el mismo equipo.
+- **Decisión pendiente: modalidad de instalación (local o servidor).** Por confirmar con Bienestar Social.
+- La entrega es el repositorio de GitHub documentado más la instalación del aplicativo en el equipo o servidor que se defina.
+- Instalación: escenario de trabajo actual, local en el equipo de la jefatura de Bienestar Social con acceso opcional por red local. Alternativa: servidor institucional. Quién recibe el código (Bienestar Social o Informática corporativa) depende de esa decisión.
+- HTTPS se mantiene como requisito (RNF-002). En instalación local, el acceso es por localhost o red local y el HTTPS se configura cuando se publique en red.
+- El respaldo de la base de datos es una copia automática mediante una tarea programada, válida en ambos escenarios.
 - La entrega incluye documentación técnica y funcional (RNF-025).
 
 ## 4. Restricciones de datos
