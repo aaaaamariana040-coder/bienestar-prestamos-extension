@@ -66,12 +66,7 @@ class SolicitudCreditoService
         } else {
             $salarioEnSmmlv = (float) $empleado->salario / $smmlv;
 
-            $tramo = $tipoPrestamo->cuantias()
-                ->where('tramo_desde_smmlv', '<=', $salarioEnSmmlv)
-                ->where(function ($query) use ($salarioEnSmmlv) {
-                    $query->whereNull('tramo_hasta_smmlv')->orWhere('tramo_hasta_smmlv', '>=', $salarioEnSmmlv);
-                })
-                ->first();
+            $tramo = $tipoPrestamo->tramoCuantiaPara($salarioEnSmmlv);
 
             if ($tramo === null) {
                 $problemas[] = 'No hay una cuantía máxima configurada para el tramo salarial del empleado en esta modalidad.';

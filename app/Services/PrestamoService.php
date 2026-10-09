@@ -62,18 +62,28 @@ class PrestamoService
      */
     public function resolverTasa(SolicitudCredito $solicitud, TipoPrestamo $tipoPrestamo, int $anio): array
     {
+        $esPrimeraSolicitud = ! Prestamo::where('cedula_empleado', $solicitud->cedula_empleado)
+            ->where('id_tipo', $solicitud->id_tipo)
+            ->exists();
+
+        return $this->resolverTasaPara($tipoPrestamo, $anio, $solicitud->plazo_solicitado, $esPrimeraSolicitud);
+    }
+
+    /**
+     * Misma resolución de tasa que resolverTasa(), sin necesitar una solicitud
+     * guardada: la usa también el simulador.
+     *
+     * @return array{0: ?int, 1: ?float} [id_tasa, tasa_anual_porcentaje]
+     */
+    public function resolverTasaPara(TipoPrestamo $tipoPrestamo, int $anio, int $plazoQuincenas, bool $esPrimeraSolicitud): array
+    {
         if ($tipoPrestamo->nombre === 'Vehículo') {
-            $esPrimeraSolicitud = ! Prestamo::where('cedula_empleado', $solicitud->cedula_empleado)
-                ->where('id_tipo', $solicitud->id_tipo)
-                ->exists();
+            $plazoAnios = intdiv($plazoQuincenas, self::QUINCENAS_POR_ANIO);
 
-            $plazoAnios = intdiv($solicitud->plazo_solicitado, self::QUINCENAS_POR_ANIO);
-            $tasaEfectiva = $this->tasaVehiculoService->tasaEfectiva($anio, $plazoAnios, $esPrimeraSolicitud);
-
-            return [null, $tasaEfectiva];
+            return [null, $this->tasaVehiculoService->tasaEfectiva($anio, $plazoAnios, $esPrimeraSolicitud)];
         }
 
-        $tasaInt = TasaInt::where('id_tipo', $solicitud->id_tipo)->where('anio', $anio)->first();
+        $tasaInt = TasaInt::where('id_tipo', $tipoPrestamo->id_tipo)->where('anio', $anio)->first();
 
         return [$tasaInt?->id_tasa, $tasaInt !== null ? (float) $tasaInt->tasa_anual : null];
     }
