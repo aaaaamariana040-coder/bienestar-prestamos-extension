@@ -201,9 +201,9 @@ class SimuladorPantallaTest extends TestCase
         $this->prestamoVigente($empleado, $calamidad, 999_999)->update(['estado' => EstadoPrestamo::Cancelado]);
 
         Desembolso::factory()->create(['id_prestamo' => $educacionVigente->id_prestamo, 'valor' => 8_000_000]);
-        Cuota::factory()->create(['id_prestamo' => $educacionVigente->id_prestamo, 'estado' => EstadoCuota::Pagada, 'valor_capital' => 1_000_000]);
-        Cuota::factory()->create(['id_prestamo' => $educacionVigente->id_prestamo, 'estado' => EstadoCuota::Pendiente, 'valor_capital' => 2_000_000]);
-        Cuota::factory()->create(['id_prestamo' => $educacionVigente->id_prestamo, 'estado' => EstadoCuota::Pendiente, 'valor_capital' => 3_000_000]);
+        Cuota::factory()->create(['id_prestamo' => $educacionVigente->id_prestamo, 'numero_cuota' => 1, 'estado' => EstadoCuota::Pagada, 'valor_capital' => 1_000_000]);
+        Cuota::factory()->create(['id_prestamo' => $educacionVigente->id_prestamo, 'numero_cuota' => 2, 'estado' => EstadoCuota::Pendiente, 'valor_capital' => 2_000_000]);
+        Cuota::factory()->create(['id_prestamo' => $educacionVigente->id_prestamo, 'numero_cuota' => 3, 'estado' => EstadoCuota::Pendiente, 'valor_capital' => 3_000_000]);
 
         $datos = $this->getJson(route('simulador.empleado', $empleado->cedula))->assertOk()->json();
 

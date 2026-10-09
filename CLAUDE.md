@@ -60,6 +60,7 @@ Local DB: development runs on MariaDB (`DB_CONNECTION=mariadb` in `.env`), the s
 - Never run `rm -rf`, bulk deletes, or "clean up" folders inside `storage/`, in backup folders (for example `storage/app/private/backups`), or in any other user data without first listing the folder's contents and asking the user for confirmation.
 - To clean up empty test folders, delete only files you created yourself, by their exact path. Never delete a whole directory because it looks like test leftovers: files in `storage/app/private/` (uploaded documents, backups) may belong to the user's development database.
 - Before deleting any file or database row you did not create in this session, look at it and ask first.
+- Antes de fusionar o subir, la suite debe terminar con código de salida 0 y sin avisos (usa `--display-all-issues`); no te bases en el resumen JSON.
 
 <laravel-boost-guidelines>
 === foundation rules ===

@@ -88,7 +88,7 @@ class CalculoFinancieroServiceTest extends TestCase
     }
 
     #[DataProvider('casosReales')]
-    public function test_el_monto_maximo_para_una_cuota_es_la_inversa_de_la_cuota_fija(string $periodicidad, float $monto, float $tasaEfectivaAnual, int $periodos): void
+    public function test_el_monto_maximo_para_una_cuota_es_la_inversa_de_la_cuota_fija(string $periodicidad, float $monto, float $tasaEfectivaAnual, int $periodos, float $cuotaEsperada, float $interesEsperado): void
     {
         $calculo = new CalculoFinancieroService;
         $tasaPeriodica = $this->tasaPeriodica($calculo, $periodicidad, $tasaEfectivaAnual);
