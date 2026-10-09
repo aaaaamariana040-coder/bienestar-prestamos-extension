@@ -2,13 +2,21 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\NormalizaMontos;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RegistrarAbonoExtraordinarioRequest extends FormRequest
 {
+    use NormalizaMontos;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizarMontos(['monto']);
     }
 
     /**
@@ -17,7 +25,7 @@ class RegistrarAbonoExtraordinarioRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'monto' => ['required', 'numeric', 'min:0.01'],
+            'monto' => ['required', 'numeric', 'min:1000'],
             'fecha_pago' => ['required', 'date'],
             'modo_reliquidacion' => ['nullable', 'in:cuota,plazo'],
         ];

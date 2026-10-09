@@ -23,8 +23,15 @@
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Nombre completo</label>
-            <input type="text" class="form-control" value="{{ $usuario->nombre_completo }}" disabled>
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" id="nombre" name="nombre" class="form-control" maxlength="80"
+                   value="{{ old('nombre', $usuario->nombre) }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="apellido" class="form-label">Apellido</label>
+            <input type="text" id="apellido" name="apellido" class="form-control" maxlength="80"
+                   value="{{ old('apellido', $usuario->apellido) }}" required>
         </div>
 
         <div class="mb-3">

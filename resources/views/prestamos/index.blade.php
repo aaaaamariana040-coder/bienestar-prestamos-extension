@@ -21,7 +21,7 @@
                     <td>{{ $prestamo->empleado->nombre_completo }}</td>
                     <td>{{ $prestamo->tipoPrestamo->nombre }}</td>
                     <td>{{ number_format($prestamo->monto_aprobado, 2) }}</td>
-                    <td>{{ $prestamo->num_cuotas }}</td>
+                    <td>{{ \App\Models\TipoPrestamo::plazoEnQuincenas($prestamo->num_cuotas) }}</td>
                     <td>{{ $prestamo->fecha_autorizacion->format('Y-m-d') }}</td>
                     <td>{{ $prestamo->estado->value }}</td>
                     <td class="text-end">

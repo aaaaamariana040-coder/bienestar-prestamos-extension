@@ -26,7 +26,11 @@
                     <td class="text-end">
                         <a href="{{ route('usuarios.edit', $usuario) }}" class="btn btn-sm btn-outline-secondary">Editar rol</a>
 
-                        @if ($usuario->habilitado)
+                        @if ($usuario->habilitado && $usuario->rol === \App\Enums\RolUsuario::Administrador)
+                            <span class="d-inline-block" title="El administrador no se puede deshabilitar" tabindex="0">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled>Deshabilitar</button>
+                            </span>
+                        @elseif ($usuario->habilitado)
                             <form method="POST" action="{{ route('usuarios.deshabilitar', $usuario) }}" class="d-inline">
                                 @csrf
                                 @method('PATCH')

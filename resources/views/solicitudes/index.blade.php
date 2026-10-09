@@ -26,7 +26,7 @@
                     <td>{{ $solicitud->empleado->nombre_completo }}</td>
                     <td>{{ $solicitud->tipoPrestamo->nombre }}</td>
                     <td>{{ number_format($solicitud->monto_solicitado, 2) }}</td>
-                    <td>{{ $solicitud->plazo_solicitado }} cuotas</td>
+                    <td>{{ $solicitud->plazo_solicitado_legible }}</td>
                     <td>{{ $solicitud->fecha_solicitud->format('Y-m-d') }}</td>
                     <td>{{ $solicitud->estado->value }}</td>
                     <td class="text-end">

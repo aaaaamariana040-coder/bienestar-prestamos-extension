@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Enums\RolUsuario;
-use App\Models\Empleado;
 use App\Models\Usuario;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -27,8 +26,9 @@ class UsuarioFactory extends Factory
     public function definition(): array
     {
         return [
-            'cedula' => Empleado::factory(),
-            'nombre_completo' => fake()->name(),
+            'cedula' => fake()->unique()->numerify('##########'),
+            'nombre' => fake()->firstName(),
+            'apellido' => fake()->lastName(),
             'contrasena_hash' => static::$password ??= Hash::make('password'),
             'rol' => RolUsuario::FuncionarioBienestar,
             'habilitado' => true,

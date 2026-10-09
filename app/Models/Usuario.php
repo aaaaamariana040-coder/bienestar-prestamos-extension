@@ -6,11 +6,11 @@ use App\Enums\RolUsuario;
 use Database\Factories\UsuarioFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-#[Fillable(['cedula', 'nombre_completo', 'contrasena_hash', 'rol', 'habilitado'])]
+#[Fillable(['cedula', 'nombre', 'apellido', 'contrasena_hash', 'rol', 'habilitado'])]
 #[Hidden(['contrasena_hash', 'remember_token'])]
 class Usuario extends Authenticatable
 {
@@ -56,10 +56,10 @@ class Usuario extends Authenticatable
     }
 
     /**
-     * @return BelongsTo<Empleado, $this>
+     * @return Attribute<string, never>
      */
-    public function empleado(): BelongsTo
+    protected function nombreCompleto(): Attribute
     {
-        return $this->belongsTo(Empleado::class, 'cedula', 'cedula');
+        return Attribute::get(fn (): string => trim($this->nombre.' '.$this->apellido));
     }
 }

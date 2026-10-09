@@ -2,10 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Enums\UnidadPlazo;
+use App\Models\PresupuestoAnual;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class TipoPrestamoCrudTest extends TestCase
@@ -29,11 +30,64 @@ class TipoPrestamoCrudTest extends TestCase
             'nombre' => 'Educación',
             'descripcion' => 'Crédito educativo',
             'plazo_maximo' => 72,
-            'unidad_plazo' => UnidadPlazo::Meses->value,
             'fuente_normativa' => 'Acuerdo Directivo No. 19/2022',
         ])->assertRedirect(route('tipos-prestamo.index'));
 
         $this->assertDatabaseHas('tipos_prestamo', ['nombre' => 'Educación', 'habilitada' => true]);
+    }
+
+    public function test_formulario_de_modalidad_no_pide_unidad_y_rotula_quincenas(): void
+    {
+        $this->actingAs(Usuario::factory()->administrador()->create())
+            ->get(route('tipos-prestamo.create'))
+            ->assertOk()
+            ->assertSee('Plazo máximo (quincenas)')
+            ->assertDontSee('unidad_plazo', false)
+            ->assertDontSee('Unidad para mostrar el plazo');
+    }
+
+    public function test_listado_y_detalle_muestran_el_plazo_en_quincenas_con_equivalencia(): void
+    {
+        $this->actingAs(Usuario::factory()->administrador()->create());
+        $vivienda = TipoPrestamo::factory()->create(['nombre' => 'Vivienda prueba', 'plazo_maximo' => 480]);
+        $educacion = TipoPrestamo::factory()->create(['nombre' => 'Educación prueba', 'plazo_maximo' => 72]);
+
+        $this->get(route('tipos-prestamo.index'))
+            ->assertSee('480 quincenas (≈ 20 años)')
+            ->assertSee('72 quincenas (≈ 36 meses)');
+
+        $this->get(route('tipos-prestamo.show', $vivienda))->assertSee('480 quincenas (≈ 20 años)');
+        $this->get(route('tipos-prestamo.show', $educacion))->assertSee('72 quincenas (≈ 36 meses)');
+    }
+
+    public function test_la_tabla_de_modalidades_ya_no_tiene_la_columna_unidad_plazo(): void
+    {
+        $this->assertFalse(Schema::hasColumn('tipos_prestamo', 'unidad_plazo'));
+    }
+
+    public function test_listado_de_modalidades_muestra_el_disponible_del_anio_vigente(): void
+    {
+        $this->actingAs(Usuario::factory()->administrador()->create());
+        $conPresupuesto = TipoPrestamo::factory()->create(['nombre' => 'Calamidad prueba']);
+        TipoPrestamo::factory()->create(['nombre' => 'Otra modalidad']);
+        PresupuestoAnual::factory()->create(['anio' => now()->year, 'id_tipo' => $conPresupuesto->id_tipo, 'monto_asignado' => 5_000_000, 'monto_comprometido' => 1_250_000]);
+        PresupuestoAnual::factory()->create(['anio' => now()->year - 1, 'id_tipo' => $conPresupuesto->id_tipo, 'monto_asignado' => 99_000_000, 'monto_comprometido' => 0]);
+
+        $this->get(route('tipos-prestamo.index'))
+            ->assertOk()
+            ->assertSee('Disponible '.now()->year)
+            ->assertSee('Para Calamidad prueba quedan $3,750,000.00')
+            ->assertDontSee('99,000,000')
+            ->assertSee('Sin presupuesto asignado');
+    }
+
+    public function test_formulario_de_tasa_trae_el_anio_actual_por_defecto(): void
+    {
+        $this->actingAs(Usuario::factory()->administrador()->create());
+        $tipoPrestamo = TipoPrestamo::factory()->create();
+
+        $this->get(route('tipos-prestamo.show', $tipoPrestamo))
+            ->assertSee('name="anio" class="form-control" value="'.now()->year.'"', false);
     }
 
     public function test_funcionario_bienestar_puede_crear_una_modalidad(): void
@@ -44,7 +98,6 @@ class TipoPrestamoCrudTest extends TestCase
             'nombre' => 'Educación',
             'descripcion' => 'Crédito educativo',
             'plazo_maximo' => 72,
-            'unidad_plazo' => UnidadPlazo::Meses->value,
             'fuente_normativa' => 'Acuerdo Directivo No. 19/2022',
         ])->assertRedirect(route('tipos-prestamo.index'));
 
@@ -60,7 +113,6 @@ class TipoPrestamoCrudTest extends TestCase
             'nombre' => 'Vehículo',
             'descripcion' => 'Crédito de vehículo',
             'plazo_maximo' => 168,
-            'unidad_plazo' => UnidadPlazo::Anios->value,
             'fuente_normativa' => 'Acuerdo Directivo No. 19/2022',
         ])->assertRedirect(route('tipos-prestamo.index'));
 
@@ -95,13 +147,11 @@ class TipoPrestamoCrudTest extends TestCase
             $this->actingAs($deshabilitado)->post(route('tipos-prestamo.store'), [
                 'nombre' => 'Educación',
                 'plazo_maximo' => 72,
-                'unidad_plazo' => UnidadPlazo::Meses->value,
             ])->assertRedirect(route('login'));
 
             $this->actingAs($deshabilitado)->put(route('tipos-prestamo.update', $tipoPrestamo), [
                 'nombre' => 'Vehículo',
                 'plazo_maximo' => 168,
-                'unidad_plazo' => UnidadPlazo::Anios->value,
             ])->assertRedirect(route('login'));
 
             $this->actingAs($deshabilitado)
@@ -126,7 +176,6 @@ class TipoPrestamoCrudTest extends TestCase
             'nombre' => 'Vehículo',
             'descripcion' => 'Crédito de vehículo',
             'plazo_maximo' => 168,
-            'unidad_plazo' => UnidadPlazo::Anios->value,
             'fuente_normativa' => 'Acuerdo Directivo No. 19/2022',
         ])->assertRedirect(route('tipos-prestamo.index'));
 

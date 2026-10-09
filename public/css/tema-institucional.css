@@ -1,0 +1,473 @@
+/*
+ * Tema institucional — Politécnico Colombiano Jaime Isaza Cadavid.
+ * Fuente: docs/identidad-visual.md (Manual de Identidad Gráfica Institucional 2025).
+ *
+ * Se carga después de Bootstrap. Los colores y la fuente se cambian solo aquí.
+ * No se usa el morado #79067F (exclusivo de campañas de género) ni
+ * AmsiPro Condensed / Attractype Reborn.
+ */
+
+:root {
+    --color-primario: #00AB44;
+    --color-primario-oscuro: #009240;
+    --color-acento: #FFD400;
+    --color-naranja: #FFAA00;
+
+    --color-primario-rgb: 0, 171, 68;
+    --color-primario-oscuro-rgb: 0, 146, 64;
+    --color-acento-rgb: 255, 212, 0;
+    --color-naranja-rgb: 255, 170, 0;
+
+    /* Texto sobre fondos claros o amarillos/naranja (contraste alto). */
+    --color-texto-oscuro: #212529;
+    --color-texto-claro: #FFFFFF;
+
+    /* Solo para errores y acciones de eliminar. */
+    --color-peligro: #DC3545;
+
+    /* Cuando lleguen los archivos oficiales de AmsiPro, anteponerla aquí. */
+    --fuente-base: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* html:root tiene más especificidad que el :root de Bootstrap, sin importar el orden de carga. */
+html:root,
+html[data-bs-theme="light"] {
+    --bs-font-sans-serif: var(--fuente-base);
+    --bs-body-font-family: var(--fuente-base);
+
+    --bs-primary: var(--color-primario);
+    --bs-primary-rgb: var(--color-primario-rgb);
+    --bs-success: var(--color-primario-oscuro);
+    --bs-success-rgb: var(--color-primario-oscuro-rgb);
+    --bs-warning: var(--color-naranja);
+    --bs-warning-rgb: var(--color-naranja-rgb);
+    --bs-info: var(--color-acento);
+    --bs-info-rgb: var(--color-acento-rgb);
+    --bs-danger: var(--color-peligro);
+
+    --bs-link-color: var(--color-primario-oscuro);
+    --bs-link-color-rgb: var(--color-primario-oscuro-rgb);
+    --bs-link-hover-color: var(--color-primario);
+    --bs-link-hover-color-rgb: var(--color-primario-rgb);
+
+    --bs-primary-bg-subtle: color-mix(in srgb, var(--color-primario) 12%, white);
+    --bs-primary-border-subtle: color-mix(in srgb, var(--color-primario) 35%, white);
+    --bs-primary-text-emphasis: var(--color-texto-oscuro);
+    --bs-success-bg-subtle: color-mix(in srgb, var(--color-primario) 12%, white);
+    --bs-success-border-subtle: color-mix(in srgb, var(--color-primario) 35%, white);
+    --bs-success-text-emphasis: var(--color-texto-oscuro);
+    --bs-warning-bg-subtle: color-mix(in srgb, var(--color-naranja) 18%, white);
+    --bs-warning-border-subtle: color-mix(in srgb, var(--color-naranja) 45%, white);
+    --bs-warning-text-emphasis: var(--color-texto-oscuro);
+
+    --bs-focus-ring-color: rgba(var(--color-primario-rgb), 0.3);
+    --bs-border-radius: 0.375rem;
+}
+
+body {
+    font-family: var(--fuente-base);
+    color: var(--color-texto-oscuro);
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    font-weight: 700;
+    color: var(--color-texto-oscuro);
+}
+
+/* ---- Navbar ---- */
+body .navbar-institucional {
+    background-color: var(--color-primario);
+    border-bottom: 4px solid var(--color-acento);
+}
+
+body .navbar-institucional .navbar-brand {
+    color: var(--color-texto-claro);
+    font-weight: 700;
+}
+
+body .navbar-institucional .nav-link:hover,
+body .navbar-institucional .nav-link:focus {
+    color: var(--color-acento) !important;
+}
+
+/* ---- Botones ---- */
+body .btn-primary {
+    --bs-btn-color: var(--color-texto-claro);
+    --bs-btn-bg: var(--color-primario);
+    --bs-btn-border-color: var(--color-primario);
+    --bs-btn-hover-color: var(--color-texto-claro);
+    --bs-btn-hover-bg: var(--color-primario-oscuro);
+    --bs-btn-hover-border-color: var(--color-primario-oscuro);
+    --bs-btn-focus-shadow-rgb: var(--color-primario-rgb);
+    --bs-btn-active-color: var(--color-texto-claro);
+    --bs-btn-active-bg: var(--color-primario-oscuro);
+    --bs-btn-active-border-color: var(--color-primario-oscuro);
+    --bs-btn-disabled-color: var(--color-texto-claro);
+    --bs-btn-disabled-bg: var(--color-primario);
+    --bs-btn-disabled-border-color: var(--color-primario);
+    font-weight: 600;
+}
+
+body .btn-success {
+    --bs-btn-color: var(--color-texto-claro);
+    --bs-btn-bg: var(--color-primario-oscuro);
+    --bs-btn-border-color: var(--color-primario-oscuro);
+    --bs-btn-hover-color: var(--color-texto-claro);
+    --bs-btn-hover-bg: var(--color-primario);
+    --bs-btn-hover-border-color: var(--color-primario);
+    --bs-btn-focus-shadow-rgb: var(--color-primario-rgb);
+    --bs-btn-active-color: var(--color-texto-claro);
+    --bs-btn-active-bg: var(--color-primario);
+    --bs-btn-active-border-color: var(--color-primario);
+    --bs-btn-disabled-color: var(--color-texto-claro);
+    --bs-btn-disabled-bg: var(--color-primario-oscuro);
+    --bs-btn-disabled-border-color: var(--color-primario-oscuro);
+}
+
+body .btn-outline-primary,
+body .btn-outline-success {
+    --bs-btn-color: var(--color-primario-oscuro);
+    --bs-btn-border-color: var(--color-primario-oscuro);
+    --bs-btn-hover-color: var(--color-texto-claro);
+    --bs-btn-hover-bg: var(--color-primario-oscuro);
+    --bs-btn-hover-border-color: var(--color-primario-oscuro);
+    --bs-btn-focus-shadow-rgb: var(--color-primario-rgb);
+    --bs-btn-active-color: var(--color-texto-claro);
+    --bs-btn-active-bg: var(--color-primario-oscuro);
+    --bs-btn-active-border-color: var(--color-primario-oscuro);
+    --bs-btn-disabled-color: var(--color-primario-oscuro);
+    --bs-btn-disabled-border-color: var(--color-primario-oscuro);
+}
+
+/* Llamadas a la acción / advertencias: texto oscuro sobre amarillo o naranja. */
+body .btn-warning,
+body .btn-info {
+    --bs-btn-color: var(--color-texto-oscuro);
+    --bs-btn-bg: var(--color-acento);
+    --bs-btn-border-color: var(--color-acento);
+    --bs-btn-hover-color: var(--color-texto-oscuro);
+    --bs-btn-hover-bg: var(--color-naranja);
+    --bs-btn-hover-border-color: var(--color-naranja);
+    --bs-btn-focus-shadow-rgb: var(--color-naranja-rgb);
+    --bs-btn-active-color: var(--color-texto-oscuro);
+    --bs-btn-active-bg: var(--color-naranja);
+    --bs-btn-active-border-color: var(--color-naranja);
+    --bs-btn-disabled-color: var(--color-texto-oscuro);
+    --bs-btn-disabled-bg: var(--color-acento);
+    --bs-btn-disabled-border-color: var(--color-acento);
+    font-weight: 600;
+}
+
+body .btn-outline-secondary {
+    --bs-btn-color: var(--color-texto-oscuro);
+    --bs-btn-border-color: #6C757D;
+    --bs-btn-hover-color: var(--color-texto-oscuro);
+    --bs-btn-hover-bg: var(--color-acento);
+    --bs-btn-hover-border-color: var(--color-acento);
+    --bs-btn-active-color: var(--color-texto-oscuro);
+    --bs-btn-active-bg: var(--color-acento);
+    --bs-btn-active-border-color: var(--color-acento);
+    --bs-btn-focus-shadow-rgb: var(--color-naranja-rgb);
+}
+
+/* Rojo solo para eliminar / errores. */
+body .btn-danger,
+body .btn-outline-danger {
+    --bs-btn-focus-shadow-rgb: 220, 53, 69;
+}
+
+/* ---- Formularios ---- */
+body .form-control:focus,
+body .form-select:focus {
+    border-color: var(--color-primario);
+    box-shadow: 0 0 0 0.25rem rgba(var(--color-primario-rgb), 0.25);
+}
+
+body .form-check-input:checked {
+    background-color: var(--color-primario);
+    border-color: var(--color-primario);
+}
+
+body .form-check-input:focus {
+    border-color: var(--color-primario);
+    box-shadow: 0 0 0 0.25rem rgba(var(--color-primario-rgb), 0.25);
+}
+
+/* ---- Paginación ---- */
+body .pagination {
+    --bs-pagination-color: var(--color-primario-oscuro);
+    --bs-pagination-hover-color: var(--color-texto-claro);
+    --bs-pagination-hover-bg: var(--color-primario-oscuro);
+    --bs-pagination-hover-border-color: var(--color-primario-oscuro);
+    --bs-pagination-focus-color: var(--color-primario-oscuro);
+    --bs-pagination-focus-box-shadow: 0 0 0 0.25rem rgba(var(--color-primario-rgb), 0.25);
+    --bs-pagination-active-color: var(--color-texto-claro);
+    --bs-pagination-active-bg: var(--color-primario);
+    --bs-pagination-active-border-color: var(--color-primario);
+}
+
+/* ---- Badges ---- */
+body .badge {
+    font-weight: 600;
+}
+
+body .badge.text-bg-primary,
+body .badge.text-bg-success {
+    background-color: var(--color-primario) !important;
+    color: var(--color-texto-claro) !important;
+}
+
+body .badge.text-bg-secondary,
+body .badge.text-bg-info {
+    background-color: var(--color-acento) !important;
+    color: var(--color-texto-oscuro) !important;
+}
+
+body .badge.text-bg-warning {
+    background-color: var(--color-naranja) !important;
+    color: var(--color-texto-oscuro) !important;
+}
+
+/* ---- Tablas ---- */
+body .table > thead > tr > th {
+    background-color: color-mix(in srgb, var(--color-primario) 12%, white);
+    color: var(--color-texto-oscuro);
+    border-bottom: 2px solid var(--color-primario);
+}
+
+body .table-hover > tbody > tr:hover > * {
+    --bs-table-hover-bg: color-mix(in srgb, var(--color-acento) 18%, white);
+}
+
+/* ---- Tarjetas ---- */
+body .card-header {
+    background-color: var(--color-primario-oscuro);
+    color: var(--color-texto-claro);
+    font-weight: 600;
+    border-bottom: 3px solid var(--color-acento);
+}
+
+/* ---- Alertas ---- */
+body .alert-success {
+    --bs-alert-border-color: var(--color-primario);
+    border-left: 4px solid var(--color-primario);
+}
+
+body .alert-warning {
+    --bs-alert-border-color: var(--color-naranja);
+    border-left: 4px solid var(--color-naranja);
+}
+
+body .alert-danger {
+    border-left: 4px solid var(--color-peligro);
+}
+
+/* ---- Estructura: barra superior, menú lateral y portada ---- */
+body .barra-superior {
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+    min-height: 64px;
+    padding: 0.5rem 1rem;
+    justify-content: space-between;
+}
+
+body .btn-alternar-menu {
+    color: var(--color-texto-claro);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    line-height: 1;
+}
+
+body .btn-alternar-menu:hover,
+body .btn-alternar-menu:focus {
+    color: var(--color-texto-oscuro);
+    background-color: var(--color-acento);
+    border-color: var(--color-acento);
+}
+
+.contenedor-app {
+    display: flex;
+    align-items: stretch;
+    min-height: calc(100vh - 64px);
+}
+
+.contenido-principal {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 1.5rem 1rem 3rem;
+}
+
+.contenido-ancho {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.menu-lateral {
+    flex: 0 0 272px;
+    width: 272px;
+    background-color: var(--color-primario-oscuro);
+    color: var(--color-texto-claro);
+    overflow-y: auto;
+    transition: flex-basis 0.2s ease, width 0.2s ease, transform 0.2s ease;
+}
+
+.menu-lateral-contenido {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem 0;
+}
+
+.menu-grupo-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.7rem 1.1rem;
+    background: transparent;
+    border: 0;
+    border-left: 4px solid transparent;
+    color: var(--color-texto-claro);
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+}
+
+.menu-grupo-titulo:hover,
+.menu-grupo-titulo:focus {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: var(--color-texto-claro);
+}
+
+.menu-grupo-titulo.activo {
+    border-left-color: var(--color-acento);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.icono-menu {
+    flex: 0 0 auto;
+}
+
+.menu-texto {
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.menu-flecha {
+    flex: 0 0 auto;
+    font-size: 1.2rem;
+    line-height: 1;
+    transition: transform 0.15s ease;
+    transform: rotate(90deg);
+}
+
+.menu-grupo-titulo.collapsed .menu-flecha {
+    transform: rotate(0deg);
+}
+
+.menu-submenu {
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.menu-enlace {
+    display: block;
+    padding: 0.5rem 1.1rem 0.5rem 3.1rem;
+    color: var(--color-texto-claro);
+    text-decoration: none;
+    border-left: 4px solid transparent;
+}
+
+.menu-enlace:hover,
+.menu-enlace:focus {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: var(--color-acento);
+}
+
+.menu-enlace.activo {
+    border-left-color: var(--color-acento);
+    background-color: var(--color-acento);
+    color: var(--color-texto-oscuro);
+    font-weight: 600;
+}
+
+.menu-fondo {
+    display: none;
+}
+
+/* Portada */
+.portada {
+    padding: 3rem 1rem;
+}
+
+.portada-logo {
+    margin-bottom: 1.5rem;
+}
+
+.portada-titulo {
+    font-size: clamp(2rem, 5vw, 3rem);
+    border-bottom: 4px solid var(--color-acento);
+    display: inline-block;
+    padding-bottom: 0.25rem;
+}
+
+.portada-subtitulo {
+    margin-top: 1rem;
+    font-size: 1.15rem;
+    color: #495057;
+}
+
+.portada-saludo {
+    margin-top: 2rem;
+    color: var(--color-primario-oscuro);
+}
+
+/* Escritorio: el menú puede colapsar a solo íconos. */
+@media (min-width: 992px) {
+    body.menu-colapsado .menu-lateral {
+        flex-basis: 72px;
+        width: 72px;
+    }
+
+    body.menu-colapsado .menu-texto,
+    body.menu-colapsado .menu-flecha,
+    body.menu-colapsado .menu-submenu {
+        display: none;
+    }
+
+    body.menu-colapsado .menu-grupo-titulo {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+/* Móvil y tableta: el menú se desliza sobre el contenido. */
+@media (max-width: 991.98px) {
+    .menu-lateral {
+        position: fixed;
+        top: 64px;
+        bottom: 0;
+        left: 0;
+        z-index: 1045;
+        transform: translateX(-100%);
+        box-shadow: 0 0 1rem rgba(0, 0, 0, 0.3);
+    }
+
+    body.menu-abierto .menu-lateral {
+        transform: translateX(0);
+    }
+
+    body.menu-abierto .menu-fondo {
+        display: block;
+        position: fixed;
+        inset: 64px 0 0 0;
+        z-index: 1040;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .contenido-principal {
+        padding: 1rem 0.75rem 2.5rem;
+    }
+}

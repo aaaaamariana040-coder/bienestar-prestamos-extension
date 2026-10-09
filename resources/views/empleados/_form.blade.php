@@ -15,7 +15,9 @@
 @if (! $empleado)
     <div class="mb-3">
         <label for="cedula" class="form-label">Cédula</label>
-        <input type="text" id="cedula" name="cedula" class="form-control" value="{{ old('cedula') }}" required>
+        <input type="text" id="cedula" name="cedula" class="form-control" value="{{ old('cedula') }}"
+               inputmode="numeric" maxlength="10" pattern="[0-9]{1,10}"
+               title="Solo números, máximo 10 dígitos, sin puntos ni caracteres especiales" required>
     </div>
 @endif
 
@@ -40,7 +42,7 @@
     <div class="col-md-6 mb-3">
         <label for="estado" class="form-label">Estado</label>
         <select id="estado" name="estado" class="form-select" required>
-            @foreach (['Activo', 'Retirado'] as $opcion)
+            @foreach ((! optional($empleado)->exists || $empleado->estado !== 'Retirado' ? ['Activo'] : ['Activo', 'Retirado']) as $opcion)
                 <option value="{{ $opcion }}" @selected(old('estado', optional($empleado)->estado ?? 'Activo') === $opcion)>
                     {{ $opcion }}
                 </option>

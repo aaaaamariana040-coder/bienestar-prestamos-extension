@@ -35,9 +35,6 @@
 
                 <dt class="col-sm-4">Estado</dt>
                 <dd class="col-sm-8">{{ $empleado->estado }}</dd>
-
-                <dt class="col-sm-4">Cuenta de usuario</dt>
-                <dd class="col-sm-8">{{ $empleado->usuario ? 'Sí (' . $empleado->usuario->rol->value . ')' : 'No tiene' }}</dd>
             </dl>
         </div>
     </div>

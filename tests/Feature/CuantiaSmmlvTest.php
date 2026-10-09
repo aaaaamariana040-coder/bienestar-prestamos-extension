@@ -61,6 +61,20 @@ class CuantiaSmmlvTest extends TestCase
         $this->assertDatabaseMissing('cuantias_smmlv', ['id_cuantia' => $cuantia->id_cuantia]);
     }
 
+    public function test_la_modalidad_ofrece_el_modal_de_confirmacion_para_eliminar_tramos(): void
+    {
+        $administrador = Usuario::factory()->administrador()->create();
+        $cuantia = CuantiaSmmlv::factory()->create();
+
+        $this->actingAs($administrador)
+            ->get(route('tipos-prestamo.show', $cuantia->id_tipo))
+            ->assertOk()
+            ->assertSee('id="modal-confirmar-eliminacion"', false)
+            ->assertSee('data-eliminar-action="'.route('cuantias-smmlv.destroy', $cuantia).'"', false);
+
+        $this->assertDatabaseHas('cuantias_smmlv', ['id_cuantia' => $cuantia->id_cuantia]);
+    }
+
     public function test_funcionario_bienestar_puede_gestionar_cuantias(): void
     {
         $funcionario = Usuario::factory()->create();

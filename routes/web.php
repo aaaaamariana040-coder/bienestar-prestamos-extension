@@ -13,16 +13,18 @@ use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\PresupuestoAnualController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\RetiroEmpleadoController;
 use App\Http\Controllers\SmmlvAnualController;
 use App\Http\Controllers\SolicitudCreditoController;
 use App\Http\Controllers\TasaIntController;
 use App\Http\Controllers\TasaVehiculoController;
 use App\Http\Controllers\TipoPrestamoController;
 use App\Http\Controllers\UsuarioController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return Auth::check() ? redirect()->route('inicio') : view('welcome');
 });
 
 Route::middleware('guest')->group(function () {
@@ -33,9 +35,10 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->post('logout', [SessionController::class, 'destroy'])->name('logout');
 
 Route::middleware(['auth', 'habilitado'])->group(function () {
+    Route::view('inicio', 'inicio')->name('inicio');
+
     Route::resource('empleados', EmpleadoController::class);
-    Route::get('empleados/{empleado}/eliminar', [EmpleadoController::class, 'confirmarEliminacion'])
-        ->name('empleados.confirmar-eliminacion');
+    Route::post('empleados/{empleado}/retiro', [RetiroEmpleadoController::class, 'store'])->name('empleados.retiro');
 
     Route::get('usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
     Route::get('usuarios/crear', [UsuarioController::class, 'create'])->name('usuarios.create');
@@ -70,6 +73,9 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
 
     Route::get('solicitudes', [SolicitudCreditoController::class, 'index'])->name('solicitudes.index');
     Route::get('solicitudes/crear', [SolicitudCreditoController::class, 'create'])->name('solicitudes.create');
+    Route::get('solicitudes/empleado/{cedula}', [SolicitudCreditoController::class, 'buscarEmpleado'])
+        ->where('cedula', '[0-9]{1,10}')
+        ->name('solicitudes.buscar-empleado');
     Route::post('solicitudes', [SolicitudCreditoController::class, 'store'])->name('solicitudes.store');
     Route::get('solicitudes/{solicitud}', [SolicitudCreditoController::class, 'show'])->name('solicitudes.show');
     Route::patch('solicitudes/{solicitud}/aprobar', [SolicitudCreditoController::class, 'aprobar'])->name('solicitudes.aprobar');

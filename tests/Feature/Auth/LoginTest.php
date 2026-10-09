@@ -27,7 +27,7 @@ class LoginTest extends TestCase
         ]);
 
         $this->assertAuthenticatedAs($usuario);
-        $response->assertRedirect(route('empleados.index'));
+        $response->assertRedirect(route('inicio'));
     }
 
     public function test_users_cannot_authenticate_with_invalid_password(): void

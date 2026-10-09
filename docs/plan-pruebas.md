@@ -27,8 +27,8 @@ Este plan cubre las funcionalidades construidas hasta el Sprint 4 (según `plan-
 | PP-011 | Crear empleado | Autenticado | Registrar empleado con datos válidos | Empleado creado; `capacidad_endeudamiento` autocalculado al 50% del salario | ⬜ |
 | PP-012 | Crear empleado con capacidad manual | Autenticado | Ingresar `capacidad_endeudamiento` manualmente distinto al 50% | Se respeta el valor manual, no se sobreescribe | ⬜ |
 | PP-013 | Editar empleado | Empleado existente | Actualizar nombre/cargo/salario | Cambios guardados; si `capacidad_endeudamiento` no se toca, se recalcula | ⬜ |
-| PP-014 | Eliminar empleado sin usuario asociado | Empleado sin cuenta de usuario | Eliminar | Empleado eliminado correctamente | ⬜ |
-| PP-015 | Eliminar empleado con usuario asociado (debe fallar) | Empleado con cuenta de usuario | Intentar eliminar | Bloqueado, mensaje "No se puede eliminar un empleado con una cuenta de usuario asociada" | ⬜ |
+| PP-014 | Eliminar empleado | Empleado existente (los usuarios son independientes de los empleados) | Eliminar y confirmar en el modal | Empleado eliminado correctamente | ⬜ |
+| PP-015 | ~~Eliminar empleado con usuario asociado (debe fallar)~~ | — | — | **Retirado:** los usuarios ya no dependen de los empleados, por lo que no existe este bloqueo | ➖ |
 | PP-016 | Listar/buscar empleados | Varios empleados registrados | Buscar por cédula o nombre | Resultados filtrados correctamente | ⬜ |
 | PP-017 | Consultar historial crediticio de un empleado | Empleado con préstamos | Ver detalle del empleado | Muestra préstamos vigentes y finalizados | ⬜ |
 | PP-018 | Validar campos excluidos del formulario | — | Enviar `fecha_solicitud_credito`/`fecha_autorizacion_credito` manualmente en el POST | El sistema los ignora (no pertenecen a `empleado`) | ⬜ |
@@ -37,9 +37,9 @@ Este plan cubre las funcionalidades construidas hasta el Sprint 4 (según `plan-
 
 | ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
 |---|---|---|---|---|---|
-| PP-019 | Crear modalidad de crédito | Autenticado | Registrar modalidad con monto máximo, plazo y tasa | Modalidad creada; plazo almacenado en quincenas | ⬜ |
+| PP-019 | Crear modalidad de crédito | Autenticado | Registrar modalidad con monto máximo, plazo y tasa | Modalidad creada; plazo almacenado en quincenas (el formulario no pide unidad) | ⬜ |
 | PP-020 | Validar tope de tasa (≤5% EA vivienda) | Modalidad vivienda | Intentar registrar tasa superior a 5% | Rechazado con mensaje de validación (Acuerdo 11/2023) | ⬜ |
-| PP-021 | Visualización del plazo según Acuerdo | Modalidad vivienda con 480 quincenas | Ver el plazo en la interfaz | Se muestra "20 años", no "480 quincenas" | ⬜ |
+| PP-021 | Visualización del plazo en quincenas | Modalidad vivienda con 480 quincenas | Ver el plazo en la interfaz | Se muestra "480 quincenas (≈ 20 años)"; educación muestra "72 quincenas (≈ 36 meses)" (meses hasta 120 quincenas, años desde ahí) | ⬜ |
 | PP-022 | Tasa especial de vehículo | Modalidad vehículo | Registrar solicitante con primera vs. segunda solicitud, distintos plazos | Tasa calculada según tabla `tasa_vehiculo` (IPC+0 a IPC+5 según corresponda) | ⬜ |
 | PP-023 | Deshabilitar modalidad | Modalidad con presupuesto agotado | Deshabilitar | Modalidad ya no aparece disponible para nuevas solicitudes | ⬜ |
 

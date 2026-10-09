@@ -3,14 +3,24 @@
 namespace App\Http\Requests;
 
 use App\Enums\RolUsuario;
+use App\Http\Requests\Concerns\ValidaContrasenaSegura;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreUsuarioRequest extends FormRequest
 {
+    use ValidaContrasenaSegura;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->cedula)) {
+            $this->merge(['cedula' => preg_replace('/\s+/', '', $this->cedula)]);
+        }
     }
 
     /**
@@ -19,9 +29,29 @@ class StoreUsuarioRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cedula' => ['required', 'string', 'max:20', 'exists:empleados,cedula', 'unique:usuarios,cedula'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'cedula' => ['required', 'regex:/^\d{1,10}$/', 'unique:usuarios,cedula'],
+            'nombre' => ['required', 'string', 'max:80'],
+            'apellido' => ['required', 'string', 'max:80'],
+            'password' => $this->reglasContrasena(),
             'rol' => ['required', Rule::enum(RolUsuario::class)],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            ...$this->mensajesContrasena(),
+            'cedula.required' => 'La cédula es obligatoria.',
+            'cedula.regex' => 'La cédula debe contener solo números, máximo 10 dígitos, sin puntos ni caracteres especiales.',
+            'cedula.unique' => 'Ya existe un usuario con esa cédula.',
+            'nombre.required' => 'El nombre es obligatorio.',
+            'nombre.max' => 'El nombre no puede superar los 80 caracteres.',
+            'apellido.required' => 'El apellido es obligatorio.',
+            'apellido.max' => 'El apellido no puede superar los 80 caracteres.',
+            'rol.required' => 'El rol es obligatorio.',
         ];
     }
 }

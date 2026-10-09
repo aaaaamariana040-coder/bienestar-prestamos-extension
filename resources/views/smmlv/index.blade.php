@@ -56,11 +56,11 @@
                     @csrf
                     <div class="col-auto">
                         <label for="anio" class="form-label">Año</label>
-                        <input type="number" id="anio" name="anio" class="form-control" value="{{ old('anio') }}">
+                        <input type="number" id="anio" name="anio" class="form-control" value="{{ old('anio', now()->year) }}">
                     </div>
                     <div class="col-auto">
                         <label for="valor" class="form-label">Valor</label>
-                        <input type="number" step="0.01" min="0" id="valor" name="valor" class="form-control" value="{{ old('valor') }}">
+                        <input type="text" inputmode="decimal" id="valor" name="valor" class="form-control" value="{{ old('valor') }}">
                     </div>
                     <div class="col-auto">
                         <label for="fuente_normativa" class="form-label">Fuente normativa</label>

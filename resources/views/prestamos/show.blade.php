@@ -35,8 +35,8 @@
                 <td>{{ number_format($prestamo->cuota_periodica, 2) }}</td>
             </tr>
             <tr>
-                <th>Número de cuotas</th>
-                <td>{{ $prestamo->num_cuotas }}</td>
+                <th>Plazo</th>
+                <td>{{ \App\Models\TipoPrestamo::plazoEnQuincenas($prestamo->num_cuotas) }}</td>
             </tr>
             <tr>
                 <th>Fecha de autorización</th>
@@ -178,7 +178,7 @@
                             @csrf
                             <div class="col-auto">
                                 <label for="monto" class="form-label">Monto</label>
-                                <input type="number" step="0.01" min="0.01" id="monto" name="monto" class="form-control" required>
+                                <input type="text" inputmode="decimal" id="monto" name="monto" class="form-control" required>
                             </div>
                             <div class="col-auto">
                                 <label for="fecha_pago_abono" class="form-label">Fecha</label>
@@ -231,7 +231,7 @@
                                 </div>
                                 <div class="col-auto">
                                     <label for="monto_cesantias" class="form-label">Monto (50%)</label>
-                                    <input type="number" step="0.01" min="0.01" id="monto_cesantias" name="monto" class="form-control" required>
+                                    <input type="text" inputmode="decimal" id="monto_cesantias" name="monto" class="form-control" required>
                                 </div>
                                 <div class="col-auto">
                                     <label for="fecha_abono_cesantias" class="form-label">Fecha</label>
@@ -277,7 +277,7 @@
                     <td>{{ $reliquidacion->fecha->format('Y-m-d') }}</td>
                     <td>{{ $reliquidacion->motivo->value }}</td>
                     <td>{{ number_format($reliquidacion->saldo_anterior, 2) }}</td>
-                    <td>{{ number_format($reliquidacion->saldo_nuevo, 2) }}</td>
+                    <td>{{ $reliquidacion->saldo_nuevo !== null ? number_format($reliquidacion->saldo_nuevo, 2) : 'Pendiente de cálculo' }}</td>
                     <td>{{ $reliquidacion->tasa_aplicada !== null ? number_format($reliquidacion->tasa_aplicada, 4).'%' : '—' }}</td>
                 </tr>
             @empty

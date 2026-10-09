@@ -29,6 +29,6 @@ class UsuarioPolicy
 
     public function deshabilitar(Usuario $actor, Usuario $usuario): bool
     {
-        return $actor->rol === RolUsuario::Administrador && ! $actor->is($usuario);
+        return $actor->rol === RolUsuario::Administrador && $usuario->rol !== RolUsuario::Administrador;
     }
 }

@@ -28,7 +28,7 @@ class AuditoriaController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        $usuarios = Usuario::orderBy('nombre_completo')->get();
+        $usuarios = Usuario::orderBy('nombre')->orderBy('apellido')->get();
         $funciones = Auditoria::query()->distinct()->orderBy('funcion_realizada')->pluck('funcion_realizada');
 
         return view('auditoria.index', compact('registros', 'usuarios', 'funciones', 'cedulaUsu', 'funcionRealizada', 'desde', 'hasta'));
