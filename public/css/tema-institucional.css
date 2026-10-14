@@ -471,3 +471,10 @@ body .btn-alternar-menu:focus {
         padding: 1rem 0.75rem 2.5rem;
     }
 }
+
+/* Logo oficial: el PNG trae fondo verde sólido #009140. */
+.logo-aplicacion {
+    background-color: #009140;
+    width: auto;
+    max-width: 100%;
+}

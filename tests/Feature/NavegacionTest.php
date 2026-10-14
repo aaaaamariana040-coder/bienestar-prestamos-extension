@@ -19,7 +19,7 @@ class NavegacionTest extends TestCase
             ->get(route('inicio'))
             ->assertOk()
             ->assertSee('class="portada', false)
-            ->assertSee('images/logo-placeholder.svg', false)
+            ->assertSee('images/logo-politecnico.png', false)
             ->assertSee('Bienestar Préstamos')
             ->assertSee('Hola, <strong>Laura Mejia</strong>', false)
             ->assertDontSee('<table', false);
@@ -37,13 +37,13 @@ class NavegacionTest extends TestCase
         $this->actingAs(Usuario::factory()->create())->get('/')->assertRedirect(route('inicio'));
     }
 
-    public function test_el_logo_es_un_marcador_y_se_referencia_en_un_solo_lugar(): void
+    public function test_el_logo_es_el_del_politecnico_y_se_referencia_en_un_solo_lugar(): void
     {
-        $this->assertFileExists(public_path('images/logo-placeholder.svg'));
-        $this->assertStringContainsString('MARCADOR DE POSICIÓN', File::get(public_path('images/logo-placeholder.svg')));
+        $this->assertFileExists(public_path('images/logo-politecnico.png'));
+        $this->assertSame('89504e47', bin2hex(substr(File::get(public_path('images/logo-politecnico.png')), 0, 4)));
 
         $archivosConLogo = collect(File::allFiles(resource_path('views')))
-            ->filter(fn ($archivo): bool => str_contains($archivo->getContents(), 'logo-placeholder'))
+            ->filter(fn ($archivo): bool => str_contains($archivo->getContents(), 'logo-politecnico'))
             ->map(fn ($archivo): string => str_replace('\\', '/', $archivo->getRelativePathname()))
             ->values()
             ->all();
@@ -124,7 +124,7 @@ class NavegacionTest extends TestCase
 
     public function test_el_login_muestra_el_logo_y_lleva_a_la_portada(): void
     {
-        $this->get(route('login'))->assertOk()->assertSee('images/logo-placeholder.svg', false);
+        $this->get(route('login'))->assertOk()->assertSee('images/logo-politecnico.png', false);
 
         $usuario = Usuario::factory()->create();
 
