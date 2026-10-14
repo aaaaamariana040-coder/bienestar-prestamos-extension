@@ -198,6 +198,24 @@ Tabla física `tasas_dtf`.
 | monto_aplicado_capital | DECIMAL(18,2) | No | |
 | cedula_usu | VARCHAR(20) | No (FK) | Quien registró el pago |
 
+### proceso_quincena
+Tabla `procesos_quincena`. Solo se guarda el proceso real; la simulación no escribe nada.
+
+| Campo | Tipo | Nulo | Descripción |
+|---|---|---|---|
+| id_proceso | INT | No (PK) | |
+| anio | SMALLINT | No | |
+| numero_quincena | TINYINT | No | 1 a 24 |
+| tipo | VARCHAR | No | Simulación / Real (solo se persiste Real) |
+| estado | VARCHAR | No | Pendiente de confirmación / Completado |
+| modo_marcado | VARCHAR | No | confirmar / automatico, el vigente al ejecutar |
+| cedula_usu | VARCHAR(20) | No (FK) | Quien ejecutó; en el proceso automático es el usuario Sistema |
+| iniciado_en | DATETIME | No | |
+| finalizado_en | DATETIME | Sí | |
+| resumen | JSON | Sí | Cuotas, total, préstamos incluidos y excluidos con motivo, advertencias |
+
+Restricción única `(anio, numero_quincena, tipo)`: impide dos procesos reales de la misma quincena del mismo año.
+
 ### desembolso
 | Campo | Tipo | Nulo | Descripción |
 |---|---|---|---|
