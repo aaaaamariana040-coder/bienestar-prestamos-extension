@@ -20,7 +20,7 @@
                 @endauth
 
                 <a class="navbar-brand d-flex align-items-center gap-2 mb-0" href="{{ route('inicio') }}">
-                    <x-logo :alto="32" />
+                    <x-logo :alto="44" barra />
                     <span>Bienestar Préstamos</span>
                 </a>
             </div>
