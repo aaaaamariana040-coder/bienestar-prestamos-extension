@@ -10,6 +10,7 @@ use App\Models\Pago;
 use App\Models\Prestamo;
 use App\Models\Usuario;
 use App\Services\AuditoriaService;
+use App\Services\PagoService;
 use Database\Seeders\SistemaUsuarioSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -129,5 +130,20 @@ class UsuarioSistemaYOrigenPagoTest extends TestCase
 
         $this->assertSame(OrigenPago::Automatico, $pago->fresh()->origen);
         $this->assertSame('Automático', $pago->fresh()->origen->value);
+    }
+
+    public function test_el_servicio_de_pagos_registra_el_origen_indicado_y_por_defecto_manual(): void
+    {
+        $this->seed(SistemaUsuarioSeeder::class);
+        $prestamo = Prestamo::factory()->create();
+        $cuotaManual = Cuota::factory()->create(['id_prestamo' => $prestamo->id_prestamo, 'numero_cuota' => 1, 'estado' => EstadoCuota::Pendiente]);
+        $cuotaAutomatica = Cuota::factory()->create(['id_prestamo' => $prestamo->id_prestamo, 'numero_cuota' => 2, 'estado' => EstadoCuota::Pendiente]);
+        $servicio = app(PagoService::class);
+
+        $manual = $servicio->registrarPagoCuota($prestamo, $cuotaManual, '2026-02-01', Usuario::sistema());
+        $automatico = $servicio->registrarPagoCuota($prestamo, $cuotaAutomatica, '2026-02-01', Usuario::sistema(), OrigenPago::Automatico);
+
+        $this->assertSame(OrigenPago::Manual, $manual->fresh()->origen);
+        $this->assertSame(OrigenPago::Automatico, $automatico->fresh()->origen);
     }
 }
