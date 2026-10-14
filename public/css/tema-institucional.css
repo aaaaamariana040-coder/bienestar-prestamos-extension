@@ -478,3 +478,7 @@ body .btn-alternar-menu:focus {
     width: auto;
     max-width: 100%;
 }
+
+.logo-aplicacion.logo-barra {
+    background-color: var(--color-primario);
+}
