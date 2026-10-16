@@ -19,16 +19,18 @@ class UsuarioPolicy
 
     public function update(Usuario $actor, Usuario $usuario): bool
     {
-        return $actor->rol === RolUsuario::Administrador;
+        return $actor->rol === RolUsuario::Administrador && ! $usuario->esSistema();
     }
 
     public function habilitar(Usuario $actor, Usuario $usuario): bool
     {
-        return $actor->rol === RolUsuario::Administrador;
+        return $actor->rol === RolUsuario::Administrador && ! $usuario->esSistema();
     }
 
     public function deshabilitar(Usuario $actor, Usuario $usuario): bool
     {
-        return $actor->rol === RolUsuario::Administrador && $usuario->rol !== RolUsuario::Administrador;
+        return $actor->rol === RolUsuario::Administrador
+            && $usuario->rol !== RolUsuario::Administrador
+            && ! $usuario->esSistema();
     }
 }

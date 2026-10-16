@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EstadoCuota;
 use App\Enums\EstadoPrestamo;
 use Database\Factories\PrestamoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -91,6 +92,30 @@ class Prestamo extends Model
     public function desembolsos(): HasMany
     {
         return $this->hasMany(Desembolso::class, 'id_prestamo', 'id_prestamo')->orderBy('numero_tramo');
+    }
+
+    /**
+     * Cuántas cuotas lleva pagadas. Usa las cuotas ya cargadas si las hay.
+     */
+    public function cuotasPagadas(): int
+    {
+        if ($this->relationLoaded('cuotas')) {
+            return $this->cuotas->where('estado', EstadoCuota::Pagada)->count();
+        }
+
+        return $this->cuotas()->where('estado', EstadoCuota::Pagada)->count();
+    }
+
+    /**
+     * «Cuota 2 de 36»: pagadas sobre el total de cuotas actual (num_cuotas, que
+     * se ajusta al reliquidar). Un préstamo cancelado siempre muestra el total.
+     */
+    public function getProgresoCuotasAttribute(): string
+    {
+        $total = (int) $this->num_cuotas;
+        $pagadas = $this->estado === EstadoPrestamo::Cancelado ? $total : min($this->cuotasPagadas(), $total);
+
+        return "Cuota {$pagadas} de {$total}";
     }
 
     /**

@@ -1,0 +1,43 @@
+<?php
+
+/*
+ * Proceso de la quincena automática. Todo lo que depende de una decisión de
+ * Bienestar Social todavía abierta es configurable; el valor predeterminado
+ * siempre es la opción segura (nada se paga solo, nada corre solo).
+ * Ver docs/quincena-automatica.md.
+ */
+
+return [
+
+    /*
+     * Cuándo vence una cuota:
+     *  - calendario:    la quincena calendario (1-15 y 16-fin de mes) que
+     *                   contiene la fecha de vencimiento de la cuota.
+     *  - cada_15_dias:  ciclos de 15 días contados desde la autorización del
+     *                   préstamo.
+     */
+    'regla_vencimiento' => env('QUINCENA_REGLA_VENCIMIENTO', 'calendario'),
+
+    /*
+     * Qué hace el proceso real:
+     *  - confirmar:   solo registra el proceso con las cuotas pendientes de
+     *                 confirmar; no crea pagos.
+     *  - automatico:  crea los pagos con origen Automático a nombre del
+     *                 usuario Sistema.
+     */
+    'modo_marcado' => env('QUINCENA_MODO_MARCADO', 'confirmar'),
+
+    /*
+     * Desde cuándo corre la primera cuota: desde_aprobacion o desde_desembolso.
+     * Hoy las cuotas se generan desde la autorización; esta clave deja
+     * registrada la decisión de Bienestar y aún no cambia la generación.
+     */
+    'inicio_primera_cuota' => env('QUINCENA_INICIO_PRIMERA_CUOTA', 'desde_desembolso'),
+
+    /*
+     * Si el programador (schedule) ejecuta el proceso real el 15 y el último
+     * día de cada mes. Apagado por defecto.
+     */
+    'programador_activo' => (bool) env('QUINCENA_PROGRAMADOR_ACTIVO', false),
+
+];

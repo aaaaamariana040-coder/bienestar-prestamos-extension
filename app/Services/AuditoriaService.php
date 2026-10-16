@@ -19,4 +19,13 @@ class AuditoriaService
             'detalle' => $detalle,
         ]);
     }
+
+    /**
+     * Registra una acción automática, sin usuario con sesión, a nombre del
+     * usuario «Sistema».
+     */
+    public function registrarComoSistema(string $funcion, ?string $detalle = null): Auditoria
+    {
+        return $this->registrar(Usuario::sistema(), $funcion, $detalle);
+    }
 }

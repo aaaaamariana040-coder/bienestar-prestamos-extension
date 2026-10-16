@@ -15,7 +15,7 @@ class UsuarioController extends Controller
     {
         $this->authorize('viewAny', Usuario::class);
 
-        $usuarios = Usuario::orderBy('nombre')->orderBy('apellido')->paginate(15);
+        $usuarios = Usuario::sinSistema()->orderBy('nombre')->orderBy('apellido')->paginate(15);
 
         return view('usuarios.index', compact('usuarios'));
     }

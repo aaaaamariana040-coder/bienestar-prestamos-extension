@@ -200,7 +200,7 @@ class SimuladorCreditoService
     }
 
     /**
-     * @return list<array{modalidad: string, monto_desembolsado: float, saldo_pendiente: float, cuota_quincenal: float}>
+     * @return list<array{modalidad: string, monto_desembolsado: float, saldo_pendiente: float, cuota_quincenal: float, progreso_cuotas: string}>
      */
     private function prestamosVigentes(Empleado $empleado): array
     {
@@ -209,6 +209,7 @@ class SimuladorCreditoService
             'monto_desembolsado' => (float) $prestamo->desembolsos()->where('estado', EstadoDesembolso::Realizado)->sum('valor'),
             'saldo_pendiente' => (float) $prestamo->cuotas()->where('estado', '!=', EstadoCuota::Pagada)->sum('valor_capital'),
             'cuota_quincenal' => (float) $prestamo->cuota_periodica,
+            'progreso_cuotas' => $prestamo->progreso_cuotas,
         ])->all();
     }
 
