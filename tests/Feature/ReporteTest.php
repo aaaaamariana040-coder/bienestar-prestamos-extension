@@ -171,7 +171,23 @@ class ReporteTest extends TestCase
 
         $this->actingAs($funcionario)
             ->get(route('empleados.index'))
-            ->assertSee('href="'.route('reportes.prestamos').'"', false);
+            ->assertSee('href="'.route('reportes.historial-pagos').'"', false);
+    }
+
+    public function test_el_resumen_de_pagos_se_llama_asi_en_el_menu_pagos_y_en_su_titulo(): void
+    {
+        $funcionario = Usuario::factory()->create();
+
+        $respuesta = $this->actingAs($funcionario)->get(route('reportes.pagos'))
+            ->assertOk()
+            ->assertSee('<h1 class="h3 mb-4">Resumen de pagos</h1>', false)
+            ->assertDontSee('Reporte de pagos');
+
+        preg_match('/id="grupo-pagos".*?<\/div>/s', $respuesta->getContent(), $grupo);
+
+        $this->assertStringContainsString('Resumen de pagos', $grupo[0]);
+        $this->assertStringContainsString('href="'.route('reportes.pagos').'"', $grupo[0]);
+        $this->assertStringNotContainsString('Historial de pagos', $grupo[0]);
     }
 
     public function test_un_usuario_deshabilitado_con_sesion_activa_no_puede_ver_los_reportes(): void

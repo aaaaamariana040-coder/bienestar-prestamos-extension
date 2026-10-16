@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             TasaVehiculoSeeder::class,
             TipoPrestamoSeeder::class,
             TipoDocumentoSeeder::class,
+            SistemaUsuarioSeeder::class,
         ]);
     }
 }

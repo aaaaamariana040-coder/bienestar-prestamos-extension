@@ -209,7 +209,7 @@ class SimuladorPantallaTest extends TestCase
 
         $this->assertCount(2, $datos['prestamos']);
         $this->assertSame(
-            ['modalidad' => 'Educación', 'monto_desembolsado' => 8_000_000, 'saldo_pendiente' => 5_000_000, 'cuota_quincenal' => 100_000],
+            ['modalidad' => 'Educación', 'monto_desembolsado' => 8_000_000, 'saldo_pendiente' => 5_000_000, 'cuota_quincenal' => 100_000, 'progreso_cuotas' => 'Cuota 1 de 4'],
             $datos['prestamos'][0],
         );
         $this->assertSame('Calamidad doméstica y necesidades especiales', $datos['prestamos'][1]['modalidad']);

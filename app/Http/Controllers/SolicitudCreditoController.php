@@ -19,15 +19,18 @@ use RuntimeException;
 
 class SolicitudCreditoController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('viewAny', SolicitudCredito::class);
 
+        $cedula = substr(preg_replace('/\D+/', '', (string) $request->query('cedula', '')), 0, 10);
+
         $solicitudes = SolicitudCredito::with(['empleado', 'tipoPrestamo'])
+            ->when($cedula !== '', fn ($consulta) => $consulta->where('cedula_empleado', 'like', $cedula.'%'))
             ->orderByDesc('fecha_solicitud')
             ->get();
 
-        return view('solicitudes.index', compact('solicitudes'));
+        return view('solicitudes.index', compact('solicitudes', 'cedula'));
     }
 
     public function create(): View

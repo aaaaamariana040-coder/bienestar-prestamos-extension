@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OrigenPago;
 use App\Enums\TipoPago;
 use Database\Factories\PagoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'fecha_pago',
     'monto',
     'tipo',
+    'origen',
     'monto_aplicado_interes',
     'monto_aplicado_capital',
     'cedula_usu',
@@ -37,6 +39,7 @@ class Pago extends Model
             'fecha_pago' => 'date',
             'monto' => 'decimal:2',
             'tipo' => TipoPago::class,
+            'origen' => OrigenPago::class,
             'monto_aplicado_interes' => 'decimal:2',
             'monto_aplicado_capital' => 'decimal:2',
         ];

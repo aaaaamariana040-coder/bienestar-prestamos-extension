@@ -25,6 +25,40 @@ class NavegacionTest extends TestCase
             ->assertDontSee('<table', false);
     }
 
+    public function test_la_portada_muestra_el_titulo_justo_debajo_del_logo(): void
+    {
+        $this->actingAs(Usuario::factory()->create())
+            ->get(route('inicio'))
+            ->assertOk()
+            ->assertSeeInOrder([
+                '<div class="portada-marca">',
+                'images/logo-politecnico.png',
+                '<h1 class="portada-titulo">Bienestar Préstamos</h1>',
+                '</div>',
+                'Hola, <strong>',
+            ], false);
+    }
+
+    public function test_el_logo_y_el_titulo_de_la_portada_se_apilan_en_columna_solo_en_la_portada(): void
+    {
+        $css = File::get(public_path('css/tema-institucional.css'));
+
+        $this->assertMatchesRegularExpression(
+            '/\.portada-marca\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*align-items:\s*center;/',
+            $css
+        );
+        $this->assertMatchesRegularExpression('/\.portada-logo\s*\{[^}]*max-width:\s*100%;/', $css);
+        $this->assertStringContainsString('border-bottom: 4px solid var(--color-acento)', $css);
+
+        $vistasConPortadaMarca = collect(File::allFiles(resource_path('views')))
+            ->filter(fn ($archivo): bool => str_contains($archivo->getContents(), 'portada-marca'))
+            ->map(fn ($archivo): string => str_replace('\\', '/', $archivo->getRelativePathname()))
+            ->values()
+            ->all();
+
+        $this->assertSame(['inicio.blade.php'], $vistasConPortadaMarca);
+    }
+
     public function test_la_portada_exige_sesion(): void
     {
         $this->get(route('inicio'))->assertRedirect(route('login'));

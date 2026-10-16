@@ -117,6 +117,8 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
 
     Route::get('reportes/prestamos', [ReporteController::class, 'prestamos'])->name('reportes.prestamos');
     Route::get('reportes/pagos', [ReporteController::class, 'pagos'])->name('reportes.pagos');
+    Route::get('reportes/historial-pagos', [ReporteController::class, 'historialPagos'])->name('reportes.historial-pagos');
+    Route::get('reportes/historial-pagos/imprimir', [ReporteController::class, 'imprimirHistorialPagos'])->name('reportes.historial-pagos.imprimir');
     Route::get('reportes/cartera', [ReporteController::class, 'cartera'])->name('reportes.cartera');
     Route::get('reportes/presupuesto', [ReporteController::class, 'presupuesto'])->name('reportes.presupuesto');
 

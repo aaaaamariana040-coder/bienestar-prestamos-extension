@@ -2,9 +2,11 @@
 
 @section('content')
     <section class="portada text-center">
-        <x-logo :alto="160" class="portada-logo" />
+        <div class="portada-marca">
+            <x-logo :alto="160" class="portada-logo" />
 
-        <h1 class="portada-titulo">Bienestar Préstamos</h1>
+            <h1 class="portada-titulo">Bienestar Préstamos</h1>
+        </div>
         <p class="portada-subtitulo">
             Gestión de préstamos de Bienestar Social<br>
             Politécnico Colombiano Jaime Isaza Cadavid

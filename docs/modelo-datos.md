@@ -44,6 +44,8 @@ El sistema tiene **20 tablas propias** (verificadas contra las migraciones). Los
 
 > El nombre completo ya no se almacena: el modelo lo compone como `nombre` + `apellido` (accesor `nombre_completo`). La cédula de un usuario sigue la misma regla que la del empleado (solo dígitos, máximo 10).
 
+> El usuario «Sistema» (cédula reservada `0000000000`) existe para registrar a su nombre las acciones automáticas en auditoría y, más adelante, los pagos automáticos. Se llama «Sistema» (sin apellido), está deshabilitado y con una contraseña aleatoria desconocida, así que no puede iniciar sesión; lo crea `SistemaUsuarioSeeder`. Está protegido: no aparece en el listado de usuarios, no se puede editar, habilitar, cambiarle el rol o la contraseña ni eliminar (por pantalla o por rutas directas), y no se puede crear otro usuario con esa cédula. Sigue apareciendo como autor en la auditoría y en los pagos automáticos.
+
 > Solo existen dos roles fijos, con diferencias fijas: el Funcionario tiene las mismas funciones que el Administrador, salvo la gestión de cuentas de usuario y la consulta de auditoría, que son exclusivas del Administrador. Los reportes e indicadores son para ambos roles. No se modela como tabla de permisos independiente por ahora.
 
 ### empleado
@@ -191,9 +193,28 @@ Tabla física `tasas_dtf`.
 | fecha_pago | DATE | No | |
 | monto | DECIMAL(18,2) | No | |
 | tipo | VARCHAR(20) | No | Regular / Abono extraordinario / Cancelación |
+| origen | VARCHAR(20) | No | Manual (registrado por una persona desde la pantalla) / Automático (proceso de la quincena). Por defecto Manual; los pagos anteriores a la columna quedan como Manual |
 | monto_aplicado_interes | DECIMAL(18,2) | No | Se aplica primero a intereses |
 | monto_aplicado_capital | DECIMAL(18,2) | No | |
 | cedula_usu | VARCHAR(20) | No (FK) | Quien registró el pago |
+
+### proceso_quincena
+Tabla `procesos_quincena`. Solo se guarda el proceso real; la simulación no escribe nada.
+
+| Campo | Tipo | Nulo | Descripción |
+|---|---|---|---|
+| id_proceso | INT | No (PK) | |
+| anio | SMALLINT | No | |
+| numero_quincena | TINYINT | No | 1 a 24 |
+| tipo | VARCHAR | No | Simulación / Real (solo se persiste Real) |
+| estado | VARCHAR | No | Pendiente de confirmación / Completado |
+| modo_marcado | VARCHAR | No | confirmar / automatico, el vigente al ejecutar |
+| cedula_usu | VARCHAR(20) | No (FK) | Quien ejecutó; en el proceso automático es el usuario Sistema |
+| iniciado_en | DATETIME | No | |
+| finalizado_en | DATETIME | Sí | |
+| resumen | JSON | Sí | Cuotas, total, préstamos incluidos y excluidos con motivo, advertencias |
+
+Restricción única `(anio, numero_quincena, tipo)`: impide dos procesos reales de la misma quincena del mismo año.
 
 ### desembolso
 | Campo | Tipo | Nulo | Descripción |

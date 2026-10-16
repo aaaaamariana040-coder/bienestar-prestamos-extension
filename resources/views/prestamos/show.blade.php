@@ -39,6 +39,10 @@
                 <td>{{ \App\Models\TipoPrestamo::plazoEnQuincenas($prestamo->num_cuotas) }}</td>
             </tr>
             <tr>
+                <th>Cuotas pagadas</th>
+                <td>{{ $prestamo->progreso_cuotas }}</td>
+            </tr>
+            <tr>
                 <th>Fecha de autorización</th>
                 <td>{{ $prestamo->fecha_autorizacion->format('Y-m-d') }}</td>
             </tr>

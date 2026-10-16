@@ -8,6 +8,21 @@
         @endcan
     </div>
 
+    <form method="GET" action="{{ route('solicitudes.index') }}" class="row g-2 align-items-end mb-3">
+        <div class="col-md-4">
+            <label for="cedula" class="form-label">Buscar por cédula</label>
+            <x-buscador-cedula modo="filtro" id="cedula" name="cedula" :valor="$cedula" objetivo="resultados-solicitudes" />
+        </div>
+
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </div>
+    </form>
+
+    <div id="resultados-solicitudes">
+    @if ($cedula !== '' && $solicitudes->isEmpty())
+        <div class="alert alert-info" role="status">No hay solicitudes con esa cédula.</div>
+    @else
     <table class="table table-striped bg-white align-middle">
         <thead>
             <tr>
@@ -40,4 +55,6 @@
             @endforelse
         </tbody>
     </table>
+    @endif
+    </div>
 @endsection

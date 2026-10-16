@@ -401,8 +401,22 @@ body .btn-alternar-menu:focus {
     padding: 3rem 1rem;
 }
 
+/* Logo y título en columna: el título es inline-block (para que la raya amarilla ajuste al texto) y el logo es una imagen en línea, así que sin este contenedor compartían fila. */
+.portada-marca {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .portada-logo {
     margin-bottom: 1.5rem;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.portada-marca .portada-titulo {
+    max-width: 100%;
+    margin-bottom: 0;
 }
 
 .portada-titulo {
@@ -481,4 +495,101 @@ body .btn-alternar-menu:focus {
 
 .logo-aplicacion.logo-barra {
     background-color: var(--color-primario);
+}
+
+/* Impresión (Historial de pagos): sin menú, botones ni buscadores; con logo y título. */
+.solo-impresion {
+    display: none;
+}
+
+@media print {
+    .barra-superior,
+    .menu-lateral,
+    .menu-fondo,
+    .no-imprimir,
+    .pagination,
+    nav[aria-label="Navegación de paginación"] {
+        display: none !important;
+    }
+
+    .solo-impresion {
+        display: block;
+    }
+
+    body {
+        background: #fff !important;
+    }
+
+    .contenedor-app,
+    .contenido-principal,
+    .contenido-ancho {
+        display: block;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+    }
+
+    .logo-aplicacion {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* Historial de pagos, solo en pantalla: la Q cabe mejor y, si es más ancha que la pantalla,
+   se desplaza de forma evidente con Cédula y Nombre fijas a la izquierda. */
+@media screen {
+    .historial-q-contenedor {
+        overflow-x: auto;
+        scrollbar-width: auto;
+        scrollbar-color: var(--color-primario) #dee2e6;
+        padding-bottom: 0.25rem;
+    }
+
+    .historial-q-contenedor::-webkit-scrollbar {
+        height: 14px;
+    }
+
+    .historial-q-contenedor::-webkit-scrollbar-track {
+        background: #dee2e6;
+    }
+
+    .historial-q-contenedor::-webkit-scrollbar-thumb {
+        background: var(--color-primario);
+        border-radius: 7px;
+    }
+
+    .historial-q-pantalla {
+        font-size: 0.8rem;
+    }
+
+    .historial-q-pantalla th,
+    .historial-q-pantalla td {
+        padding: 0.2rem 0.4rem;
+    }
+
+    .historial-q-pantalla th:first-child,
+    .historial-q-pantalla td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        min-width: 7.5rem;
+        max-width: 7.5rem;
+        background-color: #fff;
+        white-space: nowrap;
+    }
+
+    .historial-q-pantalla th:nth-child(2),
+    .historial-q-pantalla td:nth-child(2) {
+        position: sticky;
+        left: 7.5rem;
+        z-index: 2;
+        min-width: 11rem;
+        background-color: #fff;
+        box-shadow: 2px 0 0 #dee2e6;
+    }
+
+    .historial-q-pantalla th:last-child,
+    .historial-q-pantalla td:last-child {
+        min-width: 18rem;
+    }
 }

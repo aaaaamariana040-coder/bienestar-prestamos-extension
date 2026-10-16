@@ -52,7 +52,7 @@
             'items' => [
                 // Los pagos y abonos se registran desde el detalle de cada préstamo.
                 ['texto' => 'Registrar pago o abono', 'ruta' => 'prestamos.index', 'activo' => null, 'visible' => $usuario->can('viewAny', \App\Models\Prestamo::class)],
-                ['texto' => 'Historial de pagos', 'ruta' => 'reportes.pagos', 'activo' => 'reportes.pagos', 'visible' => $usuario->can('reportes.ver')],
+                ['texto' => 'Resumen de pagos', 'ruta' => 'reportes.pagos', 'activo' => 'reportes.pagos', 'visible' => $usuario->can('reportes.ver')],
             ],
         ],
         [
@@ -60,10 +60,10 @@
             'titulo' => 'Reportes',
             'icono' => 'reportes',
             'items' => [
-                ['texto' => 'Préstamos', 'ruta' => 'reportes.prestamos', 'activo' => 'reportes.prestamos', 'visible' => $usuario->can('reportes.ver')],
+                ['texto' => 'Historial de pagos', 'ruta' => 'reportes.historial-pagos', 'activo' => 'reportes.historial-pagos*', 'visible' => $usuario->can('reportes.ver')],
                 ['texto' => 'Cartera', 'ruta' => 'reportes.cartera', 'activo' => 'reportes.cartera', 'visible' => $usuario->can('reportes.ver')],
                 ['texto' => 'Presupuesto', 'ruta' => 'reportes.presupuesto', 'activo' => 'reportes.presupuesto', 'visible' => $usuario->can('reportes.ver')],
-                ['texto' => 'Informes guardados', 'ruta' => 'informes.index', 'activo' => 'informes.*', 'visible' => $usuario->can('reportes.ver')],
+                ['texto' => 'Informes', 'ruta' => 'informes.index', 'activo' => 'informes.*', 'visible' => $usuario->can('reportes.ver')],
             ],
         ],
     ];

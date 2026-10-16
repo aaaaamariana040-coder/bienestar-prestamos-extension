@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\RolUsuario;
 use App\Http\Requests\Concerns\ValidaContrasenaSegura;
+use App\Models\Usuario;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,7 +30,7 @@ class StoreUsuarioRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cedula' => ['required', 'regex:/^\d{1,10}$/', 'unique:usuarios,cedula'],
+            'cedula' => ['required', 'regex:/^\d{1,10}$/', Rule::notIn([Usuario::CEDULA_SISTEMA]), 'unique:usuarios,cedula'],
             'nombre' => ['required', 'string', 'max:80'],
             'apellido' => ['required', 'string', 'max:80'],
             'password' => $this->reglasContrasena(),
@@ -47,6 +48,7 @@ class StoreUsuarioRequest extends FormRequest
             'cedula.required' => 'La cédula es obligatoria.',
             'cedula.regex' => 'La cédula debe contener solo números, máximo 10 dígitos, sin puntos ni caracteres especiales.',
             'cedula.unique' => 'Ya existe un usuario con esa cédula.',
+            'cedula.not_in' => 'Esa cédula está reservada para el sistema.',
             'nombre.required' => 'El nombre es obligatorio.',
             'nombre.max' => 'El nombre no puede superar los 80 caracteres.',
             'apellido.required' => 'El apellido es obligatorio.',
