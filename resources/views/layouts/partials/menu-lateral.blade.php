@@ -63,7 +63,7 @@
                 ['texto' => 'Préstamos', 'ruta' => 'reportes.prestamos', 'activo' => 'reportes.prestamos', 'visible' => $usuario->can('reportes.ver')],
                 ['texto' => 'Cartera', 'ruta' => 'reportes.cartera', 'activo' => 'reportes.cartera', 'visible' => $usuario->can('reportes.ver')],
                 ['texto' => 'Presupuesto', 'ruta' => 'reportes.presupuesto', 'activo' => 'reportes.presupuesto', 'visible' => $usuario->can('reportes.ver')],
-                ['texto' => 'Informes guardados', 'ruta' => 'informes.index', 'activo' => 'informes.*', 'visible' => $usuario->can('reportes.ver')],
+                ['texto' => 'Informes', 'ruta' => 'informes.index', 'activo' => 'informes.*', 'visible' => $usuario->can('reportes.ver')],
             ],
         ],
     ];

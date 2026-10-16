@@ -334,6 +334,22 @@ class InformeGuardadoTest extends TestCase
             ->assertSee('Generar y guardar informe');
     }
 
+    public function test_el_menu_reportes_y_el_titulo_de_la_pantalla_se_llaman_informes(): void
+    {
+        $funcionario = Usuario::factory()->create();
+
+        $this->actingAs($funcionario)
+            ->get(route('informes.index'))
+            ->assertOk()
+            ->assertSee('<h1 class="h3 mb-4">Informes</h1>', false)
+            ->assertSeeInOrder(['href="'.route('informes.index').'"', 'Informes'], false)
+            ->assertDontSee('<h1 class="h3 mb-4">Informes guardados</h1>', false);
+
+        $this->actingAs($funcionario)
+            ->get(route('inicio'))
+            ->assertDontSee('>Informes guardados<', false);
+    }
+
     public function test_un_usuario_deshabilitado_o_invitado_no_accede_a_los_informes(): void
     {
         $informe = InformeGuardado::factory()->create();

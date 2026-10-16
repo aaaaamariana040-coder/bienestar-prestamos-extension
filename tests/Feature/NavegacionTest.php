@@ -25,6 +25,18 @@ class NavegacionTest extends TestCase
             ->assertDontSee('<table', false);
     }
 
+    public function test_la_portada_muestra_el_titulo_justo_debajo_del_logo(): void
+    {
+        $this->actingAs(Usuario::factory()->create())
+            ->get(route('inicio'))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'images/logo-politecnico.png',
+                '<h1 class="portada-titulo">Bienestar Préstamos</h1>',
+                'Hola, <strong>',
+            ], false);
+    }
+
     public function test_la_portada_exige_sesion(): void
     {
         $this->get(route('inicio'))->assertRedirect(route('login'));
