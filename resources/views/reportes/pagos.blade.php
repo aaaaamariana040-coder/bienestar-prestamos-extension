@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1 class="h3 mb-4">Reporte de pagos</h1>
+    <h1 class="h3 mb-4">Resumen de pagos</h1>
 
     <form method="GET" action="{{ route('reportes.pagos') }}" class="row g-2 align-items-end mb-4">
         <div class="col-auto">

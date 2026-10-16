@@ -52,7 +52,7 @@
             'items' => [
                 // Los pagos y abonos se registran desde el detalle de cada préstamo.
                 ['texto' => 'Registrar pago o abono', 'ruta' => 'prestamos.index', 'activo' => null, 'visible' => $usuario->can('viewAny', \App\Models\Prestamo::class)],
-                ['texto' => 'Historial de pagos', 'ruta' => 'reportes.pagos', 'activo' => 'reportes.pagos', 'visible' => $usuario->can('reportes.ver')],
+                ['texto' => 'Resumen de pagos', 'ruta' => 'reportes.pagos', 'activo' => 'reportes.pagos', 'visible' => $usuario->can('reportes.ver')],
             ],
         ],
         [
