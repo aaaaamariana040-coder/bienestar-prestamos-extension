@@ -171,7 +171,7 @@ class ReporteTest extends TestCase
 
         $this->actingAs($funcionario)
             ->get(route('empleados.index'))
-            ->assertSee('href="'.route('reportes.prestamos').'"', false);
+            ->assertSee('href="'.route('reportes.historial-pagos').'"', false);
     }
 
     public function test_un_usuario_deshabilitado_con_sesion_activa_no_puede_ver_los_reportes(): void

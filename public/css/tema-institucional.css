@@ -496,3 +496,41 @@ body .btn-alternar-menu:focus {
 .logo-aplicacion.logo-barra {
     background-color: var(--color-primario);
 }
+
+/* Impresión (Historial de pagos): sin menú, botones ni buscadores; con logo y título. */
+.solo-impresion {
+    display: none;
+}
+
+@media print {
+    .barra-superior,
+    .menu-lateral,
+    .menu-fondo,
+    .no-imprimir,
+    .pagination,
+    nav[aria-label="Navegación de paginación"] {
+        display: none !important;
+    }
+
+    .solo-impresion {
+        display: block;
+    }
+
+    body {
+        background: #fff !important;
+    }
+
+    .contenedor-app,
+    .contenido-principal,
+    .contenido-ancho {
+        display: block;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+    }
+
+    .logo-aplicacion {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
