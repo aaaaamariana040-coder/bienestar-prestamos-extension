@@ -328,6 +328,65 @@ class HistorialPagosTest extends TestCase
             ->assertSee('Q10 de 2026');
     }
 
+    public function test_la_impresion_de_la_q_es_a4_horizontal_con_encabezado_repetible_y_filas_enteras(): void
+    {
+        $this->empleado('1000000001');
+
+        $html = $this->actingAs(Usuario::factory()->create())
+            ->get(route('reportes.historial-pagos.imprimir', ['anio' => 2026, 'quincena' => 10]))
+            ->assertOk()
+            ->assertSee('class="impresion-historial impresion-q"', false)
+            ->getContent();
+
+        $this->assertStringContainsString('@page { size: A4 landscape; margin: 10mm; }', $html);
+        $this->assertStringNotContainsString('A4 portrait', $html);
+        $this->assertStringContainsString('thead { display: table-header-group; }', $html);
+        $this->assertStringContainsString('page-break-inside: avoid', $html);
+        $this->assertStringContainsString('table-layout: fixed', $html);
+        $this->assertStringContainsString('width: 100%', $html);
+        $this->assertStringContainsString('font-size: 7.5pt', $html);
+        $this->assertStringContainsString('overflow-wrap: anywhere', $html);
+        $this->assertStringContainsString('overflow: visible !important', $html);
+        $this->assertStringContainsString('border: 0.5pt solid #555', $html);
+        $this->assertStringContainsString('background: transparent !important', $html);
+        $this->assertStringContainsString('<thead>', $html);
+        $this->assertSame(16, substr_count($html, '.historial-q th:nth-child('));
+    }
+
+    public function test_la_impresion_individual_cabe_en_a4_vertical_con_las_mismas_reglas_de_tabla(): void
+    {
+        $tipo = TipoPrestamo::factory()->create();
+        $this->pagarCuota($this->prestamo($this->empleado('1000000001'), $tipo), 1, '2026-03-15');
+
+        $html = $this->actingAs(Usuario::factory()->create())
+            ->get(route('reportes.historial-pagos.imprimir', [
+                'tipo' => 'individual', 'anio' => 2026, 'quincena' => 10, 'cedula' => '1000000001',
+                'modalidad' => $tipo->id_tipo, 'desde' => '2026-03-01', 'hasta' => '2026-03-31',
+            ]))
+            ->assertOk()
+            ->assertSee('class="impresion-historial impresion-individual"', false)
+            ->getContent();
+
+        $this->assertStringContainsString('@page { size: A4 portrait; margin: 10mm; }', $html);
+        $this->assertStringNotContainsString('A4 landscape', $html);
+        $this->assertStringContainsString('thead { display: table-header-group; }', $html);
+        $this->assertStringContainsString('page-break-inside: avoid', $html);
+        $this->assertStringContainsString('table-layout: fixed', $html);
+    }
+
+    public function test_los_estilos_de_impresion_solo_estan_en_las_vistas_de_impresion(): void
+    {
+        $css = file_get_contents(public_path('css/tema-institucional.css'));
+
+        $this->assertStringNotContainsString('table-header-group', $css);
+        $this->assertStringNotContainsString('A4 landscape', $css);
+
+        $this->ver()
+            ->assertOk()
+            ->assertDontSee('A4 landscape', false)
+            ->assertDontSee('table-layout: fixed', false);
+    }
+
     public function test_la_impresion_individual_sin_datos_validos_vuelve_a_la_pantalla(): void
     {
         $this->empleado('1000000001');
