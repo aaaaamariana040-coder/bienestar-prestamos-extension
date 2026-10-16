@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Enums\EstadoPrestamo;
-use App\Enums\TipoPago;
+use App\Models\Cuota;
 use App\Models\Empleado;
 use App\Models\Pago;
 use App\Models\Prestamo;
@@ -96,8 +96,9 @@ class HistorialPagosService
     }
 
     /**
-     * Créditos vigentes (Vigente y En mora) por empleado, con las cuotas pagadas hasta el cierre
-     * de la quincena. Una sola consulta de pagos para todos los empleados recibidos.
+     * Créditos vigentes en la quincena por empleado (Vigente, En mora y los Cancelados cuyo último
+     * pago es posterior al cierre: ese día aún estaban vigentes), con las cuotas pagadas hasta el
+     * cierre. Dos consultas para todos los empleados recibidos, sin importar cuántos sean.
      *
      * @param  iterable<Empleado>  $empleados
      * @return array<string, list<object{modalidad: string, pagadas: int, total: int, cuota: string, estado: string}>>
@@ -105,11 +106,13 @@ class HistorialPagosService
     public function lineasDeCredito(iterable $empleados, Carbon $cierre): array
     {
         $empleados = collect($empleados);
-        $prestamos = $empleados->flatMap(fn (Empleado $empleado) => $empleado->prestamosActivos);
-        $pagadas = $this->cuotasPagadasHasta($prestamos->pluck('id_prestamo')->all(), $cierre);
+        $prestamos = $empleados->flatMap(fn (Empleado $empleado) => $empleado->prestamos);
+        $ultimosPagos = $this->ultimosPagosDeCancelados($prestamos);
+        $pagadas = $this->cuotasPagadasHasta($prestamos, $cierre, $ultimosPagos);
 
         return $empleados->mapWithKeys(fn (Empleado $empleado): array => [
-            $empleado->cedula => $empleado->prestamosActivos
+            $empleado->cedula => $empleado->prestamos
+                ->reject(fn (Prestamo $prestamo): bool => $this->canceladoAl($prestamo, $ultimosPagos, $cierre))
                 ->sortBy('id_prestamo')
                 ->map(fn (Prestamo $prestamo): object => $this->linea($prestamo, $pagadas))
                 ->values()
@@ -129,9 +132,93 @@ class HistorialPagosService
             ->orderBy('id_prestamo')
             ->get();
 
-        $pagadas = $this->cuotasPagadasHasta($prestamos->pluck('id_prestamo')->all(), $cierre);
+        $pagadas = $this->cuotasPagadasHasta($prestamos, $cierre);
 
         return $prestamos->map(fn (Prestamo $prestamo): object => $this->linea($prestamo, $pagadas))->all();
+    }
+
+    /**
+     * Variante «hasta una fecha» de Prestamo::cuotasPagadas(): mismo criterio de cuota pagada
+     * (Cuota::pagadas) y mismo tope al total (Prestamo::toparAlTotal), pero solo las que ya
+     * tenían un pago con fecha hasta el cierre. Una sola consulta agrupada para todos los préstamos.
+     *
+     * Un préstamo Cancelado cuyo último pago es igual o anterior al cierre cuenta como pagado
+     * por completo (total de total), igual que progreso_cuotas hoy. Si el cierre es anterior a
+     * su último pago, se cuentan solo las cuotas pagadas hasta el cierre. No hay un campo de fecha
+     * de cancelación: se usa la fecha del último pago registrado.
+     *
+     * @param  iterable<Prestamo>  $prestamos
+     * @param  array<int, string|null>|null  $ultimosPagos  resultado de ultimosPagosDeCancelados(), si ya se calculó
+     * @return array<int, int> cuotas pagadas por id de préstamo
+     */
+    public function cuotasPagadasHasta(iterable $prestamos, Carbon $cierre, ?array $ultimosPagos = null): array
+    {
+        $prestamos = collect($prestamos);
+
+        if ($prestamos->isEmpty()) {
+            return [];
+        }
+
+        $ultimosPagos ??= $this->ultimosPagosDeCancelados($prestamos);
+
+        $conteo = Cuota::query()
+            ->pagadasHasta($cierre)
+            ->whereIn('id_prestamo', $prestamos->pluck('id_prestamo')->all())
+            ->selectRaw('id_prestamo, count(*) as pagadas')
+            ->groupBy('id_prestamo')
+            ->pluck('pagadas', 'id_prestamo');
+
+        return $prestamos->mapWithKeys(function (Prestamo $prestamo) use ($conteo, $ultimosPagos, $cierre): array {
+            $total = (int) $prestamo->num_cuotas;
+
+            return [$prestamo->id_prestamo => $this->canceladoAl($prestamo, $ultimosPagos, $cierre)
+                ? $total
+                : Prestamo::toparAlTotal((int) ($conteo[$prestamo->id_prestamo] ?? 0), $total)];
+        })->all();
+    }
+
+    /**
+     * Fecha del último pago de cada préstamo Cancelado (null si no tiene pagos). Una consulta;
+     * ninguna si no hay préstamos cancelados.
+     *
+     * @param  iterable<Prestamo>  $prestamos
+     * @return array<int, string|null>
+     */
+    public function ultimosPagosDeCancelados(iterable $prestamos): array
+    {
+        $ids = collect($prestamos)
+            ->filter(fn (Prestamo $prestamo): bool => $prestamo->estado === EstadoPrestamo::Cancelado)
+            ->pluck('id_prestamo')
+            ->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $ultimos = Pago::query()
+            ->whereIn('id_prestamo', $ids)
+            ->selectRaw('id_prestamo, max(fecha_pago) as ultimo')
+            ->groupBy('id_prestamo')
+            ->pluck('ultimo', 'id_prestamo')
+            ->all();
+
+        return collect($ids)->mapWithKeys(fn (int $id): array => [$id => $ultimos[$id] ?? null])->all();
+    }
+
+    /**
+     * ¿Ya estaba cancelado el préstamo al cierre? Cancelado y sin pagos posteriores al cierre.
+     *
+     * @param  array<int, string|null>  $ultimosPagos
+     */
+    private function canceladoAl(Prestamo $prestamo, array $ultimosPagos, Carbon $cierre): bool
+    {
+        if ($prestamo->estado !== EstadoPrestamo::Cancelado) {
+            return false;
+        }
+
+        $ultimo = $ultimosPagos[$prestamo->id_prestamo] ?? null;
+
+        return $ultimo === null || $cierre->greaterThanOrEqualTo(Carbon::parse($ultimo)->startOfDay());
     }
 
     /**
@@ -151,7 +238,7 @@ class HistorialPagosService
      */
     public function pagosEnRango(Empleado $empleado, int $idTipo, string $desde, string $hasta): Collection
     {
-        return Pago::with(['cuota', 'usuario'])
+        return Pago::with(['cuota', 'usuario', 'prestamo'])
             ->whereIn('id_prestamo', Prestamo::where('cedula_empleado', $empleado->cedula)->where('id_tipo', $idTipo)->select('id_prestamo'))
             ->whereDate('fecha_pago', '>=', $desde)
             ->whereDate('fecha_pago', '<=', $hasta)
@@ -179,31 +266,9 @@ class HistorialPagosService
     private function consultaQ(string $cedula)
     {
         return Empleado::query()
-            ->with('prestamosActivos.tipoPrestamo')
+            ->with('prestamos.tipoPrestamo')
             ->when($cedula !== '', fn ($consulta) => $consulta->where('cedula', 'like', $cedula.'%'))
             ->orderBy('cedula');
-    }
-
-    /**
-     * @param  list<int>  $idsPrestamo
-     * @return array<int, int>
-     */
-    private function cuotasPagadasHasta(array $idsPrestamo, Carbon $cierre): array
-    {
-        if ($idsPrestamo === []) {
-            return [];
-        }
-
-        return Pago::query()
-            ->whereIn('id_prestamo', $idsPrestamo)
-            ->where('tipo', TipoPago::Regular)
-            ->whereNotNull('id_cuota')
-            ->whereDate('fecha_pago', '<=', $cierre->toDateString())
-            ->selectRaw('id_prestamo, count(*) as pagadas')
-            ->groupBy('id_prestamo')
-            ->pluck('pagadas', 'id_prestamo')
-            ->map(fn ($pagadas): int => (int) $pagadas)
-            ->all();
     }
 
     /**

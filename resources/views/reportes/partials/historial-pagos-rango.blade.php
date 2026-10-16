@@ -18,6 +18,7 @@
                     <th>Fecha</th>
                     <th>Cuota</th>
                     <th>Tipo</th>
+                    <th>Origen</th>
                     <th class="text-end">Valor</th>
                     <th class="text-end">Capital</th>
                     <th class="text-end">Interés</th>
@@ -28,8 +29,9 @@
                 @foreach ($individual['pagos'] as $pago)
                     <tr>
                         <td>{{ $pago->fecha_pago->format('Y-m-d') }}</td>
-                        <td>{{ $pago->cuota?->numero_cuota ?? '—' }}</td>
+                        <td>{{ $pago->cuota !== null ? $pago->cuota->numero_cuota.' de '.$pago->prestamo->num_cuotas : '—' }}</td>
                         <td>{{ $pago->tipo->value }}</td>
+                        <td>{{ $pago->origen?->value ?? '—' }}</td>
                         <td class="text-end">{{ number_format($pago->monto, 2) }}</td>
                         <td class="text-end">{{ number_format($pago->monto_aplicado_capital, 2) }}</td>
                         <td class="text-end">{{ number_format($pago->monto_aplicado_interes, 2) }}</td>
@@ -39,7 +41,7 @@
             </tbody>
             <tfoot>
                 <tr class="fw-bold">
-                    <td colspan="3">Total pagado en el rango</td>
+                    <td colspan="4">Total pagado en el rango</td>
                     <td class="text-end" id="total-pagado">{{ number_format($individual['total'], 2) }}</td>
                     <td colspan="3"></td>
                 </tr>

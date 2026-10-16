@@ -103,7 +103,16 @@ class Prestamo extends Model
             return $this->cuotas->where('estado', EstadoCuota::Pagada)->count();
         }
 
-        return $this->cuotas()->where('estado', EstadoCuota::Pagada)->count();
+        return $this->cuotas()->pagadas()->count();
+    }
+
+    /**
+     * Tope común de «Cuota X de Y»: nunca se muestran más cuotas pagadas que el total
+     * actual (el total cambia al reliquidar). Lo usan progreso_cuotas y el Historial de pagos.
+     */
+    public static function toparAlTotal(int $pagadas, int $total): int
+    {
+        return min($pagadas, $total);
     }
 
     /**
@@ -113,7 +122,7 @@ class Prestamo extends Model
     public function getProgresoCuotasAttribute(): string
     {
         $total = (int) $this->num_cuotas;
-        $pagadas = $this->estado === EstadoPrestamo::Cancelado ? $total : min($this->cuotasPagadas(), $total);
+        $pagadas = $this->estado === EstadoPrestamo::Cancelado ? $total : self::toparAlTotal($this->cuotasPagadas(), $total);
 
         return "Cuota {$pagadas} de {$total}";
     }
