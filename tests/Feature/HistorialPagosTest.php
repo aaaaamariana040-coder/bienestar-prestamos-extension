@@ -55,20 +55,125 @@ class HistorialPagosTest extends TestCase
             ->get(route('reportes.historial-pagos', array_merge(['anio' => 2026, 'quincena' => 10], $consulta)));
     }
 
-    public function test_muestra_todas_las_columnas_y_con_guion_las_que_no_existen_en_la_base(): void
+    private const TODAS_LAS_COLUMNAS = ['Cédula', 'Nombre', 'Programa', 'Cargo', 'Ingreso', 'Nacimiento', 'Nivel', 'Grado', 'Asignación', 'EPS', 'Pensión', 'Centro de Costos', 'Sede', 'Jornada', 'Tipo Contrato'];
+
+    private const SIN_DATOS = ['Nacimiento', 'Nivel', 'Grado', 'EPS', 'Pensión', 'Centro de Costos', 'Sede', 'Jornada'];
+
+    public function test_la_impresion_conserva_las_15_columnas_y_con_guion_las_que_no_existen_en_la_base(): void
     {
         $this->empleado('1000000001');
 
-        $respuesta = $this->ver()->assertOk();
+        $respuesta = $this->actingAs(Usuario::factory()->create())
+            ->get(route('reportes.historial-pagos.imprimir', ['anio' => 2026, 'quincena' => 10]))
+            ->assertOk();
 
-        foreach (['Cédula', 'Nombre', 'Programa', 'Cargo', 'Ingreso', 'Nacimiento', 'Nivel', 'Grado', 'Asignación', 'EPS', 'Pensión', 'Centro de Costos', 'Sede', 'Jornada', 'Tipo Contrato'] as $titulo) {
+        foreach (self::TODAS_LAS_COLUMNAS as $titulo) {
             $respuesta->assertSee('<th>'.$titulo.'</th>', false);
         }
 
-        $faltantes = collect(HistorialPagosService::COLUMNAS)->filter(fn (array $columna): bool => $columna['campo'] === null)->pluck('titulo')->all();
-        $this->assertSame(['Nacimiento', 'Nivel', 'Grado', 'EPS', 'Pensión', 'Centro de Costos', 'Sede', 'Jornada'], $faltantes);
+        $respuesta->assertDontSee('historial-q-pantalla', false)->assertDontSee('Columnas sin datos aún')->assertSee('—');
 
-        $respuesta->assertSee('1000000001')->assertSee('—');
+        $faltantes = collect(HistorialPagosService::COLUMNAS)->filter(fn (array $columna): bool => $columna['campo'] === null)->pluck('titulo')->all();
+        $this->assertSame(self::SIN_DATOS, $faltantes);
+    }
+
+    public function test_en_pantalla_no_aparecen_las_columnas_vacias_para_todos_y_se_avisa_cuales(): void
+    {
+        $this->empleado('1000000001');
+        $this->empleado('1000000002');
+
+        $respuesta = $this->ver()->assertOk();
+
+        foreach (['Cédula', 'Nombre', 'Programa', 'Cargo', 'Ingreso', 'Asignación', 'Tipo Contrato'] as $titulo) {
+            $respuesta->assertSee('<th>'.$titulo.'</th>', false);
+        }
+
+        foreach (self::SIN_DATOS as $titulo) {
+            $respuesta->assertDontSee('<th>'.$titulo.'</th>', false);
+        }
+
+        $respuesta
+            ->assertSee('Columnas sin datos aún: Nacimiento, Nivel, Grado, EPS, Pensión, Centro de Costos, Sede, Jornada (se mostrarán cuando existan).')
+            ->assertSee('historial-q-pantalla', false);
+    }
+
+    public function test_una_columna_vacia_reaparece_sola_cuando_algun_empleado_tiene_el_dato(): void
+    {
+        $this->empleado('1000000001')->update(['cargo' => null, 'dependencia' => null]);
+        $conDatos = $this->empleado('1000000002');
+        $conDatos->update(['cargo' => null, 'dependencia' => null]);
+
+        $this->ver()
+            ->assertDontSee('<th>Cargo</th>', false)
+            ->assertDontSee('<th>Programa</th>', false)
+            ->assertSee('Columnas sin datos aún: Programa, Cargo, Nacimiento');
+
+        $conDatos->update(['cargo' => 'Profesional universitario']);
+
+        $this->ver()
+            ->assertSee('<th>Cargo</th>', false)
+            ->assertSee('Profesional universitario')
+            ->assertDontSee('<th>Programa</th>', false)
+            ->assertDontSee('Columnas sin datos aún: Programa, Cargo');
+    }
+
+    public function test_las_columnas_visibles_no_cambian_con_la_busqueda_en_vivo_ni_al_paginar(): void
+    {
+        $this->empleado('1000000001')->update(['cargo' => null]);
+        $this->empleado('2000000002')->update(['cargo' => 'Docente de planta']);
+
+        $titulos = function ($respuesta): array {
+            preg_match_all('/<th>([^<]+)<\/th>/', $respuesta->getContent(), $coincidencias);
+
+            return $coincidencias[1];
+        };
+
+        $completa = $this->ver();
+        // El fragmento que pide el buscador en vivo es la misma página filtrada por cédula.
+        $filtrada = $this->actingAs(Usuario::factory()->create())
+            ->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
+            ->get(route('reportes.historial-pagos', ['anio' => 2026, 'quincena' => 10, 'cedula' => '1000']));
+
+        // «Cargo» tiene dato solo en un empleado que el filtro dejó fuera: la columna sigue visible.
+        $completa->assertSee('<th>Cargo</th>', false);
+        $filtrada->assertSee('<th>Cargo</th>', false)->assertSee('id="resultados-historial"', false)->assertDontSee('Docente de planta');
+        $this->assertNotEmpty($titulos($completa));
+        $this->assertSame($titulos($completa), $titulos($filtrada));
+    }
+
+    public function test_la_pantalla_declara_desplazamiento_horizontal_visible_columnas_fijas_y_ancho_minimo(): void
+    {
+        $css = file_get_contents(public_path('css/tema-institucional.css'));
+
+        $this->assertMatchesRegularExpression('/@media screen\s*\{[^@]*\.historial-q-contenedor\s*\{[^}]*overflow-x:\s*auto/s', $css);
+        $this->assertMatchesRegularExpression('/\.historial-q-contenedor::-webkit-scrollbar\s*\{[^}]*height:\s*14px/s', $css);
+        $this->assertMatchesRegularExpression('/\.historial-q-pantalla th:first-child,\s*\.historial-q-pantalla td:first-child\s*\{[^}]*position:\s*sticky;[^}]*left:\s*0/s', $css);
+        $this->assertMatchesRegularExpression('/\.historial-q-pantalla th:nth-child\(2\),\s*\.historial-q-pantalla td:nth-child\(2\)\s*\{[^}]*position:\s*sticky/s', $css);
+        $this->assertMatchesRegularExpression('/\.historial-q-pantalla th:last-child,\s*\.historial-q-pantalla td:last-child\s*\{[^}]*min-width:\s*18rem/s', $css);
+        $this->assertMatchesRegularExpression('/\.historial-q-pantalla\s*\{[^}]*font-size:\s*0\.8rem/s', $css);
+
+        $this->empleado('1000000001');
+
+        $this->ver()->assertSee('table table-striped table-sm bg-white align-middle historial-q historial-q-pantalla', false);
+    }
+
+    public function test_la_impresion_conserva_sus_reglas_actuales(): void
+    {
+        $this->empleado('1000000001');
+
+        $html = $this->actingAs(Usuario::factory()->create())
+            ->get(route('reportes.historial-pagos.imprimir', ['anio' => 2026, 'quincena' => 10]))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('@page { size: A4 landscape; margin: 10mm; }', $html);
+        $this->assertStringContainsString('thead { display: table-header-group; }', $html);
+        $this->assertStringContainsString('page-break-inside: avoid', $html);
+        $this->assertStringContainsString('table-layout: fixed', $html);
+        $this->assertStringContainsString('font-size: 7.5pt', $html);
+        $this->assertSame(16, substr_count($html, '.historial-q th:nth-child('));
+        $this->assertSame(16, substr_count($html, '<th>'));
+        $this->assertStringNotContainsString('historial-q-contenedor', $html);
     }
 
     public function test_muestra_las_cuotas_pagadas_sobre_el_total_hasta_el_cierre_de_la_quincena(): void

@@ -1,9 +1,14 @@
-{{-- Tabla de la Q: datos del empleado y, por cada crédito vigente, modalidad · cuotas pagadas/total · valor de la cuota. --}}
-<div class="table-responsive">
-    <table class="table table-striped table-sm bg-white align-middle historial-q">
+{{-- Tabla de la Q: datos del empleado y, por cada crédito vigente, modalidad · cuotas pagadas/total · valor de la cuota.
+     En pantalla ($pantalla) recibe $columnasQ, solo las columnas con datos; la impresión muestra todas las de $columnas. --}}
+@php
+    $columnasTabla = $columnasQ ?? $columnas;
+    $enPantalla = $pantalla ?? false;
+@endphp
+<div class="table-responsive {{ $enPantalla ? 'historial-q-contenedor' : '' }}">
+    <table class="table table-striped table-sm bg-white align-middle historial-q {{ $enPantalla ? 'historial-q-pantalla' : '' }}">
         <thead>
             <tr>
-                @foreach ($columnas as $columna)
+                @foreach ($columnasTabla as $columna)
                     <th>{{ $columna['titulo'] }}</th>
                 @endforeach
                 <th>Crédito vigente <span class="fw-normal text-muted">(modalidad · cuotas · valor de la cuota)</span></th>
@@ -12,7 +17,7 @@
         <tbody>
             @forelse ($empleados as $empleado)
                 <tr>
-                    @foreach ($columnas as $columna)
+                    @foreach ($columnasTabla as $columna)
                         <td>{{ $historial->valorColumna($empleado, $columna['campo']) }}</td>
                     @endforeach
                     <td>
@@ -29,7 +34,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="{{ count($columnas) + 1 }}" class="text-center text-muted">{{ ($cedula ?? '') !== '' ? 'No hay empleados con esa cédula.' : 'No hay empleados registrados.' }}</td>
+                    <td colspan="{{ count($columnasTabla) + 1 }}" class="text-center text-muted">{{ ($cedula ?? '') !== '' ? 'No hay empleados con esa cédula.' : 'No hay empleados registrados.' }}</td>
                 </tr>
             @endforelse
         </tbody>

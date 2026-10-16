@@ -48,6 +48,10 @@
             {{ $empleados->total() }} {{ $empleados->total() === 1 ? 'empleado' : 'empleados' }}
         </p>
 
+        @if ($columnasOcultas !== [])
+            <p class="small text-muted columnas-sin-datos">Columnas sin datos aún: {{ implode(', ', $columnasOcultas) }} (se mostrarán cuando existan).</p>
+        @endif
+
         @include('reportes.partials.historial-q-tabla')
 
         {{ $empleados->links() }}

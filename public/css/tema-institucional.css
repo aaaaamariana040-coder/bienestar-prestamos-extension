@@ -534,3 +534,62 @@ body .btn-alternar-menu:focus {
         print-color-adjust: exact;
     }
 }
+
+/* Historial de pagos, solo en pantalla: la Q cabe mejor y, si es más ancha que la pantalla,
+   se desplaza de forma evidente con Cédula y Nombre fijas a la izquierda. */
+@media screen {
+    .historial-q-contenedor {
+        overflow-x: auto;
+        scrollbar-width: auto;
+        scrollbar-color: var(--color-primario) #dee2e6;
+        padding-bottom: 0.25rem;
+    }
+
+    .historial-q-contenedor::-webkit-scrollbar {
+        height: 14px;
+    }
+
+    .historial-q-contenedor::-webkit-scrollbar-track {
+        background: #dee2e6;
+    }
+
+    .historial-q-contenedor::-webkit-scrollbar-thumb {
+        background: var(--color-primario);
+        border-radius: 7px;
+    }
+
+    .historial-q-pantalla {
+        font-size: 0.8rem;
+    }
+
+    .historial-q-pantalla th,
+    .historial-q-pantalla td {
+        padding: 0.2rem 0.4rem;
+    }
+
+    .historial-q-pantalla th:first-child,
+    .historial-q-pantalla td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        min-width: 7.5rem;
+        max-width: 7.5rem;
+        background-color: #fff;
+        white-space: nowrap;
+    }
+
+    .historial-q-pantalla th:nth-child(2),
+    .historial-q-pantalla td:nth-child(2) {
+        position: sticky;
+        left: 7.5rem;
+        z-index: 2;
+        min-width: 11rem;
+        background-color: #fff;
+        box-shadow: 2px 0 0 #dee2e6;
+    }
+
+    .historial-q-pantalla th:last-child,
+    .historial-q-pantalla td:last-child {
+        min-width: 18rem;
+    }
+}

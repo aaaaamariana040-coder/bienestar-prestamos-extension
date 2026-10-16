@@ -247,6 +247,45 @@ class HistorialPagosService
             ->get();
     }
 
+    /**
+     * Columnas de la Q que se muestran en pantalla: se ocultan las que no tienen dato en ningún
+     * empleado (las que no existen en la base y las vacías para todos). Se mira toda la Q, no la
+     * página, para que las columnas no cambien al paginar ni al buscar. Una sola consulta.
+     * Cédula y nombre siempre se muestran. La impresión sigue usando COLUMNAS completas.
+     *
+     * @return array{visibles: list<array{titulo: string, campo: string|null}>, ocultas: list<string>}
+     */
+    public function columnasConDatos(): array
+    {
+        $campos = collect(self::COLUMNAS)
+            ->pluck('campo')
+            ->filter(fn (?string $campo): bool => $campo !== null && ! in_array($campo, ['cedula', 'nombre_completo'], true))
+            ->values();
+
+        $resumen = Empleado::query()
+            ->toBase()
+            ->selectRaw('count(*) as total')
+            ->selectRaw($campos->map(fn (string $campo): string => "max(case when {$campo} is not null and {$campo} <> '' then 1 else 0 end) as {$campo}")->implode(', '))
+            ->first();
+
+        $visibles = [];
+        $ocultas = [];
+
+        foreach (self::COLUMNAS as $columna) {
+            $campo = $columna['campo'];
+            $siempre = $campo !== null && in_array($campo, ['cedula', 'nombre_completo'], true);
+            $conDatos = $campo !== null && (int) ($resumen->{$campo} ?? 0) === 1;
+
+            if ($siempre || $conDatos || (int) $resumen->total === 0) {
+                $visibles[] = $columna;
+            } else {
+                $ocultas[] = $columna['titulo'];
+            }
+        }
+
+        return ['visibles' => $visibles, 'ocultas' => $ocultas];
+    }
+
     public function valorColumna(Empleado $empleado, ?string $campo): string
     {
         if ($campo === null) {

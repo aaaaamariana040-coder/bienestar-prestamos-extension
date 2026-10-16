@@ -57,8 +57,13 @@ class ReporteController extends Controller
             ? $this->consultaIndividual($request, $historial, $empleados->first(), $q['cierre'])
             : null;
 
+        $columnasQ = $historial->columnasConDatos();
+
         return view('reportes.historial-pagos', [
             ...$q,
+            'pantalla' => true,
+            'columnasQ' => $columnasQ['visibles'],
+            'columnasOcultas' => $columnasQ['ocultas'],
             'empleados' => $empleados,
             'lineas' => $historial->lineasDeCredito($empleados->getCollection(), $q['cierre']),
             'individual' => $individual,
