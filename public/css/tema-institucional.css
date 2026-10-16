@@ -401,8 +401,22 @@ body .btn-alternar-menu:focus {
     padding: 3rem 1rem;
 }
 
+/* Logo y título en columna: el título es inline-block (para que la raya amarilla ajuste al texto) y el logo es una imagen en línea, así que sin este contenedor compartían fila. */
+.portada-marca {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .portada-logo {
     margin-bottom: 1.5rem;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.portada-marca .portada-titulo {
+    max-width: 100%;
+    margin-bottom: 0;
 }
 
 .portada-titulo {
