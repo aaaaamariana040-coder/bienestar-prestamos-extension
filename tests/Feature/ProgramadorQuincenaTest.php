@@ -33,7 +33,7 @@ class ProgramadorQuincenaTest extends TestCase
 
     public function test_activo_corre_el_ultimo_dia_del_mes_con_anio_y_quincena_explicitos(): void
     {
-        $this->activarProgramador();
+        $this->activarProgramador('automatico');
         $this->seed(SistemaUsuarioSeeder::class);
         $this->cuotaQueVence('2026-10-31');
         $this->travelTo('2026-10-31 11:00:00');
@@ -43,7 +43,20 @@ class ProgramadorQuincenaTest extends TestCase
         $proceso = ProcesoQuincena::firstOrFail();
         $this->assertSame(2026, $proceso->anio);
         $this->assertSame(20, $proceso->numero_quincena);
-        $this->assertSame('confirmar', $proceso->modo_marcado->value);
+        $this->assertSame('automatico', $proceso->modo_marcado->value);
+        $this->assertSame(1, Pago::count());
+    }
+
+    public function test_activo_en_modo_confirmar_solo_calcula_y_no_crea_proceso_ni_pagos(): void
+    {
+        $this->activarProgramador();
+        $this->seed(SistemaUsuarioSeeder::class);
+        $this->cuotaQueVence('2026-10-31');
+        $this->travelTo('2026-10-31 11:00:00');
+
+        $this->artisan('schedule:run')->assertSuccessful();
+
+        $this->assertSame(0, ProcesoQuincena::count());
         $this->assertSame(0, Pago::count());
     }
 
@@ -59,9 +72,9 @@ class ProgramadorQuincenaTest extends TestCase
         $this->assertSame(0, ProcesoQuincena::count());
     }
 
-    private function activarProgramador(): void
+    private function activarProgramador(string $modo = 'confirmar'): void
     {
-        config(['quincena.programador_activo' => true, 'quincena.modo_marcado' => 'confirmar']);
+        config(['quincena.programador_activo' => true, 'quincena.modo_marcado' => $modo]);
 
         require base_path('routes/console.php');
 

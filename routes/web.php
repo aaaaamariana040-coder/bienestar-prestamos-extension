@@ -13,6 +13,7 @@ use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\PresupuestoAnualController;
 use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\QuincenaController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RetiroEmpleadoController;
 use App\Http\Controllers\SimuladorController;
@@ -104,6 +105,15 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
     Route::post('prestamos/{prestamo}/abonos', [PagoController::class, 'storeAbono'])->name('pagos.store-abono');
     Route::post('prestamos/{prestamo}/cancelacion', [PagoController::class, 'storeCancelacion'])->name('pagos.store-cancelacion');
     Route::post('prestamos/{prestamo}/cesantias', [AbonoCesantiasController::class, 'store'])->name('cesantias.store');
+
+    Route::get('quincenas', [QuincenaController::class, 'index'])->name('quincenas.index');
+    Route::get('quincenas/proceso/{proceso}', [QuincenaController::class, 'proceso'])->name('quincenas.proceso');
+    Route::get('quincenas/{anio}/{quincena}', [QuincenaController::class, 'vistaPrevia'])
+        ->where(['anio' => '[0-9]{4}', 'quincena' => '[0-9]{1,2}'])
+        ->name('quincenas.vista-previa');
+    Route::post('quincenas/{anio}/{quincena}/confirmar', [QuincenaController::class, 'confirmar'])
+        ->where(['anio' => '[0-9]{4}', 'quincena' => '[0-9]{1,2}'])
+        ->name('quincenas.confirmar');
 
     Route::get('proveedores', [ProveedorController::class, 'index'])->name('proveedores.index');
     Route::post('proveedores', [ProveedorController::class, 'store'])->name('proveedores.store');

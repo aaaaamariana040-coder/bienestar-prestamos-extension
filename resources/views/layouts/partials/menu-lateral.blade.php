@@ -1,5 +1,6 @@
 @php
     $usuario = auth()->user();
+    $cuotasPorConfirmar = count($quincenasPendientes ?? []);
 
     // Cada grupo se muestra solo si el usuario puede ver al menos uno de sus submenús.
     // Los de Administrador dependen de las políticas de usuarios y auditoría (solo ese rol).
@@ -52,6 +53,7 @@
             'items' => [
                 // Los pagos y abonos se registran desde el detalle de cada préstamo.
                 ['texto' => 'Registrar pago o abono', 'ruta' => 'prestamos.index', 'activo' => null, 'visible' => $usuario->can('viewAny', \App\Models\Prestamo::class)],
+                ['texto' => 'Quincenas', 'ruta' => 'quincenas.index', 'activo' => 'quincenas.*', 'visible' => $usuario->can('viewAny', \App\Models\ProcesoQuincena::class), 'insignia' => $cuotasPorConfirmar],
                 ['texto' => 'Resumen de pagos', 'ruta' => 'reportes.pagos', 'activo' => 'reportes.pagos', 'visible' => $usuario->can('reportes.ver')],
             ],
         ],
@@ -78,6 +80,7 @@
     @foreach ($grupos as $grupo)
         @php
             $items = array_values(array_filter($grupo['items'], fn (array $item): bool => $item['visible']));
+            $insigniaGrupo = collect($items)->sum(fn (array $item): int => $item['insignia'] ?? 0);
             $grupoActivo = collect($items)->contains(fn (array $item): bool => $item['activo'] !== null && request()->routeIs($item['activo']));
         @endphp
 
@@ -89,6 +92,9 @@
                         title="{{ $grupo['titulo'] }}">
                     <x-icono :nombre="$grupo['icono']" />
                     <span class="menu-texto">{{ $grupo['titulo'] }}</span>
+                    @if ($insigniaGrupo > 0)
+                        <span class="badge rounded-pill text-bg-warning menu-texto" title="Quincenas pendientes de confirmar">{{ $insigniaGrupo }}</span>
+                    @endif
                     <span class="menu-flecha" aria-hidden="true">&rsaquo;</span>
                 </button>
 
@@ -99,6 +105,9 @@
                         @endphp
                         <a href="{{ route($item['ruta']) }}" class="menu-enlace {{ $enlaceActivo ? 'activo' : '' }}" @if ($enlaceActivo) aria-current="page" @endif>
                             {{ $item['texto'] }}
+                            @if (! empty($item['insignia']))
+                                <span class="badge rounded-pill text-bg-warning ms-1">{{ $item['insignia'] }}</span>
+                            @endif
                         </a>
                     @endforeach
                 </div>

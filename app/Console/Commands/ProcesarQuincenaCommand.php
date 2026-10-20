@@ -56,10 +56,17 @@ class ProcesarQuincenaCommand extends Command
      */
     private function imprimir(array $resultado, bool $real): void
     {
-        $this->info(($real ? 'PROCESO REAL' : 'SIMULACIÓN (no se escribió nada)')." — quincena {$resultado['quincena']} de {$resultado['anio']} ({$resultado['inicio']} al {$resultado['corte']})");
+        $escribe = $real && ! $resultado['simulacion'];
+        $titulo = match (true) {
+            $escribe => 'PROCESO REAL',
+            $real => 'VISTA PREVIA (modo confirmar: no se escribió nada)',
+            default => 'SIMULACIÓN (no se escribió nada)',
+        };
+
+        $this->info($titulo." — quincena {$resultado['quincena']} de {$resultado['anio']} ({$resultado['inicio']} al {$resultado['corte']})");
         $this->line("Regla de vencimiento: {$resultado['regla_vencimiento']} · Modo de marcado: {$resultado['modo_marcado']}");
 
-        if ($resultado['ya_procesado'] && $real) {
+        if ($resultado['ya_procesado'] && $escribe) {
             $this->warn('Esta quincena ya tenía un proceso real: no se creó nada nuevo (resumen del proceso existente).');
         } elseif ($resultado['ya_procesado']) {
             $this->warn('Esta quincena ya tiene un proceso real registrado.');
@@ -68,7 +75,7 @@ class ProcesarQuincenaCommand extends Command
         $this->line('Cuotas: '.count($resultado['cuotas']).' · Total: '.number_format($resultado['total'], 2, ',', '.'));
         $this->line('Préstamos incluidos: '.count($resultado['prestamos_incluidos']).($resultado['prestamos_incluidos'] === [] ? '' : ' ('.implode(', ', array_map(fn ($id) => "#{$id}", $resultado['prestamos_incluidos'])).')'));
 
-        if ($real) {
+        if ($escribe) {
             $this->line("Pagos creados: {$resultado['pagos_creados']}");
         }
 
@@ -90,8 +97,8 @@ class ProcesarQuincenaCommand extends Command
             $this->line("Informativo: {$vencidas['cuotas']} cuotas pendientes de {$vencidas['prestamos']} préstamos vencieron antes de esta quincena y no se procesan aquí.");
         }
 
-        if ($real && $resultado['modo_marcado'] === 'confirmar' && ! $resultado['ya_procesado']) {
-            $this->line('Modo confirmar: no se crearon pagos; las cuotas quedan pendientes de confirmar en el proceso.');
+        if ($real && ! $escribe) {
+            $this->line('Modo confirmar: no se creó ningún proceso ni pagos. La quincena se confirma desde la aplicación (menú Pagos › Quincenas).');
         }
     }
 }

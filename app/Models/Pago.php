@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'monto',
     'tipo',
     'origen',
+    'id_proceso_quincena',
     'monto_aplicado_interes',
     'monto_aplicado_capital',
     'cedula_usu',
@@ -59,6 +60,14 @@ class Pago extends Model
     public function cuota(): BelongsTo
     {
         return $this->belongsTo(Cuota::class, 'id_cuota', 'id_cuota');
+    }
+
+    /**
+     * @return BelongsTo<ProcesoQuincena, $this>
+     */
+    public function procesoQuincena(): BelongsTo
+    {
+        return $this->belongsTo(ProcesoQuincena::class, 'id_proceso_quincena', 'id_proceso');
     }
 
     /**
