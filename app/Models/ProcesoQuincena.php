@@ -7,9 +7,11 @@ use App\Enums\ModoMarcado;
 use App\Enums\TipoProcesoQuincena;
 use Database\Factories\ProcesoQuincenaFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'anio',
@@ -46,6 +48,27 @@ class ProcesoQuincena extends Model
             'finalizado_en' => 'datetime',
             'resumen' => 'array',
         ];
+    }
+
+    /**
+     * Procesos reales ya confirmados o completados, del más reciente al más antiguo.
+     *
+     * @param  Builder<ProcesoQuincena>  $consulta
+     */
+    public function scopeConfirmados(Builder $consulta): void
+    {
+        $consulta->where('tipo', TipoProcesoQuincena::Real)
+            ->where('estado', EstadoProcesoQuincena::Completado)
+            ->orderByDesc('anio')
+            ->orderByDesc('numero_quincena');
+    }
+
+    /**
+     * @return HasMany<Pago, $this>
+     */
+    public function pagos(): HasMany
+    {
+        return $this->hasMany(Pago::class, 'id_proceso_quincena', 'id_proceso');
     }
 
     /**

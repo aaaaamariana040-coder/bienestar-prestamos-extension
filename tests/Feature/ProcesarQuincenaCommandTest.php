@@ -70,8 +70,26 @@ class ProcesarQuincenaCommandTest extends TestCase
         $this->assertSame(2, Pago::count());
     }
 
+    public function test_el_modo_real_con_confirmar_solo_muestra_la_vista_previa_y_no_crea_proceso(): void
+    {
+        $this->seed(SistemaUsuarioSeeder::class);
+        $this->cuotaQueVence('2026-10-10');
+
+        $this->artisan('quincena:procesar', ['--ejecutar' => true, '--anio' => 2026, '--quincena' => 19])
+            ->expectsOutputToContain('VISTA PREVIA (modo confirmar: no se escribió nada)')
+            ->expectsOutputToContain('Cuotas: 1')
+            ->expectsOutputToContain('no se creó ningún proceso ni pagos')
+            ->doesntExpectOutputToContain('Pagos creados')
+            ->assertSuccessful();
+
+        $this->assertSame(0, ProcesoQuincena::count());
+        $this->assertSame(0, Pago::count());
+    }
+
     public function test_el_modo_real_aborta_si_no_existe_el_usuario_sistema(): void
     {
+        config(['quincena.modo_marcado' => 'automatico']);
+
         $this->artisan('quincena:procesar', ['--ejecutar' => true, '--anio' => 2026, '--quincena' => 19])
             ->expectsOutputToContain('SistemaUsuarioSeeder')
             ->assertFailed();

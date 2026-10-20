@@ -59,21 +59,20 @@ class QuincenaServiceTest extends TestCase
         $this->assertSame(EstadoCuota::Pendiente, $cuota->fresh()->estado);
     }
 
-    public function test_el_proceso_real_con_confirmar_registra_las_cuotas_y_no_crea_pagos(): void
+    public function test_el_proceso_real_con_confirmar_solo_devuelve_la_vista_previa_sin_escribir(): void
     {
         $cuota = $this->cuotaQueVence('2026-10-15');
+        $auditorias = Auditoria::count();
 
         $resultado = $this->servicio()->procesar(self::ANIO, self::QUINCENA, false);
 
-        $this->assertSame(0, Pago::count());
+        $this->assertTrue($resultado['simulacion']);
+        $this->assertSame([$cuota->id_cuota], array_column($resultado['cuotas'], 'id_cuota'));
         $this->assertSame(0, $resultado['pagos_creados']);
+        $this->assertSame(0, Pago::count());
+        $this->assertSame(0, ProcesoQuincena::count());
+        $this->assertSame($auditorias, Auditoria::count());
         $this->assertSame(EstadoCuota::Pendiente, $cuota->fresh()->estado);
-
-        $proceso = ProcesoQuincena::firstOrFail();
-        $this->assertSame(EstadoProcesoQuincena::PendienteConfirmacion, $proceso->estado);
-        $this->assertSame('confirmar', $proceso->modo_marcado->value);
-        $this->assertSame(Usuario::CEDULA_SISTEMA, $proceso->cedula_usu);
-        $this->assertSame([$cuota->id_cuota], array_column($proceso->resumen['cuotas'], 'id_cuota'));
     }
 
     public function test_el_proceso_real_con_automatico_crea_pagos_automaticos_a_nombre_de_sistema(): void
@@ -91,6 +90,7 @@ class QuincenaServiceTest extends TestCase
         $this->assertSame('2026-10-15', $pago->fecha_pago->toDateString());
         $this->assertSame(EstadoCuota::Pagada, $cuota->fresh()->estado);
         $this->assertSame(EstadoProcesoQuincena::Completado, ProcesoQuincena::firstOrFail()->estado);
+        $this->assertSame(ProcesoQuincena::firstOrFail()->id_proceso, $pago->id_proceso_quincena);
     }
 
     public function test_ejecutar_dos_veces_la_misma_quincena_no_duplica_nada(): void
@@ -108,15 +108,15 @@ class QuincenaServiceTest extends TestCase
         $this->assertSame($primero['proceso']->id_proceso, $segundo['proceso']->id_proceso);
     }
 
-    public function test_ejecutar_dos_veces_en_modo_confirmar_tampoco_duplica_el_proceso(): void
+    public function test_ejecutar_varias_veces_en_modo_confirmar_nunca_crea_un_proceso(): void
     {
         $this->cuotaQueVence('2026-10-15');
 
         $this->servicio()->procesar(self::ANIO, self::QUINCENA, false);
         $segundo = $this->servicio()->procesar(self::ANIO, self::QUINCENA, false);
 
-        $this->assertTrue($segundo['ya_procesado']);
-        $this->assertSame(1, ProcesoQuincena::count());
+        $this->assertFalse($segundo['ya_procesado']);
+        $this->assertSame(0, ProcesoQuincena::count());
         $this->assertSame(0, Pago::count());
     }
 
@@ -187,6 +187,7 @@ class QuincenaServiceTest extends TestCase
 
     public function test_el_proceso_real_aborta_sin_escribir_si_no_existe_el_usuario_sistema(): void
     {
+        config(['quincena.modo_marcado' => 'automatico']);
         Usuario::where('cedula', Usuario::CEDULA_SISTEMA)->delete();
         $this->cuotaQueVence('2026-10-15');
 

@@ -107,6 +107,33 @@ Este plan cubre las funcionalidades construidas hasta el Sprint 4 (según `plan-
 | PP-051 | Consultar historial de auditoría | Varios registros de auditoría existentes | Consultar por usuario o fecha | Resultados filtrados correctamente | ⬜ |
 | PP-052 | Trazabilidad completa de un préstamo | Préstamo con solicitud, desembolso y pagos | Consultar trazabilidad | Se puede reconstruir la línea de tiempo completa del préstamo | ⬜ |
 
+## 11. Confirmación de la quincena (RF-007)
+
+Detalle del diseño en `docs/quincena-automatica.md`. Automatizados en `tests/Feature/ConfirmarQuincenaTest.php`; la columna final queda ⬜ hasta la prueba manual en el navegador.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-059 | Vista previa sin escribir | Cuotas que vencen en una quincena ya iniciada | Abrir `Pagos › Quincenas › Revisar y confirmar` | Lista las cuotas con casillas de exclusión y el total; no se crean pagos, procesos ni auditoría | ⬜ |
+| PP-060 | Aviso en Inicio y menú | Quincena iniciada, sin proceso confirmado y con cuotas candidatas | Entrar a Inicio | Banner con las quincenas pendientes e insignia en el menú; desaparece al confirmar y no se muestra si no hay cuotas candidatas ni a cuentas que no operan | ⬜ |
+| PP-061 | Listar todas las quincenas iniciadas sin confirmar | Cuotas en varias quincenas anteriores | Abrir `Quincenas` | Aparecen todas, no solo la actual; las futuras no | ⬜ |
+| PP-062 | Confirmar la quincena | Vista previa con cuotas (incluye un préstamo En mora) | Pulsar «Confirmar quincena» | Una sola transacción: proceso «Completado» a nombre de quien confirma; pagos Regular, origen Automático, autor = quien confirma, con `id_proceso_quincena`; cuotas Pagadas | ⬜ |
+| PP-063 | Fecha del pago | Quincena cuyo corte ya pasó / quincena en curso | Confirmar cada una | Fecha de pago = corte; en la quincena en curso = hoy | ⬜ |
+| PP-064 | Auditoría de la confirmación | Confirmación con una cuota excluida | Consultar `Auditoría` | Una «Pago de cuota» por cada cuota pagada y una «Confirmación de quincena» con quién, cuántas cuotas, total y excluidas con motivo | ⬜ |
+| PP-065 | Excluir una cuota con motivo | Vista previa con 2 cuotas | Marcar una, escribir el motivo, confirmar | La excluida queda Pendiente y su motivo se guarda; en la quincena siguiente aparece como vencida anterior | ⬜ |
+| PP-066 | Excluir sin motivo | Vista previa con casilla marcada | Dejar el motivo vacío y confirmar | Se rechaza con el mensaje del motivo; no se crea proceso ni pagos | ⬜ |
+| PP-067 | Dos cuotas del mismo préstamo | Préstamo con 2 cuotas en la misma quincena | Abrir la vista previa | Filas resaltadas y advertencia; se puede excluir una | ⬜ |
+| PP-068 | Última cuota que cierra el préstamo | Préstamo con una sola cuota pendiente en la quincena | Confirmar | El préstamo pasa a Cancelado | ⬜ |
+| PP-069 | Doble confirmación | Quincena ya confirmada | Confirmar de nuevo (otra pestaña u otra persona) | «La quincena N de AAAA ya fue confirmada por X el dd/mm/aaaa hh:mm»; sin pagos nuevos | ⬜ |
+| PP-070 | Doble confirmación concurrente | Dos personas confirman a la vez | Enviar ambas confirmaciones | Una gana; la otra la rechaza la restricción única y no paga nada | ⬜ |
+| PP-071 | Quincena no iniciada | Quincena futura | Abrir su vista previa o enviar la confirmación | Se rechaza («todavía no empieza»); no se escribe nada | ⬜ |
+| PP-072 | Pago manual entre la vista previa y la confirmación | Vista previa abierta | En otra pestaña pagar una cuota de la lista; confirmar | Se rechaza, se recarga la vista previa y se muestra la diferencia; no se paga nada | ⬜ |
+| PP-073 | Reliquidación entre la vista previa y la confirmación | Vista previa abierta | En otra pestaña reliquidar un préstamo de la lista; confirmar | Se rechaza y se muestra la diferencia (las cuotas se regeneraron) | ⬜ |
+| PP-074 | Cancelación entre la vista previa y la confirmación | Vista previa abierta | En otra pestaña cancelar un préstamo de la lista; confirmar | Se rechaza y se muestra la diferencia | ⬜ |
+| PP-075 | Atomicidad | Falla al pagar la 2.ª cuota | Confirmar | No queda proceso, ni pagos, ni auditoría de la confirmación; todas las cuotas siguen Pendientes | ⬜ |
+| PP-076 | Confirmar fuera de orden | Dos quincenas iniciadas sin confirmar | Confirmar la más reciente primero | Se permite | ⬜ |
+| PP-077 | Permisos | Administrador, Funcionario, invitado y cuenta deshabilitada | Abrir `Quincenas` y confirmar | Administrador y Funcionario pueden; el invitado y la cuenta deshabilitada son enviados al inicio de sesión | ⬜ |
+| PP-078 | Detalle de un proceso confirmado | Proceso con cuotas pagadas y excluidas | Abrir «Ver» en Quincenas confirmadas | Muestra quién, cuándo, cuotas pagadas y excluidas con su motivo | ⬜ |
+| PP-079 | Comando en modo confirmar | `QUINCENA_MODO_MARCADO=confirmar` | `php artisan quincena:procesar --anio=… --quincena=… --ejecutar` | Muestra la vista previa y no crea proceso ni pagos | ⬜ |
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -126,3 +153,4 @@ Este plan cubre las funcionalidades construidas hasta el Sprint 4 (según `plan-
 | Sprint 2 (modalidades, presupuesto, solicitudes, préstamos/desembolsos, pagos) | Cubierto — PP-019 a PP-041 |
 | Sprint 3 (situaciones especiales) | **Parcial** — reliquidación y cesantías cubiertas; retiro/liquidación pendiente (PP-044, PP-045) |
 | Sprint 4 (reportes, auditoría) | Cubierto — PP-046 a PP-052 |
+| Confirmación de la quincena (posterior al Sprint 4) | Automatizada — PP-059 a PP-079; falta la prueba manual en el navegador |

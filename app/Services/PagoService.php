@@ -27,9 +27,10 @@ class PagoService
      * Pago regular de una cuota. El Art. 12 parágrafo 2 fija cuotas constantes,
      * por lo que un pago regular cubre exactamente el valor de la cuota; el
      * monto se aplica primero a intereses y el resto a capital. El origen es
-     * Manual salvo que lo registre el proceso automático de la quincena.
+     * Manual salvo que lo registre el proceso de la quincena, que además deja
+     * el id del proceso para trazar el pago.
      */
-    public function registrarPagoCuota(Prestamo $prestamo, Cuota $cuota, string $fechaPago, Usuario $actor, OrigenPago $origen = OrigenPago::Manual): Pago
+    public function registrarPagoCuota(Prestamo $prestamo, Cuota $cuota, string $fechaPago, Usuario $actor, OrigenPago $origen = OrigenPago::Manual, ?int $idProcesoQuincena = null): Pago
     {
         if ($cuota->id_prestamo !== $prestamo->id_prestamo) {
             throw new RuntimeException('La cuota no pertenece a este préstamo.');
@@ -39,13 +40,14 @@ class PagoService
             throw new RuntimeException('La cuota ya fue pagada.');
         }
 
-        return DB::transaction(function () use ($prestamo, $cuota, $fechaPago, $actor, $origen) {
+        return DB::transaction(function () use ($prestamo, $cuota, $fechaPago, $actor, $origen, $idProcesoQuincena) {
             $pago = $prestamo->pagos()->create([
                 'id_cuota' => $cuota->id_cuota,
                 'fecha_pago' => $fechaPago,
                 'monto' => $cuota->valor_total,
                 'tipo' => TipoPago::Regular,
                 'origen' => $origen,
+                'id_proceso_quincena' => $idProcesoQuincena,
                 'monto_aplicado_interes' => $cuota->valor_interes,
                 'monto_aplicado_capital' => $cuota->valor_capital,
                 'cedula_usu' => $actor->cedula,
