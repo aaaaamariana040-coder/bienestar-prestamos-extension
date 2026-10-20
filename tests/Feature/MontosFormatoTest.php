@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\EstadoCuota;
 use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\TipoPrestamo;
@@ -85,6 +86,15 @@ class MontosFormatoTest extends TestCase
     public function test_abono_extraordinario_normaliza_el_monto(string $escrito, string $guardado): void
     {
         $prestamo = Prestamo::factory()->create(['monto_aprobado' => 50_000_000, 'cuota_periodica' => 5_000_000]);
+        // El abono se compara siempre contra el saldo de capital pendiente, así que el préstamo necesita cuotas.
+        $prestamo->cuotas()->create([
+            'numero_cuota' => 1,
+            'fecha_vencimiento' => '2026-03-01',
+            'valor_capital' => 50_000_000,
+            'valor_interes' => 0,
+            'valor_total' => 50_000_000,
+            'estado' => EstadoCuota::Pendiente,
+        ]);
 
         $this->actingAs(Usuario::factory()->create())->post(route('pagos.store-abono', $prestamo), [
             'monto' => $escrito,
@@ -101,6 +111,15 @@ class MontosFormatoTest extends TestCase
     public function test_abono_extraordinario_rechaza_montos_invalidos_o_menores_al_minimo(string $escrito): void
     {
         $prestamo = Prestamo::factory()->create(['monto_aprobado' => 50_000_000, 'cuota_periodica' => 5_000_000]);
+        // El abono se compara siempre contra el saldo de capital pendiente, así que el préstamo necesita cuotas.
+        $prestamo->cuotas()->create([
+            'numero_cuota' => 1,
+            'fecha_vencimiento' => '2026-03-01',
+            'valor_capital' => 50_000_000,
+            'valor_interes' => 0,
+            'valor_total' => 50_000_000,
+            'estado' => EstadoCuota::Pendiente,
+        ]);
 
         $this->actingAs(Usuario::factory()->create())->post(route('pagos.store-abono', $prestamo), [
             'monto' => $escrito,

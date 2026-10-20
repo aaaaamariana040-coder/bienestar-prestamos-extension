@@ -85,12 +85,23 @@ class PagoTest extends TestCase
     {
         $funcionario = Usuario::factory()->create();
         // Valores fijos: con una cuota aleatoria baja (monto/num_cuotas < 50.000) el abono de 500.000
-        // supera las 10 cuotas, dispara la reliquidación y, al no haber cuotas pendientes, falla.
+        // supera las 10 cuotas y dispara la reliquidación. El préstamo necesita cuotas pendientes:
+        // un abono se compara siempre contra el saldo de capital y debe ser menor.
         $prestamo = Prestamo::factory()->create([
             'monto_aprobado' => 2_400_000,
             'num_cuotas' => 24,
             'cuota_periodica' => 100_000,
         ]);
+        foreach (range(1, 24) as $numero) {
+            $prestamo->cuotas()->create([
+                'numero_cuota' => $numero,
+                'fecha_vencimiento' => '2026-03-01',
+                'valor_capital' => 100_000,
+                'valor_interes' => 0,
+                'valor_total' => 100_000,
+                'estado' => EstadoCuota::Pendiente,
+            ]);
+        }
 
         $this->actingAs($funcionario)->post(route('pagos.store-abono', $prestamo), [
             'monto' => 500_000,

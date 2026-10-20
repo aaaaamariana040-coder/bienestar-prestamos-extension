@@ -227,6 +227,41 @@ class AbonoExtraordinarioTest extends TestCase
         $this->assertSame('Vigente', $prestamo->fresh()->estado->value);
     }
 
+    public function test_un_abono_menor_al_umbral_pero_mayor_al_saldo_tambien_se_rechaza(): void
+    {
+        $prestamo = Prestamo::factory()->create([
+            'id_tipo' => TipoPrestamo::factory()->create(['nombre' => 'Educación'])->id_tipo,
+            'num_cuotas' => 5,
+            'cuota_periodica' => 100_000,
+        ]);
+        foreach (range(1, 5) as $numero) {
+            $prestamo->cuotas()->create([
+                'numero_cuota' => $numero,
+                'fecha_vencimiento' => '2026-03-01',
+                'valor_capital' => 100_000,
+                'valor_interes' => 0,
+                'valor_total' => 100_000,
+                'estado' => EstadoCuota::Pendiente,
+            ]);
+        }
+        $usuario = Usuario::factory()->create();
+
+        // Saldo de capital 500.000; el umbral son 1.000.000 (10 cuotas): 700.000 y 500.000 quedan por debajo.
+        foreach ([700_000, 500_000] as $monto) {
+            $this->abonar($usuario, $prestamo, $monto)
+                ->assertRedirect()
+                ->assertSessionHas('error', fn ($mensaje) => str_contains($mensaje, 'Cancelación total'));
+        }
+
+        $this->assertDatabaseCount('pagos', 0);
+        $this->assertDatabaseCount('reliquidaciones', 0);
+        $this->assertSame(5, $this->pendientes($prestamo));
+        $this->assertSame('Vigente', $prestamo->fresh()->estado->value);
+
+        $this->abonar($usuario, $prestamo, 499_999.99)->assertSessionHas('status');
+        $this->assertDatabaseCount('pagos', 1);
+    }
+
     public function test_en_una_modalidad_no_configurada_el_abono_grande_va_a_capital_sin_reliquidar(): void
     {
         $prestamo = $this->prestamo('Educación');
