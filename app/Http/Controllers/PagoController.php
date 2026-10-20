@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\RegistrarAbonoExtraordinarioRequest;
 use App\Http\Requests\RegistrarCancelacionRequest;
 use App\Http\Requests\RegistrarPagoCuotaRequest;
+use App\Http\Requests\VistaPreviaAbonoRequest;
 use App\Models\Cuota;
 use App\Models\Prestamo;
 use App\Services\PagoService;
+use App\Services\ReliquidacionService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use RuntimeException;
 
@@ -36,13 +39,45 @@ class PagoController extends Controller
                 (float) $request->validated('monto'),
                 $request->validated('fecha_pago'),
                 $request->user(),
-                $request->validated('modo_reliquidacion') ?? 'plazo',
+                $request->validated('modo_reliquidacion'),
+                $request->validated('num_cuotas') !== null ? (int) $request->validated('num_cuotas') : null,
             );
         } catch (RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
 
         return redirect()->route('prestamos.show', $prestamo)->with('status', 'Abono extraordinario registrado correctamente.');
+    }
+
+    /**
+     * Vista previa del abono: no guarda nada. Indica si el monto alcanza el
+     * umbral y, si el operador ya eligió una opción, cómo quedaría el préstamo.
+     */
+    public function vistaPreviaAbono(VistaPreviaAbonoRequest $request, Prestamo $prestamo, ReliquidacionService $reliquidacionService): JsonResponse
+    {
+        $this->authorize('registrarPago', $prestamo);
+
+        $monto = (float) $request->validated('monto');
+        $respuesta = [
+            'supera_umbral' => $reliquidacionService->superaUmbral($prestamo, $monto),
+            'umbral_cuotas' => $reliquidacionService->umbralCuotas(),
+            'umbral_monto' => round($reliquidacionService->umbralCuotas() * (float) $prestamo->cuota_periodica, 2),
+        ];
+
+        $modo = $request->validated('modo_reliquidacion');
+
+        if ($respuesta['supera_umbral'] && $modo !== null) {
+            try {
+                $numCuotas = $request->validated('num_cuotas');
+                $respuesta['plan'] = collect($reliquidacionService->calcular($prestamo, $monto, $modo, $numCuotas !== null ? (int) $numCuotas : null))
+                    ->except('tasa_periodica')
+                    ->all();
+            } catch (RuntimeException $e) {
+                $respuesta['error'] = $e->getMessage();
+            }
+        }
+
+        return response()->json($respuesta);
     }
 
     public function storeCancelacion(RegistrarCancelacionRequest $request, Prestamo $prestamo, PagoService $pagoService): RedirectResponse

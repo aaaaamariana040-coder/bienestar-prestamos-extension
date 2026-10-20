@@ -28,6 +28,7 @@ class RegistrarAbonoExtraordinarioRequest extends FormRequest
             'monto' => ['required', 'numeric', 'min:1000'],
             'fecha_pago' => ['required', 'date'],
             'modo_reliquidacion' => ['nullable', 'in:cuota,plazo'],
+            'num_cuotas' => ['nullable', 'integer', 'min:1'],
         ];
     }
 }

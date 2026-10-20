@@ -22,23 +22,102 @@ class ReliquidacionService
     }
 
     /**
-     * Umbral del Art. 12 parágrafo 5: un abono extraordinario que supere el
-     * valor de 10 cuotas quincenales dispara una nueva liquidación de la
-     * cuota según el plazo pendiente.
+     * Umbral del Art. 12 parágrafos 4 y 5: un abono extraordinario igual o
+     * mayor a N cuotas vigentes (N = config prestamos.abono_extraordinario)
+     * permite elegir entre bajar la cuota o bajar el plazo. Solo aplica a las
+     * modalidades configuradas.
      */
     public function superaUmbral(Prestamo $prestamo, float $monto): bool
     {
-        return (float) $prestamo->cuota_periodica > 0
-            && $monto / (float) $prestamo->cuota_periodica > 10;
+        $cuota = (float) $prestamo->cuota_periodica;
+
+        return $cuota > 0
+            && $this->aplicaALaModalidad($prestamo)
+            && round($monto, 2) >= round($this->umbralCuotas() * $cuota, 2);
+    }
+
+    public function umbralCuotas(): int
+    {
+        return (int) config('prestamos.abono_extraordinario.umbral_cuotas');
+    }
+
+    public function aplicaALaModalidad(Prestamo $prestamo): bool
+    {
+        $modalidades = (array) config('prestamos.abono_extraordinario.modalidades');
+        $nombre = (string) $prestamo->tipoPrestamo?->nombre;
+
+        foreach ($modalidades as $modalidad) {
+            if ($modalidad === '*' || ($nombre !== '' && str_starts_with($nombre, $modalidad))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
-     * Recalcula la tabla de amortización pendiente tras reducir el saldo en
-     * $montoAbono, manteniendo el plazo (cuota más baja) o manteniendo la
-     * cuota (plazo más corto), según elija el beneficiario (Art. 12 §3-4).
-     * La tasa periódica se deriva de la propia cuota pendiente más próxima
-     * en vez de re-consultar tasa_int, porque los préstamos de vehículo no
-     * persisten su tasa anual (se calcula dinámicamente al aprobar).
+     * Calcula, sin guardar nada, cómo quedaría el préstamo tras el abono. Es la
+     * fuente única de la vista previa y de reliquidar().
+     *
+     * En 'cuota' se mantiene el número de cuotas restantes y se recalcula la
+     * cuota con el nuevo saldo. En 'plazo' se sugiere n = ceil(−ln(1 − S·r/C) /
+     * ln(1+r)) con C la cuota actual; el operador puede indicar otro n y la
+     * cuota se recalcula siempre con el n elegido.
+     *
+     * @return array{saldo_anterior: float, saldo_nuevo: float, tasa_periodica: float, cuota_actual: float, cuota_nueva: float, cuotas_actuales: int, cuotas_nuevas: int, n_sugerido: ?int}
+     */
+    public function calcular(Prestamo $prestamo, float $montoAbono, string $modo, ?int $numCuotasElegido = null): array
+    {
+        if (! in_array($modo, ['cuota', 'plazo'], true)) {
+            throw new RuntimeException('Debe elegir si desea bajar la cuota o bajar el plazo.');
+        }
+
+        $cuotasPendientes = $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->orderBy('numero_cuota')->get();
+
+        if ($cuotasPendientes->isEmpty()) {
+            throw new RuntimeException('Este préstamo no tiene cuotas pendientes que reliquidar.');
+        }
+
+        $saldoAnterior = round((float) $cuotasPendientes->sum('valor_capital'), 2);
+
+        if ($montoAbono <= 0 || $montoAbono >= $saldoAnterior) {
+            throw new RuntimeException('El monto del abono debe ser mayor que cero y menor que el saldo pendiente; para pagar el saldo completo use la cancelación total.');
+        }
+
+        $tasaPeriodica = $this->tasaPeriodicaDelPrestamo($prestamo, $cuotasPendientes->first(), $saldoAnterior);
+        $saldoNuevo = round($saldoAnterior - $montoAbono, 2);
+        $cuotaActual = (float) $prestamo->cuota_periodica;
+        $cuotasActuales = $cuotasPendientes->count();
+        $nSugerido = null;
+
+        if ($modo === 'cuota') {
+            $cuotasNuevas = $cuotasActuales;
+        } else {
+            $nSugerido = $this->numCuotasParaCuotaFija($saldoNuevo, $tasaPeriodica, $cuotaActual);
+            $cuotasNuevas = $numCuotasElegido ?? $nSugerido;
+
+            if ($numCuotasElegido !== null && ($cuotasNuevas < 1 || $cuotasNuevas > $cuotasActuales)) {
+                throw new RuntimeException("El número de cuotas debe estar entre 1 y {$cuotasActuales} (las cuotas que faltan).");
+            }
+        }
+
+        return [
+            'saldo_anterior' => $saldoAnterior,
+            'saldo_nuevo' => $saldoNuevo,
+            'tasa_periodica' => $tasaPeriodica,
+            'cuota_actual' => $cuotaActual,
+            'cuota_nueva' => $this->calculoFinanciero->cuotaFija($saldoNuevo, $tasaPeriodica, $cuotasNuevas),
+            'cuotas_actuales' => $cuotasActuales,
+            'cuotas_nuevas' => $cuotasNuevas,
+            'n_sugerido' => $nSugerido,
+        ];
+    }
+
+    /**
+     * Regenera las cuotas pendientes tras reducir el saldo en $montoAbono
+     * (Art. 12 §3-5). Las cuotas pagadas no se tocan. La tasa periódica sale de
+     * la tasa efectiva guardada en el préstamo, o de la primera cuota pendiente
+     * en los préstamos anteriores a esa columna.
      */
     public function reliquidar(
         Prestamo $prestamo,
@@ -47,57 +126,36 @@ class ReliquidacionService
         string $modo,
         string $fecha,
         Usuario $actor,
+        ?int $numCuotasElegido = null,
     ): Reliquidacion {
-        $cuotasPendientes = $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->orderBy('numero_cuota')->get();
-
-        if ($cuotasPendientes->isEmpty()) {
-            throw new RuntimeException('Este préstamo no tiene cuotas pendientes que reliquidar.');
-        }
-
-        $saldoAnterior = (float) $cuotasPendientes->sum('valor_capital');
-
-        if ($montoAbono <= 0 || $montoAbono >= $saldoAnterior) {
-            throw new RuntimeException('El monto del abono debe ser mayor que cero y menor que el saldo pendiente; para pagar el saldo completo use la cancelación total.');
-        }
-
-        $primeraPendiente = $cuotasPendientes->first();
-        $tasaPeriodica = $this->tasaPeriodicaDelPrestamo($prestamo, $primeraPendiente, $saldoAnterior);
-        $saldoNuevo = round($saldoAnterior - $montoAbono, 2);
-
-        return DB::transaction(function () use ($prestamo, $cuotasPendientes, $primeraPendiente, $saldoAnterior, $saldoNuevo, $tasaPeriodica, $motivo, $modo, $fecha, $actor) {
+        return DB::transaction(function () use ($prestamo, $montoAbono, $motivo, $modo, $fecha, $actor, $numCuotasElegido) {
+            $plan = $this->calcular($prestamo, $montoAbono, $modo, $numCuotasElegido);
+            $primeraPendiente = $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->orderBy('numero_cuota')->first();
             $numeroInicial = $primeraPendiente->numero_cuota;
-
-            if ($modo === 'cuota') {
-                $numCuotasRestantes = $cuotasPendientes->count();
-                $nuevaCuotaPeriodica = $this->calculoFinanciero->cuotaFija($saldoNuevo, $tasaPeriodica, $numCuotasRestantes);
-            } else {
-                $cuotaActual = (float) $prestamo->cuota_periodica;
-                $numCuotasRestantes = $this->numCuotasParaCuotaFija($saldoNuevo, $tasaPeriodica, $cuotaActual);
-                $nuevaCuotaPeriodica = $cuotaActual;
-            }
 
             $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->delete();
 
             $this->prestamoService->generarCuotasDesde(
                 $prestamo,
-                $saldoNuevo,
-                $tasaPeriodica,
-                $nuevaCuotaPeriodica,
-                $numCuotasRestantes,
+                $plan['saldo_nuevo'],
+                $plan['tasa_periodica'],
+                $plan['cuota_nueva'],
+                $plan['cuotas_nuevas'],
                 $numeroInicial,
                 $primeraPendiente->fecha_vencimiento->toDateString(),
             );
 
             $prestamo->update([
-                'cuota_periodica' => $nuevaCuotaPeriodica,
-                'num_cuotas' => $numeroInicial - 1 + $numCuotasRestantes,
+                'cuota_periodica' => $plan['cuota_nueva'],
+                'num_cuotas' => $numeroInicial - 1 + $plan['cuotas_nuevas'],
             ]);
 
             $reliquidacion = $prestamo->reliquidaciones()->create([
                 'motivo' => $motivo,
-                'saldo_anterior' => $saldoAnterior,
-                'saldo_nuevo' => $saldoNuevo,
-                'tasa_aplicada' => round($this->calculoFinanciero->tasaNominalDesdePeriodica($tasaPeriodica), 4),
+                'opcion_elegida' => $modo,
+                'saldo_anterior' => $plan['saldo_anterior'],
+                'saldo_nuevo' => $plan['saldo_nuevo'],
+                'tasa_aplicada' => round($this->calculoFinanciero->tasaNominalDesdePeriodica($plan['tasa_periodica']), 4),
                 'fecha' => $fecha,
                 'cedula_usu' => $actor->cedula,
             ]);
@@ -105,7 +163,7 @@ class ReliquidacionService
             $this->auditoriaService->registrar(
                 $actor,
                 'Reliquidación de préstamo',
-                "Préstamo #{$prestamo->id_prestamo} — saldo {$saldoAnterior} a {$saldoNuevo} (modo: {$modo})",
+                "Préstamo #{$prestamo->id_prestamo} — saldo {$plan['saldo_anterior']} a {$plan['saldo_nuevo']}, opción: {$modo}, cuota {$plan['cuota_actual']} a {$plan['cuota_nueva']}, cuotas restantes {$plan['cuotas_actuales']} a {$plan['cuotas_nuevas']}",
             );
 
             return $reliquidacion;
@@ -128,18 +186,10 @@ class ReliquidacionService
 
     private function numCuotasParaCuotaFija(float $saldo, float $tasaPeriodica, float $cuotaFija): int
     {
-        if ($tasaPeriodica <= 0) {
-            return max(1, (int) ceil($saldo / $cuotaFija));
-        }
-
-        $interesPrimeraCuota = $saldo * $tasaPeriodica;
-
-        if ($cuotaFija <= $interesPrimeraCuota) {
+        if ($tasaPeriodica > 0 && $cuotaFija <= $saldo * $tasaPeriodica) {
             throw new RuntimeException('La cuota actual no alcanza a cubrir el interés del nuevo saldo; reliquide disminuyendo la cuota en vez del plazo.');
         }
 
-        $numCuotas = -log(1 - $interesPrimeraCuota / $cuotaFija) / log(1 + $tasaPeriodica);
-
-        return max(1, (int) ceil($numCuotas));
+        return $this->calculoFinanciero->numPeriodosParaCuota($saldo, $tasaPeriodica, $cuotaFija);
     }
 }
