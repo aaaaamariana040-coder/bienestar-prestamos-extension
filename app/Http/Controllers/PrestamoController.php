@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Prestamo;
 use App\Models\Proveedor;
 use App\Services\DesembolsoService;
+use App\Services\ReliquidacionService;
 use Illuminate\View\View;
 
 class PrestamoController extends Controller
@@ -20,7 +21,7 @@ class PrestamoController extends Controller
         return view('prestamos.index', compact('prestamos'));
     }
 
-    public function show(Prestamo $prestamo, DesembolsoService $desembolsoService): View
+    public function show(Prestamo $prestamo, DesembolsoService $desembolsoService, ReliquidacionService $reliquidacionService): View
     {
         $this->authorize('view', $prestamo);
 
@@ -29,6 +30,9 @@ class PrestamoController extends Controller
         $tramosEsperados = $desembolsoService->tramosEsperados($prestamo);
         $proveedores = Proveedor::orderBy('nombre_empresa')->get();
 
-        return view('prestamos.show', compact('prestamo', 'tramosEsperados', 'proveedores'));
+        $umbralCuotas = $reliquidacionService->umbralCuotas();
+        $abonoAplicaAModalidad = $reliquidacionService->aplicaALaModalidad($prestamo);
+
+        return view('prestamos.show', compact('prestamo', 'tramosEsperados', 'proveedores', 'umbralCuotas', 'abonoAplicaAModalidad'));
     }
 }

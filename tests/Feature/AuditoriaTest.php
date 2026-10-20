@@ -135,7 +135,10 @@ class AuditoriaTest extends TestCase
     public function test_un_abono_extraordinario_que_supera_el_umbral_deja_traza_de_pago_y_reliquidacion(): void
     {
         $funcionario = Usuario::factory()->create();
-        $prestamo = Prestamo::factory()->create(['cuota_periodica' => 100_000]);
+        $prestamo = Prestamo::factory()->create([
+            'id_tipo' => TipoPrestamo::factory()->create(['nombre' => 'Vivienda — compra de inmueble'])->id_tipo,
+            'cuota_periodica' => 100_000,
+        ]);
         $prestamo->cuotas()->create([
             'numero_cuota' => 1,
             'fecha_vencimiento' => '2026-02-15',
@@ -148,6 +151,7 @@ class AuditoriaTest extends TestCase
         $this->actingAs($funcionario)->post(route('pagos.store-abono', $prestamo), [
             'monto' => 1_500_000,
             'fecha_pago' => '2026-02-15',
+            'modo_reliquidacion' => 'cuota',
         ])->assertRedirect(route('prestamos.show', $prestamo));
 
         $this->assertDatabaseHas('auditorias', [

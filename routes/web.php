@@ -100,6 +100,7 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
     Route::post('prestamos/{prestamo}/desembolsos', [DesembolsoController::class, 'store'])->name('desembolsos.store');
 
     Route::post('prestamos/{prestamo}/cuotas/{cuota}/pagos', [PagoController::class, 'storeCuota'])->name('pagos.store-cuota');
+    Route::get('prestamos/{prestamo}/abonos/vista-previa', [PagoController::class, 'vistaPreviaAbono'])->name('pagos.vista-previa-abono');
     Route::post('prestamos/{prestamo}/abonos', [PagoController::class, 'storeAbono'])->name('pagos.store-abono');
     Route::post('prestamos/{prestamo}/cancelacion', [PagoController::class, 'storeCancelacion'])->name('pagos.store-cancelacion');
     Route::post('prestamos/{prestamo}/cesantias', [AbonoCesantiasController::class, 'store'])->name('cesantias.store');

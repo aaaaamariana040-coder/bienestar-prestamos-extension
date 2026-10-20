@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['id_prestamo', 'motivo', 'saldo_anterior', 'saldo_nuevo', 'tasa_aplicada', 'fecha', 'cedula_usu'])]
+#[Fillable(['id_prestamo', 'motivo', 'opcion_elegida', 'saldo_anterior', 'saldo_nuevo', 'tasa_aplicada', 'fecha', 'cedula_usu'])]
 class Reliquidacion extends Model
 {
     /** @use HasFactory<ReliquidacionFactory> */

@@ -23,7 +23,7 @@ class ReliquidacionTest extends TestCase
         $tasaPeriodica = $prestamoService->tasaPeriodica($tasaAnual);
         $cuotaPeriodica = $prestamoService->calcularCuotaFrancesa($monto, $tasaPeriodica, $numCuotas);
 
-        $tipoPrestamo = TipoPrestamo::factory()->create(['nombre' => 'Educación']);
+        $tipoPrestamo = TipoPrestamo::factory()->create(['nombre' => 'Vivienda']);
         $prestamo = Prestamo::factory()->create([
             'id_tipo' => $tipoPrestamo->id_tipo,
             'monto_aprobado' => $monto,
@@ -159,9 +159,10 @@ class ReliquidacionTest extends TestCase
             'saldo_nuevo' => round(10_000_000 - $monto, 2),
         ]);
 
-        // Modo "plazo": la cuota periódica no cambia, el número de cuotas sí baja.
-        $this->assertSame(number_format($cuotaOriginal, 2), number_format((float) $prestamo->cuota_periodica, 2));
+        // Modo "plazo": baja el número de cuotas y la cuota se recalcula con el n sugerido (queda igual o apenas menor).
         $this->assertLessThan(24, $prestamo->num_cuotas);
+        $this->assertLessThanOrEqual($cuotaOriginal, (float) $prestamo->cuota_periodica);
+        $this->assertEqualsWithDelta($cuotaOriginal, (float) $prestamo->cuota_periodica, $cuotaOriginal * 0.1);
 
         $saldoPendiente = $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_capital');
         $this->assertEqualsWithDelta(round(10_000_000 - $monto, 2), (float) $saldoPendiente, 1.0);

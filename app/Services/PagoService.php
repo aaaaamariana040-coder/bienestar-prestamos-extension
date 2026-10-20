@@ -67,17 +67,25 @@ class PagoService
 
     /**
      * Abono extraordinario a capital (Art. 12 parágrafos 3 y 4): no está ligado
-     * a una cuota puntual. Si supera el valor de 10 cuotas quincenales, dispara
-     * la reliquidación de la cuota o el plazo (parágrafo 5), según elija el
-     * beneficiario en $modoReliquidacion ('cuota' o 'plazo').
+     * a una cuota puntual. Si alcanza el umbral configurado (por defecto 10
+     * cuotas) en una modalidad a la que aplica, el operador debe elegir en
+     * $modoReliquidacion ('cuota' o 'plazo') y se reliquida (parágrafos 4 y 5);
+     * $numCuotas fija a mano el plazo nuevo. Por debajo del umbral solo se
+     * registra el pago, sin reliquidación.
      */
-    public function registrarAbonoExtraordinario(Prestamo $prestamo, float $monto, string $fechaPago, Usuario $actor, string $modoReliquidacion = 'plazo'): Pago
+    public function registrarAbonoExtraordinario(Prestamo $prestamo, float $monto, string $fechaPago, Usuario $actor, ?string $modoReliquidacion = null, ?int $numCuotas = null): Pago
     {
         if ($monto <= 0) {
             throw new RuntimeException('El monto del abono debe ser mayor que cero.');
         }
 
-        return DB::transaction(function () use ($prestamo, $monto, $fechaPago, $actor, $modoReliquidacion) {
+        $saldoCapital = round((float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_capital'), 2);
+
+        if (round($monto, 2) >= $saldoCapital) {
+            throw new RuntimeException('El abono debe ser menor que el saldo de capital pendiente; para pagar el saldo completo use «Cancelación total».');
+        }
+
+        return DB::transaction(function () use ($prestamo, $monto, $fechaPago, $actor, $modoReliquidacion, $numCuotas) {
             $pago = $prestamo->pagos()->create([
                 'id_cuota' => null,
                 'fecha_pago' => $fechaPago,
@@ -93,9 +101,10 @@ class PagoService
                     $prestamo,
                     $monto,
                     MotivoReliquidacion::AbonoExtraordinario,
-                    $modoReliquidacion,
+                    (string) $modoReliquidacion,
                     $fechaPago,
                     $actor,
+                    $numCuotas,
                 );
             }
 

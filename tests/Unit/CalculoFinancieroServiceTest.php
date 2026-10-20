@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\CalculoFinancieroService;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -105,5 +106,64 @@ class CalculoFinancieroServiceTest extends TestCase
 
         $this->assertSame(250_000.0, $calculo->cuotaFija(1_000_000, 0.0, 4));
         $this->assertEqualsWithDelta(0.0, $calculo->tablaAmortizacion(1_000_000, 0.0, 4)[3]['saldo'], self::TOLERANCIA);
+    }
+
+    /**
+     * Casos de verificación de la reliquidación contra el Excel del área
+     * (E.A. 1,61 %, cuotas quincenales).
+     *
+     * @return array<string, array{0: float, 1: int, 2: float}>
+     */
+    public static function casosReliquidacion(): array
+    {
+        return [
+            'saldo 1.158.589 en 7 cuotas' => [1_158_589, 7, 165_953.74],
+            'saldo 21.481.144 en 130 cuotas' => [21_481_144, 130, 172_547.78],
+        ];
+    }
+
+    #[DataProvider('casosReliquidacion')]
+    public function test_la_cuota_recalculada_coincide_con_el_excel(float $saldo, int $cuotas, float $cuotaEsperada): void
+    {
+        $calculo = new CalculoFinancieroService;
+        $tasaPeriodica = $calculo->tasaPeriodicaQuincenal(1.61);
+
+        $this->assertEqualsWithDelta($cuotaEsperada, $calculo->cuotaFija($saldo, $tasaPeriodica, $cuotas), self::TOLERANCIA);
+    }
+
+    public function test_la_cuota_se_redondea_a_dos_decimales(): void
+    {
+        $calculo = new CalculoFinancieroService;
+        $cuota = $calculo->cuotaFija(1_000_000, $calculo->tasaPeriodicaQuincenal(1.61), 7);
+
+        $this->assertSame(round($cuota, 2), $cuota);
+        $this->assertNotSame(1_000_000 / 7, $cuota);
+    }
+
+    #[DataProvider('casosReliquidacion')]
+    public function test_el_numero_de_cuotas_sugerido_devuelve_n_al_mantener_la_cuota_del_excel(float $saldo, int $cuotas, float $cuota): void
+    {
+        $calculo = new CalculoFinancieroService;
+
+        // La cuota está redondeada a centavos; el redondeo a 6 decimales evita subir una cuota por ruido.
+        $this->assertSame($cuotas, $calculo->numPeriodosParaCuota($saldo, $calculo->tasaPeriodicaQuincenal(1.61), $cuota));
+    }
+
+    public function test_el_numero_de_cuotas_sugerido_sube_al_entero_siguiente(): void
+    {
+        $calculo = new CalculoFinancieroService;
+
+        // Con una cuota apenas menor a la de 7 cuotas, 7 ya no alcanza y se necesitan 8.
+        $this->assertSame(8, $calculo->numPeriodosParaCuota(1_158_589, $calculo->tasaPeriodicaQuincenal(1.61), 165_000));
+        $this->assertSame(4, $calculo->numPeriodosParaCuota(1_000_000, 0.0, 250_000));
+    }
+
+    public function test_el_numero_de_cuotas_sugerido_rechaza_una_cuota_que_no_cubre_el_interes(): void
+    {
+        $calculo = new CalculoFinancieroService;
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $calculo->numPeriodosParaCuota(100_000_000, $calculo->tasaPeriodicaQuincenal(10), 1_000);
     }
 }

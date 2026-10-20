@@ -177,8 +177,15 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <h3 class="h6 mb-3">Registrar abono extraordinario</h3>
-                        <p class="text-muted small">Si supera el valor de 10 cuotas, el sistema reliquida automáticamente (Art. 12 §5).</p>
-                        <form method="POST" action="{{ route('pagos.store-abono', $prestamo) }}" class="row g-2 align-items-end">
+                        <p class="text-muted small">
+                            Un abono menor a {{ $umbralCuotas }} cuotas ({{ number_format($umbralCuotas * (float) $prestamo->cuota_periodica, 2) }}) se aplica a capital sin reliquidar.
+                            @if ($abonoAplicaAModalidad)
+                                Si es igual o mayor, elija si baja la cuota o el plazo (Art. 12 §4 y §5).
+                            @else
+                                Esta modalidad no tiene reliquidación por abono.
+                            @endif
+                        </p>
+                        <form method="POST" action="{{ route('pagos.store-abono', $prestamo) }}" id="form-abono" class="row g-2 align-items-end">
                             @csrf
                             <div class="col-auto">
                                 <label for="monto" class="form-label">Monto</label>
@@ -188,19 +195,33 @@
                                 <label for="fecha_pago_abono" class="form-label">Fecha</label>
                                 <input type="date" id="fecha_pago_abono" name="fecha_pago" class="form-control" value="{{ now()->toDateString() }}" required>
                             </div>
-                            <div class="col-auto">
-                                <label class="form-label d-block">Si reliquida, prefiero</label>
-                                <div class="form-check form-check-inline">
-                                    <input type="radio" id="modo_plazo" name="modo_reliquidacion" value="plazo" class="form-check-input" checked>
-                                    <label for="modo_plazo" class="form-check-label">Bajar el plazo</label>
-                                </div>
+                            <div class="col-12 d-none" id="abono-opciones">
+                                <label class="form-label d-block">Este abono permite reliquidar. Elija:</label>
                                 <div class="form-check form-check-inline">
                                     <input type="radio" id="modo_cuota" name="modo_reliquidacion" value="cuota" class="form-check-input">
-                                    <label for="modo_cuota" class="form-check-label">Bajar la cuota</label>
+                                    <label for="modo_cuota" class="form-check-label">Bajar el valor de la cuota</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" id="modo_plazo" name="modo_reliquidacion" value="plazo" class="form-check-input">
+                                    <label for="modo_plazo" class="form-check-label">Bajar el número de cuotas</label>
+                                </div>
+                                <div class="mt-2 d-none" id="abono-plazo">
+                                    <label for="num_cuotas" class="form-label">Cuotas restantes (sugerido, editable)</label>
+                                    <input type="number" min="1" id="num_cuotas" name="num_cuotas" class="form-control w-auto">
                                 </div>
                             </div>
+                            <div class="col-12 d-none" id="abono-vista-previa">
+                                <table class="table table-sm bg-white mb-0">
+                                    <tbody>
+                                        <tr><th>Saldo anterior</th><td id="vp-saldo-anterior"></td><th>Saldo nuevo</th><td id="vp-saldo-nuevo"></td></tr>
+                                        <tr><th>Cuota actual</th><td id="vp-cuota-actual"></td><th>Cuota nueva</th><td id="vp-cuota-nueva"></td></tr>
+                                        <tr><th>Cuotas restantes actuales</th><td id="vp-cuotas-actuales"></td><th>Cuotas restantes nuevas</th><td id="vp-cuotas-nuevas"></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-12 text-danger small d-none" id="abono-error"></div>
                             <div class="col-auto">
-                                <button type="submit" class="btn btn-outline-primary">Registrar abono</button>
+                                <button type="submit" class="btn btn-outline-primary">Confirmar abono</button>
                             </div>
                         </form>
                     </div>
@@ -270,6 +291,7 @@
             <tr>
                 <th>Fecha</th>
                 <th>Motivo</th>
+                <th>Opción</th>
                 <th>Saldo anterior</th>
                 <th>Saldo nuevo</th>
                 <th>Tasa aplicada</th>
@@ -280,13 +302,14 @@
                 <tr>
                     <td>{{ $reliquidacion->fecha->format('Y-m-d') }}</td>
                     <td>{{ $reliquidacion->motivo->value }}</td>
+                    <td>{{ match ($reliquidacion->opcion_elegida) { 'cuota' => 'Bajó la cuota', 'plazo' => 'Bajó el plazo', default => '—' } }}</td>
                     <td>{{ number_format($reliquidacion->saldo_anterior, 2) }}</td>
                     <td>{{ $reliquidacion->saldo_nuevo !== null ? number_format($reliquidacion->saldo_nuevo, 2) : 'Pendiente de cálculo' }}</td>
                     <td>{{ $reliquidacion->tasa_aplicada !== null ? number_format($reliquidacion->tasa_aplicada, 4).'%' : '—' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="text-center text-muted">No hay reliquidaciones registradas.</td>
+                    <td colspan="6" class="text-center text-muted">No hay reliquidaciones registradas.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -321,3 +344,80 @@
         </tbody>
     </table>
 @endsection
+
+@push('scripts')
+    @can('registrarPago', $prestamo)
+        <script>
+            (function () {
+                const url = @json(route('pagos.vista-previa-abono', $prestamo));
+                const montoInput = document.getElementById('monto');
+                const numInput = document.getElementById('num_cuotas');
+                const opciones = document.getElementById('abono-opciones');
+                const plazo = document.getElementById('abono-plazo');
+                const tabla = document.getElementById('abono-vista-previa');
+                const error = document.getElementById('abono-error');
+                const modos = document.querySelectorAll('input[name="modo_reliquidacion"]');
+                let temporizador = null;
+                let numEditado = false;
+
+                const dinero = (n) => Number(n).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                const modoElegido = () => (document.querySelector('input[name="modo_reliquidacion"]:checked') || {}).value || '';
+
+                function limpiar() {
+                    opciones.classList.add('d-none');
+                    tabla.classList.add('d-none');
+                    error.classList.add('d-none');
+                    modos.forEach((m) => { m.checked = false; m.required = false; });
+                    numInput.disabled = true;
+                    numInput.value = '';
+                    numEditado = false;
+                }
+
+                function consultar() {
+                    if (montoInput.value.trim() === '') { return limpiar(); }
+
+                    const params = new URLSearchParams({monto: montoInput.value, modo_reliquidacion: modoElegido()});
+                    if (modoElegido() === 'plazo' && numEditado && numInput.value !== '') {
+                        params.set('num_cuotas', numInput.value);
+                    }
+
+                    fetch(url + '?' + params.toString(), {headers: {'Accept': 'application/json'}})
+                        .then((r) => r.ok ? r.json() : Promise.reject())
+                        .then((d) => {
+                            if (! d.supera_umbral) { return limpiar(); }
+
+                            opciones.classList.remove('d-none');
+                            modos.forEach((m) => { m.required = true; });
+                            plazo.classList.toggle('d-none', modoElegido() !== 'plazo');
+                            numInput.disabled = modoElegido() !== 'plazo';
+                            error.classList.toggle('d-none', ! d.error);
+                            error.textContent = d.error || '';
+
+                            if (! d.plan) { return tabla.classList.add('d-none'); }
+
+                            if (d.plan.n_sugerido !== null && ! numEditado) { numInput.value = d.plan.n_sugerido; }
+                            numInput.max = d.plan.cuotas_actuales;
+                            document.getElementById('vp-saldo-anterior').textContent = dinero(d.plan.saldo_anterior);
+                            document.getElementById('vp-saldo-nuevo').textContent = dinero(d.plan.saldo_nuevo);
+                            document.getElementById('vp-cuota-actual').textContent = dinero(d.plan.cuota_actual);
+                            document.getElementById('vp-cuota-nueva').textContent = dinero(d.plan.cuota_nueva);
+                            document.getElementById('vp-cuotas-actuales').textContent = d.plan.cuotas_actuales;
+                            document.getElementById('vp-cuotas-nuevas').textContent = d.plan.cuotas_nuevas;
+                            tabla.classList.remove('d-none');
+                        })
+                        .catch(() => limpiar());
+                }
+
+                function programar() {
+                    clearTimeout(temporizador);
+                    temporizador = setTimeout(consultar, 300);
+                }
+
+                numInput.disabled = true;
+                montoInput.addEventListener('input', programar);
+                modos.forEach((m) => m.addEventListener('change', consultar));
+                numInput.addEventListener('input', () => { numEditado = true; programar(); });
+            })();
+        </script>
+    @endcan
+@endpush
