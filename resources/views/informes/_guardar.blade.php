@@ -1,3 +1,4 @@
+@can('informes.guardar')
 @if ($errors->any())
     <div class="alert alert-danger">
         <ul class="mb-0">
@@ -19,3 +20,4 @@
     <button type="submit" class="btn btn-primary">Generar y guardar informe</button>
     <a href="{{ route('informes.index') }}" class="btn btn-link">Ver informes guardados</a>
 </form>
+@endcan

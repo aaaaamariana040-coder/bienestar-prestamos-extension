@@ -10,21 +10,31 @@ class PrestamoPolicy
 {
     public function viewAny(Usuario $actor): bool
     {
-        return true;
+        return $actor->tienePermiso('prestamos.ver');
     }
 
     public function view(Usuario $actor, Prestamo $prestamo): bool
     {
-        return true;
+        return $actor->tienePermiso('prestamos.ver');
     }
 
     public function registrarDesembolso(Usuario $actor, Prestamo $prestamo): bool
     {
-        return $prestamo->estado === EstadoPrestamo::Vigente;
+        return $actor->tienePermiso('desembolsos.registrar') && $prestamo->estado === EstadoPrestamo::Vigente;
     }
 
-    public function registrarPago(Usuario $actor, Prestamo $prestamo): bool
+    public function registrarPagoCuota(Usuario $actor, Prestamo $prestamo): bool
     {
-        return $prestamo->estado === EstadoPrestamo::Vigente;
+        return $actor->tienePermiso('pagos.registrar-cuota') && $prestamo->estado === EstadoPrestamo::Vigente;
+    }
+
+    public function registrarAbono(Usuario $actor, Prestamo $prestamo): bool
+    {
+        return $actor->tienePermiso('pagos.registrar-abono') && $prestamo->estado === EstadoPrestamo::Vigente;
+    }
+
+    public function cancelar(Usuario $actor, Prestamo $prestamo): bool
+    {
+        return $actor->tienePermiso('pagos.cancelar-prestamo') && $prestamo->estado === EstadoPrestamo::Vigente;
     }
 }

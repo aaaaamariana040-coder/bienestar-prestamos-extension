@@ -9,16 +9,16 @@ class ProcesoQuincenaPolicy
 {
     public function viewAny(Usuario $actor): bool
     {
-        return $actor->puedeOperar();
+        return $actor->tienePermiso('quincenas.ver');
     }
 
     public function view(Usuario $actor, ProcesoQuincena $proceso): bool
     {
-        return $actor->puedeOperar();
+        return $actor->tienePermiso('quincenas.ver');
     }
 
     public function confirmar(Usuario $actor): bool
     {
-        return $actor->puedeOperar();
+        return $actor->tienePermiso('quincenas.confirmar');
     }
 }

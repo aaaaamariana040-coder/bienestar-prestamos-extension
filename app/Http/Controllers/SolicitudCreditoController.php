@@ -123,7 +123,7 @@ class SolicitudCreditoController extends Controller
 
     public function aprobar(Request $request, SolicitudCredito $solicitud, SolicitudCreditoService $solicitudCreditoService): RedirectResponse
     {
-        $this->authorize('decidir', $solicitud);
+        $this->authorize('aprobar', $solicitud);
 
         try {
             $solicitudCreditoService->aprobar($solicitud, $request->user());
@@ -136,7 +136,7 @@ class SolicitudCreditoController extends Controller
 
     public function rechazar(RechazarSolicitudCreditoRequest $request, SolicitudCredito $solicitud, SolicitudCreditoService $solicitudCreditoService): RedirectResponse
     {
-        $this->authorize('decidir', $solicitud);
+        $this->authorize('rechazar', $solicitud);
 
         $solicitudCreditoService->rechazar($solicitud, $request->validated('motivo_rechazo'), $request->user());
 

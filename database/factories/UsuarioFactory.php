@@ -45,4 +45,22 @@ class UsuarioFactory extends Factory
             'rol' => RolUsuario::Administrador,
         ]);
     }
+
+    /**
+     * Cuenta sin ningún permiso.
+     */
+    public function sinPermisos(): static
+    {
+        return $this->state(fn (array $attributes) => ['permisos' => []]);
+    }
+
+    /**
+     * Cuenta con exactamente estos permisos (sin los del perfil).
+     *
+     * @param  list<string>  $permisos
+     */
+    public function conPermisos(array $permisos): static
+    {
+        return $this->state(fn (array $attributes) => ['permisos' => $permisos]);
+    }
 }

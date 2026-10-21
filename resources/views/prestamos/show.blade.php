@@ -141,7 +141,7 @@
                 <th>Interés</th>
                 <th>Total</th>
                 <th>Estado</th>
-                @can('registrarPago', $prestamo)
+                @can('registrarPagoCuota', $prestamo)
                     <th class="text-end">Acciones</th>
                 @endcan
             </tr>
@@ -155,7 +155,7 @@
                     <td>{{ number_format($cuota->valor_interes, 2) }}</td>
                     <td>{{ number_format($cuota->valor_total, 2) }}</td>
                     <td>{{ $cuota->estado->value }}</td>
-                    @can('registrarPago', $prestamo)
+                    @can('registrarPagoCuota', $prestamo)
                         <td class="text-end">
                             @if ($cuota->estado->value === 'Pendiente')
                                 <form method="POST" action="{{ route('pagos.store-cuota', [$prestamo, $cuota]) }}" class="d-inline">
@@ -171,8 +171,9 @@
         </tbody>
     </table>
 
-    @can('registrarPago', $prestamo)
+    @canany(['registrarAbono', 'cancelar'], $prestamo)
         <div class="row">
+            @can('registrarAbono', $prestamo)
             <div class="col-md-6 mb-4">
                 <div class="card h-100">
                     <div class="card-body">
@@ -227,7 +228,9 @@
                     </div>
                 </div>
             </div>
+            @endcan
 
+            @can('cancelar', $prestamo)
             <div class="col-md-6 mb-4">
                 <div class="card h-100">
                     <div class="card-body">
@@ -241,8 +244,9 @@
                     </div>
                 </div>
             </div>
+            @endcan
 
-            @if (str_starts_with($prestamo->tipoPrestamo->nombre, 'Vivienda'))
+            @if (str_starts_with($prestamo->tipoPrestamo->nombre, 'Vivienda') && auth()->user()->can('registrarAbono', $prestamo))
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
                         <div class="card-body">
@@ -282,7 +286,7 @@
                 </div>
             @endif
         </div>
-    @endcan
+    @endcanany
 
     <h2 class="h5 mb-3">Historial de reliquidaciones</h2>
 
@@ -346,7 +350,7 @@
 @endsection
 
 @push('scripts')
-    @can('registrarPago', $prestamo)
+    @can('registrarAbono', $prestamo)
         <script>
             (function () {
                 const url = @json(route('pagos.vista-previa-abono', $prestamo));

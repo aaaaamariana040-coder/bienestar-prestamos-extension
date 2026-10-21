@@ -3,11 +3,14 @@
 namespace App\Http\Requests;
 
 use App\Enums\RolUsuario;
+use App\Http\Requests\Concerns\ValidaPermisosDeUsuario;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateUsuarioRequest extends FormRequest
 {
+    use ValidaPermisosDeUsuario;
+
     public function authorize(): bool
     {
         return $this->user()->can('update', $this->route('usuario'));
@@ -22,6 +25,7 @@ class UpdateUsuarioRequest extends FormRequest
             'nombre' => ['required', 'string', 'max:80'],
             'apellido' => ['required', 'string', 'max:80'],
             'rol' => ['required', Rule::enum(RolUsuario::class)],
+            ...$this->reglasDePermisos(),
         ];
     }
 
@@ -36,6 +40,7 @@ class UpdateUsuarioRequest extends FormRequest
             'apellido.required' => 'El apellido es obligatorio.',
             'apellido.max' => 'El apellido no puede superar los 80 caracteres.',
             'rol.required' => 'El rol es obligatorio.',
+            ...$this->mensajesDePermisos(),
         ];
     }
 }

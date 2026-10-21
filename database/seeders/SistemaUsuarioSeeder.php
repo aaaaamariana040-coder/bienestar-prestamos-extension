@@ -25,6 +25,7 @@ class SistemaUsuarioSeeder extends Seeder
                 'apellido' => '',
                 'contrasena_hash' => Str::random(64),
                 'rol' => RolUsuario::FuncionarioBienestar,
+                'permisos' => [],
                 'habilitado' => false,
             ],
         );

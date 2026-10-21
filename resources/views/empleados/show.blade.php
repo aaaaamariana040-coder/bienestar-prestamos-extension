@@ -4,7 +4,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">{{ $empleado->nombre_completo }}</h1>
         <div>
-            <a href="{{ route('empleados.edit', $empleado) }}" class="btn btn-outline-secondary">Editar</a>
+            @can('empleados.gestionar')
+                <a href="{{ route('empleados.edit', $empleado) }}" class="btn btn-outline-secondary">Editar</a>
+            @endcan
             <a href="{{ route('empleados.index') }}" class="btn btn-outline-secondary">Volver</a>
         </div>
     </div>

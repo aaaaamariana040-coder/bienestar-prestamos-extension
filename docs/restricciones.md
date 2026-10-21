@@ -43,6 +43,7 @@ Aplicación de Préstamos de Bienestar Social — Politécnico Colombiano Jaime 
 - Por confirmar (reunión 14-oct): tasa de 5,20 % en una solicitud de 2025 frente al tope del 5 %, umbral y aplicación de abonos menores a 10 cuotas, cobertura del seguro de vida deudor, conceptos 14, 31 y 34 del AS/400 y la columna TIPO.
 - Cantidad aproximada de empleados y préstamos vigentes.
 - Envío al Comité: correos reales del Comité y de la copia, remitente, textos del asunto y del cuerpo, servidor de correo de producción, si se puede enviar una solicitud sin documentos y si el correo lleva las observaciones de incumplimientos.
+- Permisos por cuenta: confirmar los permisos por defecto de cada perfil (hoy: Administrador todos; Funcionario todo menos Usuarios y Auditoría), si el Funcionario debe poder aprobar y rechazar solicitudes, crear presupuestos y modalidades, confirmar quincenas, registrar retiros y eliminar empleados, y si habrá más perfiles (por ejemplo, solo consulta).
 - Calendario académico real del trabajo de grado.
 
 ## 7. Configuración del correo del Comité (producción)
@@ -52,3 +53,6 @@ El envío de solicitudes al Comité (`config/comite.php`) funciona hoy con valor
 - **Destinatarios:** `COMITE_DESTINATARIOS` (correos del Comité, separados por coma) y `COMITE_COPIA` (copia a Bienestar). Sin destinatarios, o con direcciones `.test`, el envío se bloquea en producción.
 - **Textos y reglas:** `COMITE_ASUNTO`, `COMITE_TEXTO_INTRODUCCION`, `COMITE_TEXTO_CIERRE`, `COMITE_ADJUNTOS_MAX_MB` (15 por defecto), `COMITE_EXIGIR_DOCUMENTOS` y `COMITE_INCLUIR_OBSERVACIONES`.
 - El envío es síncrono (sin colas): no hace falta un worker. Después de cambiar el `.env`, ejecutar `php artisan config:clear`.
+
+## 8. Permisos por cuenta
+Cada cuenta guarda su lista de permisos (`usuarios.permisos`). El catálogo, las dependencias («gestionar» implica «ver»), los permisos exclusivos del Administrador (Usuarios y Auditoría) y los **permisos por defecto de cada perfil** están en `config/permisos.php`; los defaults están **pendientes de confirmación de Bienestar** y se cambian solo ahí. Valen para las cuentas nuevas y para «Restablecer a los permisos del perfil»; no cambian las cuentas que ya existen. Un permiso nuevo exige agregarlo al catálogo, protegerlo con `can:` en las rutas y, si las cuentas existentes deben tenerlo, una migración que se lo asigne.

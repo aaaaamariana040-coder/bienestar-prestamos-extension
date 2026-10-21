@@ -21,10 +21,15 @@
                 <tr>
                     <td>{{ $usuario->cedula }}</td>
                     <td>{{ $usuario->nombre_completo }}</td>
-                    <td>{{ $usuario->rol->name }}</td>
+                    <td>
+                        {{ $usuario->rol->name }}
+                        @if ($personalizados[$usuario->cedula] ?? false)
+                            <span class="badge text-bg-warning" title="Sus permisos difieren de los del perfil">Personalizado</span>
+                        @endif
+                    </td>
                     <td>{{ $usuario->habilitado ? 'Habilitado' : 'Deshabilitado' }}</td>
                     <td class="text-end">
-                        <a href="{{ route('usuarios.edit', $usuario) }}" class="btn btn-sm btn-outline-secondary">Editar rol</a>
+                        <a href="{{ route('usuarios.edit', $usuario) }}" class="btn btn-sm btn-outline-secondary">Editar rol y permisos</a>
 
                         @if ($usuario->habilitado && $usuario->rol === \App\Enums\RolUsuario::Administrador)
                             <span class="d-inline-block" title="El administrador no se puede deshabilitar" tabindex="0">

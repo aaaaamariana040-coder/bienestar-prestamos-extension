@@ -18,7 +18,7 @@ class PagoController extends Controller
 {
     public function storeCuota(RegistrarPagoCuotaRequest $request, Prestamo $prestamo, Cuota $cuota, PagoService $pagoService): RedirectResponse
     {
-        $this->authorize('registrarPago', $prestamo);
+        $this->authorize('registrarPagoCuota', $prestamo);
 
         try {
             $pagoService->registrarPagoCuota($prestamo, $cuota, $request->validated('fecha_pago'), $request->user());
@@ -31,7 +31,7 @@ class PagoController extends Controller
 
     public function storeAbono(RegistrarAbonoExtraordinarioRequest $request, Prestamo $prestamo, PagoService $pagoService): RedirectResponse
     {
-        $this->authorize('registrarPago', $prestamo);
+        $this->authorize('registrarAbono', $prestamo);
 
         try {
             $pagoService->registrarAbonoExtraordinario(
@@ -55,7 +55,7 @@ class PagoController extends Controller
      */
     public function vistaPreviaAbono(VistaPreviaAbonoRequest $request, Prestamo $prestamo, ReliquidacionService $reliquidacionService): JsonResponse
     {
-        $this->authorize('registrarPago', $prestamo);
+        $this->authorize('registrarAbono', $prestamo);
 
         $monto = (float) $request->validated('monto');
         $respuesta = [
@@ -82,7 +82,7 @@ class PagoController extends Controller
 
     public function storeCancelacion(RegistrarCancelacionRequest $request, Prestamo $prestamo, PagoService $pagoService): RedirectResponse
     {
-        $this->authorize('registrarPago', $prestamo);
+        $this->authorize('cancelar', $prestamo);
 
         try {
             $pagoService->registrarCancelacion($prestamo, $request->validated('fecha_pago'), $request->user());
