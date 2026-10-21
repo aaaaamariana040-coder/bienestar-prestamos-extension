@@ -8,6 +8,7 @@ use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\SmmlvAnual;
 use App\Models\SolicitudCredito;
+use App\Models\TasaInt;
 use App\Models\TipoPrestamo;
 
 /**
@@ -28,6 +29,8 @@ class SimuladorCreditoService
         private readonly CalculoFinancieroService $calculoFinanciero,
         private readonly EmpleadoService $empleadoService,
         private readonly SolicitudCreditoService $solicitudCreditoService,
+        private readonly DescuentosLeyService $descuentosLey,
+        private readonly TasaVehiculoService $tasaVehiculoService,
     ) {
         //
     }
@@ -214,129 +217,350 @@ class SimuladorCreditoService
     }
 
     /**
-     * Si hay errores de validación, solo viene `errores` con datos; el resto
-     * de las claves quedan en null (o vacías, en la tabla).
+     * Tasa oficial que tendría una solicitud de este empleado: base (tasas_int
+     * del año) y puntos adicionales (solo vehículo, según el plazo en años
+     * completos y si es su primera solicitud de la modalidad). Es lo que
+     * prellena el simulador; el operador puede cambiarla.
      *
-     * @return array{
-     *     errores: list<string>,
-     *     tasa_efectiva_anual: ?float,
-     *     tasa_nominal_anual: ?float,
-     *     cuota_quincenal: ?float,
-     *     total_intereses: ?float,
-     *     total_a_pagar: ?float,
-     *     tabla_amortizacion: list<array{numero: int, interes: float, capital: float, cuota: float, saldo: float}>,
-     *     capacidad_endeudamiento: ?float,
-     *     margen_capacidad: ?float,
-     * }
+     * @return array{base: ?float, puntos: float, primera_solicitud: bool, avisos: list<string>}
+     */
+    public function tasaOficial(Empleado $empleado, TipoPrestamo $modalidad, int $anio, int $plazoQuincenas): array
+    {
+        $esPrimeraSolicitud = ! Prestamo::where('cedula_empleado', $empleado->cedula)
+            ->where('id_tipo', $modalidad->id_tipo)
+            ->exists();
+        $avisos = [];
+
+        if (! $modalidad->esVehiculo()) {
+            $tasaInt = TasaInt::where('id_tipo', $modalidad->id_tipo)->where('anio', $anio)->first();
+
+            return [
+                'base' => $tasaInt !== null ? (float) $tasaInt->tasa_anual : null,
+                'puntos' => 0.0,
+                'primera_solicitud' => $esPrimeraSolicitud,
+                'avisos' => [],
+            ];
+        }
+
+        $plazoAnios = intdiv(max($plazoQuincenas, 0), PrestamoService::QUINCENAS_POR_ANIO);
+        $componentes = $this->tasaVehiculoService->componentes($anio, $plazoAnios, $esPrimeraSolicitud);
+        $tipoSolicitud = $esPrimeraSolicitud ? 'primera solicitud' : 'segunda solicitud o posterior';
+
+        if ($componentes !== null && $componentes['puntos'] === null) {
+            $avisos[] = "No hay puntos adicionales registrados para vehículo a {$plazoAnios} años ({$tipoSolicitud}); se muestran 0 puntos. Si corresponden, digítalos a mano.";
+        }
+
+        if ($plazoQuincenas % PrestamoService::QUINCENAS_POR_ANIO !== 0) {
+            $avisos[] = "En vehículo los puntos se toman por años completos: {$plazoQuincenas} quincenas se tratan como {$plazoAnios} años, igual que en el préstamo real.";
+        }
+
+        return [
+            'base' => $componentes['base'] ?? null,
+            'puntos' => (float) ($componentes['puntos'] ?? 0),
+            'primera_solicitud' => $esPrimeraSolicitud,
+            'avisos' => $avisos,
+        ];
+    }
+
+    /**
+     * Plazo más alto que se puede simular: el máximo de la modalidad, sin pasar
+     * del límite técnico del simulador.
+     */
+    public function plazoMaximoSimulable(TipoPrestamo $modalidad): int
+    {
+        return min((int) $modalidad->plazo_maximo, (int) config('prestamos.simulador.plazo_tecnico_maximo'));
+    }
+
+    /**
+     * Simula un crédito sin guardar nada. La tasa y los puntos que llegan nulos
+     * se toman de la configuración oficial; si llegan, mandan (el operador los
+     * editó). Con errores solo vienen `errores` y `avisos`.
+     *
+     * @return array<string, mixed>
      */
     public function simular(
+        Empleado $empleado,
         TipoPrestamo $modalidad,
         float $monto,
         int $plazoQuincenas,
-        float $salario,
-        int $anioSolicitud,
-        bool $esPrimeraSolicitud = true,
+        ?float $tasaEfectivaBase = null,
+        ?float $puntos = null,
+        float $retencion = 0.0,
+        ?int $anio = null,
     ): array {
-        $errores = $this->validarEntradas($modalidad, $monto, $plazoQuincenas, $salario, $anioSolicitud);
+        $anio ??= now()->year;
+        $salario = (float) $empleado->salario;
+        $smmlv = SmmlvAnual::valorParaAnio($anio);
+        $plazoMaximo = $this->plazoMaximoSimulable($modalidad);
+        $oficial = $this->tasaOficial($empleado, $modalidad, $anio, $plazoQuincenas);
 
-        [, $tasaEfectivaAnual] = $this->prestamoService->resolverTasaPara($modalidad, $anioSolicitud, $plazoQuincenas, $esPrimeraSolicitud);
+        $errores = $this->validarEntradas($empleado, $modalidad, $monto, $plazoQuincenas, $salario, $smmlv, $anio, $plazoMaximo);
 
-        if ($tasaEfectivaAnual === null) {
-            $errores[] = "No hay una tasa de interés registrada para {$modalidad->nombre} en {$anioSolicitud}.";
+        $base = $tasaEfectivaBase ?? $oficial['base'];
+
+        if ($base === null && $errores === []) {
+            $errores[] = "No hay una tasa de interés registrada para {$modalidad->nombre} en {$anio}. Digita la tasa para simular.";
         }
 
         if ($errores !== []) {
-            return $this->resultadoConErrores($errores);
+            return ['errores' => $errores, 'avisos' => []];
         }
 
-        $tasaPeriodica = $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaEfectivaAnual);
+        $puntosUsados = $puntos ?? $oficial['puntos'];
+        $tasaTotal = round($base + $puntosUsados, 4);
+        $editada = $oficial['base'] === null
+            || abs($base - $oficial['base']) > 1e-9
+            || abs($puntosUsados - $oficial['puntos']) > 1e-9;
+
+        $tasaPeriodica = $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaTotal);
         $tabla = $this->calculoFinanciero->tablaAmortizacion($monto, $tasaPeriodica, $plazoQuincenas);
         $cuota = $this->calculoFinanciero->cuotaFija($monto, $tasaPeriodica, $plazoQuincenas);
-        $capacidad = $this->empleadoService->capacidadEndeudamientoSugerida($salario);
+        $seguro = round($monto * (float) config('prestamos.seguro.tasa_sobre_monto'), 2);
+
+        $capacidad = $this->capacidad($empleado, $salario, $smmlv, $retencion, $cuota);
+        $tramo = $modalidad->tramoCuantiaPara($salario / $smmlv);
+        $cuantiaMaxima = $tramo !== null ? floor((float) $tramo->cuantia_maxima_smmlv * $smmlv) : null;
 
         return [
             'errores' => [],
-            'tasa_efectiva_anual' => $tasaEfectivaAnual,
-            'tasa_nominal_anual' => $this->calculoFinanciero->tasaNominalDesdePeriodica($tasaPeriodica),
+            'avisos' => [...$oficial['avisos'], ...$this->avisosInformativos($empleado, $modalidad, $monto, $plazoQuincenas, $oficial['base'] === null)],
+            'encabezado' => [
+                'modalidad' => $modalidad->nombre,
+                'monto' => $monto,
+                'tasa_efectiva_anual' => $base,
+                'puntos' => $puntosUsados,
+                'tasa_total' => $tasaTotal,
+                'tasa_nominal_anual' => $this->calculoFinanciero->tasaNominalDesdePeriodica($tasaPeriodica),
+                'tasa_periodica_quincenal' => $tasaPeriodica * 100,
+                'periodos' => $plazoQuincenas,
+                'plazo_legible' => TipoPrestamo::plazoEnQuincenas($plazoQuincenas),
+                'plazo_maximo_simulable' => $plazoMaximo,
+            ],
+            'tasa' => [
+                'editada' => $editada,
+                'oficial_base' => $oficial['base'],
+                'oficial_puntos' => $oficial['puntos'],
+                'oficial_total' => $oficial['base'] === null ? null : round($oficial['base'] + $oficial['puntos'], 4),
+            ],
             'cuota_quincenal' => $cuota,
+            'seguro' => $seguro,
+            'cuota_mas_seguro' => round($cuota + $seguro, 2),
             'total_intereses' => round(array_sum(array_column($tabla, 'interes')), 2),
             'total_a_pagar' => round(array_sum(array_column($tabla, 'cuota')), 2),
-            'tabla_amortizacion' => $tabla,
-            'capacidad_endeudamiento' => $capacidad,
-            'margen_capacidad' => round($capacidad - $cuota * 2, 2),
+            'tabla_amortizacion' => $this->conFechasEstimadas($tabla, $plazoQuincenas),
+            'capacidad' => $capacidad,
+            'sugerencias' => $this->sugerencias($capacidad['disponible'], $monto, $tasaPeriodica, $plazoQuincenas, $plazoMaximo, $cuantiaMaxima),
         ];
+    }
+
+    /**
+     * Las dos capacidades —la estimada con descuentos de ley y la guardada del
+     * empleado, que usa la aprobación— y el veredicto de la cuota mensual
+     * (cuota quincenal × 2) contra cada una. A la que elige el interruptor se le
+     * resta lo comprometido en préstamos vigentes. El seguro no se incluye.
+     *
+     * @return array<string, mixed>
+     */
+    private function capacidad(Empleado $empleado, float $salario, float $smmlv, float $retencion, float $cuotaQuincenal): array
+    {
+        $comprometida = $this->empleadoService->capacidadEndeudamiento($empleado)['comprometida'];
+        $cuotaMensual = round($cuotaQuincenal * 2, 2);
+        $estimada = $this->descuentosLey->calcular($salario, $smmlv, $retencion);
+        $guardada = round((float) $empleado->capacidad_endeudamiento, 2);
+
+        $estimada['disponible'] = round($estimada['capacidad'] - $comprometida, 2);
+        $estimada['cabe'] = $cuotaMensual <= $estimada['disponible'];
+
+        $usaEstimada = (bool) config('prestamos.simulador.restar_descuentos_ley');
+        $guardadaDisponible = round($guardada - $comprometida, 2);
+        $guardadaCabe = $cuotaMensual <= $guardadaDisponible;
+        $disponible = $usaEstimada ? $estimada['disponible'] : $guardadaDisponible;
+
+        return [
+            'restar_descuentos_ley' => $usaEstimada,
+            'usada' => $usaEstimada ? 'estimada' : 'guardada',
+            'comprometida' => $comprometida,
+            'estimada' => $estimada,
+            'guardada' => [
+                'capacidad' => $guardada,
+                'disponible' => $guardadaDisponible,
+                'cabe' => $guardadaCabe,
+            ],
+            'cuota_mensual' => $cuotaMensual,
+            'disponible' => $disponible,
+            'cabe' => $usaEstimada ? $estimada['cabe'] : $guardadaCabe,
+            'margen' => round($disponible - $cuotaMensual, 2),
+            'veredictos_distintos' => $estimada['cabe'] !== $guardadaCabe,
+        ];
+    }
+
+    /**
+     * Cuantía máxima del tramo, antigüedad y presupuesto, con las verificaciones
+     * de la solicitud real salvo la capacidad (que se evalúa aparte), el plazo
+     * (ya validado) y lo que el simulador ya reporta como error o aviso propio.
+     *
+     * @return list<string>
+     */
+    private function avisosInformativos(Empleado $empleado, TipoPrestamo $modalidad, float $monto, int $plazoQuincenas, bool $sinTasaOficial): array
+    {
+        $omitidos = ['capacidad_excedida', 'plazo_excedido', 'sin_smmlv', 'empleado_inactivo'];
+        $avisos = [];
+
+        foreach ($this->solicitudCreditoService->incumplimientos($this->solicitudHipotetica($empleado, $modalidad, $monto, $plazoQuincenas)) as $incumplimiento) {
+            if (in_array($incumplimiento['codigo'], $omitidos, true)) {
+                continue;
+            }
+
+            if ($incumplimiento['codigo'] === 'sin_tasa') {
+                if ($sinTasaOficial) {
+                    $avisos[] = 'No hay tasa oficial registrada para esta modalidad y año: la solicitud real no podrá aprobarse hasta registrarla.';
+                }
+
+                continue;
+            }
+
+            $avisos[] = $incumplimiento['mensaje'];
+        }
+
+        return $avisos;
+    }
+
+    /**
+     * Sugerencias con la capacidad disponible que decidió el veredicto: el
+     * plazo mínimo para que quepa el monto pedido y el monto máximo que cabe
+     * con el plazo elegido. Ambas respetan el plazo máximo simulable.
+     *
+     * @return array<string, mixed>
+     */
+    private function sugerencias(float $disponible, float $monto, float $tasaPeriodica, int $plazoQuincenas, int $plazoMaximo, ?float $cuantiaMaxima): array
+    {
+        $cuotaMaxima = round($disponible / 2, 2);
+
+        return [
+            'cuota_maxima_quincenal' => max($cuotaMaxima, 0.0),
+            'plazo_minimo' => $this->plazoMinimo($disponible, $cuotaMaxima, $monto, $tasaPeriodica, $plazoMaximo),
+            'monto_maximo' => $this->montoMaximo($disponible, $cuotaMaxima, $tasaPeriodica, $plazoQuincenas, $cuantiaMaxima),
+        ];
+    }
+
+    /**
+     * @return array{posible: bool, quincenas: ?int, cuota_quincenal: ?float, motivo: ?string}
+     */
+    private function plazoMinimo(float $disponible, float $cuotaMaxima, float $monto, float $tasaPeriodica, int $plazoMaximo): array
+    {
+        $sinPlazo = fn (string $motivo, ?int $quincenas = null): array => ['posible' => false, 'quincenas' => $quincenas, 'cuota_quincenal' => null, 'motivo' => $motivo];
+
+        if ($cuotaMaxima <= 0) {
+            return $sinPlazo('No hay capacidad de endeudamiento disponible: ningún plazo sirve.');
+        }
+
+        $interes = round($monto * $tasaPeriodica, 2);
+
+        if ($cuotaMaxima <= $interes) {
+            return $sinPlazo('La cuota máxima que cabe ($'.$this->pesos($cuotaMaxima).' por quincena) no cubre ni el interés de la primera quincena ($'.$this->pesos($interes).'): ningún plazo sirve para este monto.');
+        }
+
+        $periodos = $this->calculoFinanciero->numPeriodosParaCuota($monto, $tasaPeriodica, $cuotaMaxima);
+
+        // La cuota se redondea a centavos: se sube el plazo hasta que quepa de verdad.
+        for ($intentos = 0; $intentos < 50 && round($this->calculoFinanciero->cuotaFija($monto, $tasaPeriodica, $periodos) * 2, 2) > $disponible; $intentos++) {
+            $periodos++;
+        }
+
+        if ($periodos > $plazoMaximo) {
+            return $sinPlazo("Aun con el plazo máximo ({$plazoMaximo} quincenas) la cuota no cabe: se necesitarían {$periodos} quincenas.", $periodos);
+        }
+
+        return [
+            'posible' => true,
+            'quincenas' => $periodos,
+            'cuota_quincenal' => $this->calculoFinanciero->cuotaFija($monto, $tasaPeriodica, $periodos),
+            'motivo' => null,
+        ];
+    }
+
+    /**
+     * @return array{posible: bool, monto: ?float, cuota_quincenal: ?float, plazo_quincenas: int, cuantia_maxima: ?float, motivo: ?string}
+     */
+    private function montoMaximo(float $disponible, float $cuotaMaxima, float $tasaPeriodica, int $plazoQuincenas, ?float $cuantiaMaxima): array
+    {
+        $resultado = ['posible' => false, 'monto' => null, 'cuota_quincenal' => null, 'plazo_quincenas' => $plazoQuincenas, 'cuantia_maxima' => $cuantiaMaxima, 'motivo' => null];
+
+        if ($cuotaMaxima <= 0) {
+            return [...$resultado, 'motivo' => 'No hay capacidad de endeudamiento disponible.'];
+        }
+
+        $monto = floor($this->calculoFinanciero->montoMaximoParaCuota($cuotaMaxima, $tasaPeriodica, $plazoQuincenas));
+
+        for ($intentos = 0; $intentos < 1000 && $monto > 0 && round($this->calculoFinanciero->cuotaFija($monto, $tasaPeriodica, $plazoQuincenas) * 2, 2) > $disponible; $intentos++) {
+            $monto--;
+        }
+
+        if ($monto < self::MONTO_MINIMO_SOLICITUD) {
+            return [...$resultado, 'motivo' => 'La capacidad disponible no alcanza para el monto mínimo de una solicitud ($'.$this->pesos(self::MONTO_MINIMO_SOLICITUD).') con este plazo.'];
+        }
+
+        return [...$resultado, 'posible' => true, 'monto' => $monto, 'cuota_quincenal' => $this->calculoFinanciero->cuotaFija($monto, $tasaPeriodica, $plazoQuincenas)];
+    }
+
+    /**
+     * Agrega la fecha estimada de cada cuota con el mismo generador de fechas
+     * que usa PrestamoService al crear las cuotas reales, como si el préstamo
+     * se autorizara hoy.
+     *
+     * @param  list<array{numero: int, interes: float, capital: float, cuota: float, saldo: float}>  $tabla
+     * @return list<array{numero: int, fecha: string, interes: float, capital: float, cuota: float, saldo: float}>
+     */
+    private function conFechasEstimadas(array $tabla, int $plazoQuincenas): array
+    {
+        $fechas = $this->prestamoService->fechasDeVencimiento(
+            $this->prestamoService->fechaPrimeraCuota(now()->toDateString()),
+            $plazoQuincenas,
+        );
+
+        return array_map(fn (array $fila, string $fecha): array => ['numero' => $fila['numero'], 'fecha' => $fecha] + $fila, $tabla, $fechas);
     }
 
     /**
      * @return list<string>
      */
-    private function validarEntradas(TipoPrestamo $modalidad, float $monto, int $plazoQuincenas, float $salario, int $anioSolicitud): array
+    private function validarEntradas(Empleado $empleado, TipoPrestamo $modalidad, float $monto, int $plazoQuincenas, float $salario, ?float $smmlv, int $anio, int $plazoMaximo): array
     {
         $errores = [];
 
-        if ($monto <= 0) {
-            $errores[] = 'El monto debe ser mayor que cero.';
+        if ($empleado->estado !== 'Activo') {
+            $errores[] = 'El empleado está retirado y no puede solicitar un crédito.';
+        }
+
+        if (! $modalidad->habilitada) {
+            $errores[] = 'La modalidad está deshabilitada.';
+        }
+
+        if ($monto < self::MONTO_MINIMO_SOLICITUD) {
+            $errores[] = 'El monto debe ser de al menos $'.$this->pesos(self::MONTO_MINIMO_SOLICITUD).'.';
         }
 
         if ($salario <= 0) {
-            $errores[] = 'El salario debe ser mayor que cero.';
+            $errores[] = 'El salario del empleado debe ser mayor que cero.';
         }
 
         if ($plazoQuincenas < 1) {
             $errores[] = 'El plazo debe ser de al menos 1 quincena.';
-        } elseif ($plazoQuincenas > $modalidad->plazo_maximo) {
+        } elseif ($plazoQuincenas > (int) $modalidad->plazo_maximo) {
             $errores[] = "El plazo ({$plazoQuincenas} quincenas) supera el máximo de la modalidad {$modalidad->nombre}: {$modalidad->plazo_maximo} quincenas.";
+        } elseif ($plazoQuincenas > $plazoMaximo) {
+            $errores[] = "El plazo ({$plazoQuincenas} quincenas) supera el límite técnico del simulador: {$plazoMaximo} quincenas.";
         }
 
-        if ($monto > 0 && $salario > 0) {
-            $errores = [...$errores, ...$this->validarCuantia($modalidad, $monto, $salario, $anioSolicitud)];
+        if ($smmlv === null) {
+            $errores[] = "No se ha registrado el valor del SMMLV para el año {$anio}.";
         }
 
         return $errores;
     }
 
-    /**
-     * @return list<string>
-     */
-    private function validarCuantia(TipoPrestamo $modalidad, float $monto, float $salario, int $anioSolicitud): array
+    private function pesos(float $valor): string
     {
-        $smmlv = SmmlvAnual::valorParaAnio($anioSolicitud);
-
-        if ($smmlv === null) {
-            return ["No se ha registrado el valor del SMMLV para el año {$anioSolicitud}."];
-        }
-
-        $tramo = $modalidad->tramoCuantiaPara($salario / $smmlv);
-
-        if ($tramo === null) {
-            return ['No hay una cuantía máxima configurada para el tramo salarial del empleado en esta modalidad.'];
-        }
-
-        $cuantiaMaxima = (float) $tramo->cuantia_maxima_smmlv * $smmlv;
-
-        if ($monto > $cuantiaMaxima) {
-            return ['El monto solicitado ('.number_format($monto, 0, ',', '.').') supera la cuantía máxima permitida para el salario indicado ('.number_format($cuantiaMaxima, 0, ',', '.').').'];
-        }
-
-        return [];
-    }
-
-    /**
-     * @param  list<string>  $errores
-     * @return array{errores: list<string>, tasa_efectiva_anual: null, tasa_nominal_anual: null, cuota_quincenal: null, total_intereses: null, total_a_pagar: null, tabla_amortizacion: array{}, capacidad_endeudamiento: null, margen_capacidad: null}
-     */
-    private function resultadoConErrores(array $errores): array
-    {
-        return [
-            'errores' => $errores,
-            'tasa_efectiva_anual' => null,
-            'tasa_nominal_anual' => null,
-            'cuota_quincenal' => null,
-            'total_intereses' => null,
-            'total_a_pagar' => null,
-            'tabla_amortizacion' => [],
-            'capacidad_endeudamiento' => null,
-            'margen_capacidad' => null,
-        ];
+        return number_format($valor, 0, ',', '.');
     }
 }

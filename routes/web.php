@@ -94,6 +94,8 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
     Route::get('simulador/empleado/{cedula}/modalidad/{tipo_prestamo}', [SimuladorController::class, 'modalidad'])
         ->where('cedula', '[0-9]{1,10}')
         ->name('simulador.modalidad');
+    Route::get('simulador/tasa', [SimuladorController::class, 'tasa'])->name('simulador.tasa');
+    Route::get('simulador/calcular', [SimuladorController::class, 'calcular'])->name('simulador.calcular');
 
     Route::get('prestamos', [PrestamoController::class, 'index'])->name('prestamos.index');
     Route::get('prestamos/{prestamo}', [PrestamoController::class, 'show'])->name('prestamos.show');

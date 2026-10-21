@@ -33,6 +33,8 @@ Casos reales para verificar el cálculo (coinciden al centavo con los Excel de B
 - La cuantía del préstamo está sujeta a esta capacidad de endeudamiento, sin superar los topes máximos por modalidad.
 - **Cómo lo aplica el sistema:** la cuota de la solicitud (cuota quincenal × 2, o sea la cuota mensual) debe caber en la capacidad **disponible** del empleado = capacidad total − capacidad comprometida. La comprometida es la suma de las cuotas quincenales de sus préstamos en estado Vigente y En mora × 2; los cancelados no cuentan, y un préstamo recién aprobado entra a la cuenta de inmediato. La misma cuenta la usan la aprobación de solicitudes y el simulador. El rechazo informa la capacidad total, la comprometida, la disponible y la cuota solicitada.
 - **Por confirmar (reunión 14-oct):** cómo se descuentan otras deducciones (judiciales, voluntarias, etc.). Hoy el sistema solo resta los préstamos que maneja.
+- **Simulador de crédito:** muestra dos capacidades. La *guardada* del empleado (la que usa la aprobación) y una *estimada* = 50 % de (salario − salud 4 % − pensión 4 % − fondo de solidaridad pensional − retención en la fuente manual); el interruptor `SIMULADOR_RESTAR_DESCUENTOS_LEY` (config/prestamos.php, activo por ahora) decide cuál manda en el veredicto, y a la elegida se le resta lo comprometido. Si las dos dan un veredicto distinto, el simulador lo avisa; la aprobación no cambia. **Por confirmar con Bienestar:** si se mantienen los descuentos de ley, dado que el Acuerdo 19/2022 (art. 10, par. 3) dice que seguridad social y retención no se cuentan. Los porcentajes y tramos de solidaridad deben verificarse con la norma vigente.
+- **Por confirmar con Bienestar:** el seguro no entra en la comparación de capacidad (ni en la aprobación ni en el simulador), aunque el art. 10, par. 3 habla de «capital, intereses y seguros».
 
 ### 2.1 Elegibilidad: año de servicio
 - Para las modalidades de **vivienda** (compra, construcción, deshipoteca, reparaciones o mejoras, cambio de vivienda) y **vehículo**, el empleado debe tener al menos **un año completo de servicio**, contado desde su fecha de vinculación hasta la fecha de la solicitud. Exactamente un año cumple.
@@ -139,6 +141,7 @@ Puede reliquidarse semestralmente si al momento de la solicitud el empleado tien
 ## 12. Seguros
 - Seguro de vida deudor (prima mensual sobre saldo de la deuda) y seguro de incendio/terremoto para vivienda (prima anual sobre valor comercial) (Art. 15).
 - **Prima del seguro de vida deudor:** mensual = saldo × 0,00034516 (0,0041419 ÷ 12). Se aplica al saldo de todos los créditos de la persona. **Por confirmar (reunión 14-oct):** si cubre todas las modalidades.
+- **Simulador:** muestra el seguro aparte como monto × 0,0003231 (`SEGURO_TASA_SOBRE_MONTO`) y lo suma a la cuota quincenal. **Por confirmar con Bienestar:** la tarifa correcta (difiere de la de arriba), su periodicidad y si se calcula sobre el monto o sobre el saldo.
 - El listado para el seguro se genera en la segunda quincena de cada mes.
 - Hay dos pólizas: la anual **VGD0099** y la mensual **VGD00100**.
 - Beneficiario del seguro de vida: la institución. Beneficiario del seguro de incendio/terremoto: el propio empleado, para reconstrucción (Art. 15, parágrafo 2).

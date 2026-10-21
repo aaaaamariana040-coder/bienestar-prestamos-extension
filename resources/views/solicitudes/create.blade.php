@@ -20,7 +20,7 @@
             <div class="col-md-6 mb-3">
                 <label for="cedula_empleado" class="form-label">Cédula del empleado</label>
                 <x-buscador-cedula :url="url('solicitudes/empleado')" id="cedula_empleado" name="cedula_empleado"
-                                   :valor="old('cedula_empleado')" requerido />
+                                   :valor="old('cedula_empleado', $previos['cedula_empleado'])" requerido />
             </div>
 
             <div class="col-md-6 mb-3">
@@ -28,7 +28,7 @@
                 <select id="id_tipo" name="id_tipo" class="form-select" required>
                     <option value="">Selecciona una modalidad…</option>
                     @foreach ($tiposPrestamo as $tipoPrestamo)
-                        <option value="{{ $tipoPrestamo->id_tipo }}" @selected((string) old('id_tipo') === (string) $tipoPrestamo->id_tipo)>
+                        <option value="{{ $tipoPrestamo->id_tipo }}" @selected((string) old('id_tipo', $previos['id_tipo']) === (string) $tipoPrestamo->id_tipo)>
                             {{ $tipoPrestamo->nombre }}
                         </option>
                     @endforeach
@@ -38,13 +38,13 @@
             <div class="col-md-4 mb-3">
                 <label for="monto_solicitado" class="form-label">Monto solicitado</label>
                 <input type="text" inputmode="decimal" id="monto_solicitado" name="monto_solicitado" class="form-control"
-                       value="{{ old('monto_solicitado') }}" required>
+                       value="{{ old('monto_solicitado', $previos['monto_solicitado']) }}" required>
             </div>
 
             <div class="col-md-4 mb-3">
                 <label for="plazo_solicitado" class="form-label">Plazo (quincenas)</label>
                 <input type="number" min="1" id="plazo_solicitado" name="plazo_solicitado" class="form-control"
-                       value="{{ old('plazo_solicitado') }}" required>
+                       value="{{ old('plazo_solicitado', $previos['plazo_solicitado'] === '0' ? '' : $previos['plazo_solicitado']) }}" required>
             </div>
 
             <div class="col-md-4 mb-3">
