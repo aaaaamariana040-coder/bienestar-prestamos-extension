@@ -98,11 +98,20 @@ class UsuarioSistemaYOrigenPagoTest extends TestCase
         $this->actingAs(Usuario::factory()->create());
         $prestamo = Prestamo::factory()->create(['monto_aprobado' => 10_000_000, 'num_cuotas' => 24, 'cuota_periodica' => 500_000]);
         $cuota = Cuota::factory()->create(['id_prestamo' => $prestamo->id_prestamo, 'numero_cuota' => 1, 'estado' => EstadoCuota::Pendiente]);
-        Cuota::factory()->create(['id_prestamo' => $prestamo->id_prestamo, 'numero_cuota' => 2, 'estado' => EstadoCuota::Pendiente]);
+        // Valores fijos: un abono debe ser menor que el saldo de capital pendiente (aquí, el de la cuota 2); con el
+        // capital aleatorio de la fábrica (50.000 a 500.000) el abono de 100.000 se rechazaba una de cada nueve veces.
+        Cuota::factory()->create([
+            'id_prestamo' => $prestamo->id_prestamo,
+            'numero_cuota' => 2,
+            'estado' => EstadoCuota::Pendiente,
+            'valor_capital' => 400_000,
+            'valor_interes' => 0,
+            'valor_total' => 400_000,
+        ]);
 
-        $this->post(route('pagos.store-cuota', [$prestamo, $cuota]), ['fecha_pago' => '2026-02-01'])->assertRedirect();
-        $this->post(route('pagos.store-abono', $prestamo), ['monto' => 100_000, 'fecha_pago' => '2026-02-02'])->assertRedirect();
-        $this->post(route('pagos.store-cancelacion', $prestamo), ['fecha_pago' => '2026-02-03'])->assertRedirect();
+        $this->post(route('pagos.store-cuota', [$prestamo, $cuota]), ['fecha_pago' => '2026-02-01'])->assertRedirect()->assertSessionMissing('error');
+        $this->post(route('pagos.store-abono', $prestamo), ['monto' => 100_000, 'fecha_pago' => '2026-02-02'])->assertRedirect()->assertSessionMissing('error');
+        $this->post(route('pagos.store-cancelacion', $prestamo), ['fecha_pago' => '2026-02-03'])->assertRedirect()->assertSessionMissing('error');
 
         $this->assertSame(3, Pago::count());
         $this->assertSame([OrigenPago::Manual], Pago::all()->pluck('origen')->unique()->values()->all());
