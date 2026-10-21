@@ -106,6 +106,7 @@ Puede reliquidarse semestralmente si al momento de la solicitud el empleado tien
 - Decisiones por mayoría de los asistentes a la reunión — no por un número fijo de votos (Art. 6, parágrafo 3).
 - Constancia en actas firmadas por Presidente y Secretario.
 - La notificación de rechazo se envía por correo electrónico (confirmado en la entrevista).
+- **Envío al Comité:** el administrador o el funcionario (permiso `solicitudes.enviar-comite`) envía cada solicitud **Radicada** por correo al Comité, un correo por solicitud, con los documentos que elija como adjuntos (hasta 15 MB en total, configurable). El cuerpo trae empleado, cédula, modalidad, monto, plazo, tasa, cuota y capacidad de endeudamiento —sin el salario— y, si está activado, las observaciones de incumplimientos. El envío no cambia el estado: queda una marca «Enviada al comité» y un registro (quién, cuándo, a quiénes, adjuntos y cifras enviadas); reenviar exige confirmarlo. **Por confirmar con Bienestar:** correos del Comité y de la copia, remitente, textos, si se permite enviar sin documentos y si el correo debe incluir las observaciones. Ver `docs/restricciones.md`, sección 7.
 - Las solicitudes se ordenan por puntaje (antigüedad, composición familiar, salario, destinación, cabeza de familia) — Art. 16 y 17; ver el detalle en la sección 15. **Alcance por decidir: no automatizado.**
 
 ## 7. Desembolso

@@ -3,7 +3,16 @@
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Solicitud #{{ $solicitud->id_solicitud }}</h1>
-        <a href="{{ route('solicitudes.index') }}" class="btn btn-outline-secondary">Volver a solicitudes</a>
+        <div class="d-flex gap-2">
+            @can('solicitudes.enviar-comite')
+                @if ($solicitud->estado === \App\Enums\EstadoSolicitud::Radicada)
+                    <a href="{{ route('solicitudes.comite.previa', $solicitud) }}" class="btn btn-outline-primary" id="enviar-al-comite">
+                        {{ $solicitud->envios->isEmpty() ? 'Enviar al comité' : 'Reenviar al comité' }}
+                    </a>
+                @endif
+            @endcan
+            <a href="{{ route('solicitudes.index') }}" class="btn btn-outline-secondary">Volver a solicitudes</a>
+        </div>
     </div>
 
     <table class="table bg-white">
@@ -32,6 +41,12 @@
                 <th>Estado</th>
                 <td>{{ $solicitud->estado->value }}</td>
             </tr>
+            @if ($solicitud->envios->isNotEmpty())
+                <tr>
+                    <th>Comité</th>
+                    <td>@include('solicitudes.comite.marca', ['envio' => $solicitud->envios->first()])</td>
+                </tr>
+            @endif
             @if ($solicitud->motivo_rechazo)
                 <tr>
                     <th>Motivo de rechazo</th>
@@ -46,6 +61,45 @@
             @endif
         </tbody>
     </table>
+
+    @if ($solicitud->envios->isNotEmpty())
+        <h2 class="h5 mt-4">Envíos al comité</h2>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle bg-white" id="historial-envios-comite">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Enviado por</th>
+                        <th>Para</th>
+                        <th>Con copia</th>
+                        <th>Adjuntos</th>
+                        <th>Tipo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($solicitud->envios as $envio)
+                        <tr>
+                            <td>{{ $envio->enviado_en->format('Y-m-d H:i') }}</td>
+                            <td>{{ $envio->usuario->nombre_completo }}</td>
+                            <td>{{ implode(', ', $envio->destinatarios) }}</td>
+                            <td>{{ implode(', ', $envio->copia) ?: '—' }}</td>
+                            <td>
+                                @forelse ($envio->adjuntos as $adjunto)
+                                    <div>{{ $adjunto['nombre'] }}</div>
+                                @empty
+                                    <span class="text-muted">Sin adjuntos</span>
+                                @endforelse
+                            </td>
+                            <td>
+                                {{ $envio->es_reenvio ? 'Reenvío' : 'Envío' }}
+                                @if ($envio->simulado) <span class="badge text-bg-warning">simulado (no se envió)</span> @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
 
     <h2 class="h5 mt-4">Documentos</h2>
 

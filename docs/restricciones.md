@@ -5,7 +5,7 @@ Aplicación de Préstamos de Bienestar Social — Politécnico Colombiano Jaime 
 - No hay integración ni migración de datos con el sistema AS/400.
 - No hay integración directa con el módulo de nómina.
 - No hay pasarela de pago en línea; los pagos se registran manualmente.
-- La votación individual del Comité no se registra en el sistema; se gestiona por correo. El sistema solo registra la solicitud y su resultado final.
+- La votación individual del Comité no se registra en el sistema: el Comité vota fuera de él, por correo. El sistema solo registra la solicitud y su resultado final. Lo que sí hace el aplicativo es **enviar** cada solicitud al Comité por correo (un correo por solicitud, con sus documentos adjuntos), registrar ese envío y avisar «Enviada al comité»; las respuestas del Comité no entran al sistema.
 - El sistema de puntaje de convocatorias (Art. 17) no está automatizado hoy. Alcance por decidir; el detalle del puntaje está en `docs/reglas-negocio.md`, sección 15.
 - La gestión de pólizas de seguro no tiene módulo propio más allá de las reglas de negocio documentadas.
 - Los casos especiales del Art. 24 (desastre natural, amenaza de ruina, alteración de orden público, FOVIS, terrorismo) no tienen flujo automatizado; se gestionan como excepciones manuales del Comité.
@@ -42,4 +42,13 @@ Aplicación de Préstamos de Bienestar Social — Politécnico Colombiano Jaime 
 - Proceso de reliquidación paso a paso: el cálculo del interés y del retiro está confirmado (`docs/reglas-negocio.md`, secciones 1.1 y 11); el resto, por confirmar (reunión 14-oct).
 - Por confirmar (reunión 14-oct): tasa de 5,20 % en una solicitud de 2025 frente al tope del 5 %, umbral y aplicación de abonos menores a 10 cuotas, cobertura del seguro de vida deudor, conceptos 14, 31 y 34 del AS/400 y la columna TIPO.
 - Cantidad aproximada de empleados y préstamos vigentes.
+- Envío al Comité: correos reales del Comité y de la copia, remitente, textos del asunto y del cuerpo, servidor de correo de producción, si se puede enviar una solicitud sin documentos y si el correo lleva las observaciones de incumplimientos.
 - Calendario académico real del trabajo de grado.
+
+## 7. Configuración del correo del Comité (producción)
+El envío de solicitudes al Comité (`config/comite.php`) funciona hoy con valores **provisionales** `.test`; en desarrollo el correo no sale: se escribe un resumen en `storage/logs/laravel.log` y la pantalla dice «simulado (no se envió)». Para producción hay que definir en `.env`:
+- **Servidor de correo real:** `MAIL_MAILER=smtp` (u otro que entregue), `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SCHEME` y `MAIL_FROM_ADDRESS`/`MAIL_FROM_NAME`. Con `log` o `array` en producción el envío se rechaza con «correo no configurado».
+- **Remitente:** `COMITE_REMITENTE_DIRECCION` y `COMITE_REMITENTE_NOMBRE` (debe ser una cuenta autorizada en el servidor SMTP).
+- **Destinatarios:** `COMITE_DESTINATARIOS` (correos del Comité, separados por coma) y `COMITE_COPIA` (copia a Bienestar). Sin destinatarios, o con direcciones `.test`, el envío se bloquea en producción.
+- **Textos y reglas:** `COMITE_ASUNTO`, `COMITE_TEXTO_INTRODUCCION`, `COMITE_TEXTO_CIERRE`, `COMITE_ADJUNTOS_MAX_MB` (15 por defecto), `COMITE_EXIGIR_DOCUMENTOS` y `COMITE_INCLUIR_OBSERVACIONES`.
+- El envío es síncrono (sin colas): no hace falta un worker. Después de cambiar el `.env`, ejecutar `php artisan config:clear`.

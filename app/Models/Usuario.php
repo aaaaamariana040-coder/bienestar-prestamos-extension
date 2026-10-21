@@ -102,6 +102,16 @@ class Usuario extends Authenticatable
     }
 
     /**
+     * Permiso por rol según config/permisos.php (hoy por rol; después, por cuenta).
+     */
+    public function tienePermiso(string $permiso): bool
+    {
+        return $this->habilitado
+            && $this->rol !== null
+            && in_array($permiso, config("permisos.por_rol.{$this->rol->value}", []), true);
+    }
+
+    /**
      * @return Attribute<string, never>
      */
     protected function nombreCompleto(): Attribute
