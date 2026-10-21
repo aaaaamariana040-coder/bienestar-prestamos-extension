@@ -9,21 +9,21 @@ class PresupuestoAnualPolicy
 {
     public function viewAny(Usuario $actor): bool
     {
-        return true;
+        return $actor->tienePermiso('presupuesto.ver');
     }
 
     public function view(Usuario $actor, PresupuestoAnual $presupuesto): bool
     {
-        return true;
+        return $actor->tienePermiso('presupuesto.ver');
     }
 
     public function create(Usuario $actor): bool
     {
-        return true;
+        return $actor->tienePermiso('presupuesto.gestionar');
     }
 
     public function update(Usuario $actor, PresupuestoAnual $presupuesto): bool
     {
-        return true;
+        return $actor->tienePermiso('presupuesto.gestionar');
     }
 }

@@ -10,21 +10,26 @@ class SolicitudCreditoPolicy
 {
     public function viewAny(Usuario $actor): bool
     {
-        return true;
+        return $actor->tienePermiso('solicitudes.ver');
     }
 
     public function view(Usuario $actor, SolicitudCredito $solicitud): bool
     {
-        return true;
+        return $actor->tienePermiso('solicitudes.ver');
     }
 
     public function create(Usuario $actor): bool
     {
-        return true;
+        return $actor->tienePermiso('solicitudes.registrar');
     }
 
-    public function decidir(Usuario $actor, SolicitudCredito $solicitud): bool
+    public function aprobar(Usuario $actor, SolicitudCredito $solicitud): bool
     {
-        return $solicitud->estado === EstadoSolicitud::Radicada;
+        return $actor->tienePermiso('solicitudes.aprobar') && $solicitud->estado === EstadoSolicitud::Radicada;
+    }
+
+    public function rechazar(Usuario $actor, SolicitudCredito $solicitud): bool
+    {
+        return $actor->tienePermiso('solicitudes.rechazar') && $solicitud->estado === EstadoSolicitud::Radicada;
     }
 }

@@ -152,11 +152,12 @@ class EnvioComiteTest extends TestCase
             ->get(route('solicitudes.comite.previa', $solicitud))->assertRedirect(route('login'));
     }
 
-    public function test_el_permiso_sale_del_mapa_de_roles_y_sin_el_no_hay_boton_ni_acceso(): void
+    public function test_el_permiso_es_de_la_cuenta_y_sin_el_no_hay_boton_ni_acceso(): void
     {
         Mail::fake();
         $solicitud = $this->solicitud();
-        config(['permisos.por_rol' => ['ADMINISTRADOR' => [], 'FUNCIONARIO_BIENESTAR' => []]]);
+        $this->usuario = Usuario::factory()->conPermisos(['solicitudes.ver', 'solicitudes.aprobar'])->create();
+        $this->actingAs($this->usuario);
 
         $this->assertFalse($this->usuario->tienePermiso('solicitudes.enviar-comite'));
         $this->get(route('solicitudes.show', $solicitud))->assertOk()->assertDontSee('id="enviar-al-comite"', false);
@@ -352,7 +353,7 @@ class EnvioComiteTest extends TestCase
         $this->enviar($solicitud);
 
         $this->assertSame(EstadoSolicitud::Radicada, $solicitud->fresh()->estado);
-        $this->assertTrue(Gate::allows('decidir', $solicitud->fresh()));
+        $this->assertTrue(Gate::allows('aprobar', $solicitud->fresh()) && Gate::allows('rechazar', $solicitud->fresh()));
         $this->get(route('solicitudes.show', $solicitud))->assertSee('Enviada al comité')->assertSee('Aprobar')->assertSee('Rechazar');
 
         $this->patch(route('solicitudes.rechazar', $solicitud), ['motivo_rechazo' => 'Motivo de prueba'])->assertRedirect();

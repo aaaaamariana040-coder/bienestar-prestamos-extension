@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RolUsuario;
+use App\Services\PermisosUsuarioService;
 use Database\Factories\UsuarioFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -13,7 +14,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use LogicException;
 use RuntimeException;
 
-#[Fillable(['cedula', 'nombre', 'apellido', 'contrasena_hash', 'rol', 'habilitado'])]
+#[Fillable(['cedula', 'nombre', 'apellido', 'contrasena_hash', 'rol', 'permisos', 'habilitado'])]
 #[Hidden(['contrasena_hash', 'remember_token'])]
 class Usuario extends Authenticatable
 {
@@ -41,6 +42,7 @@ class Usuario extends Authenticatable
             'contrasena_hash' => 'hashed',
             'habilitado' => 'boolean',
             'rol' => RolUsuario::class,
+            'permisos' => 'array',
         ];
     }
 
@@ -74,6 +76,13 @@ class Usuario extends Authenticatable
 
     protected static function booted(): void
     {
+        // Una cuenta que nace sin lista de permisos (seeders, consola…) recibe los de su perfil.
+        static::creating(function (Usuario $usuario): void {
+            if (! array_key_exists('permisos', $usuario->getAttributes())) {
+                $usuario->permisos = app(PermisosUsuarioService::class)->defaultsPara($usuario->rol);
+            }
+        });
+
         static::deleting(function (Usuario $usuario): void {
             if ($usuario->esSistema()) {
                 throw new LogicException('No se puede eliminar al usuario Sistema.');
@@ -92,23 +101,42 @@ class Usuario extends Authenticatable
     }
 
     /**
-     * Cuenta habilitada con un rol que puede operar el sistema (todo salvo
-     * la gestión de usuarios y la consulta de auditoría, que son solo del Administrador).
+     * Permisos asignados a la cuenta, sin repetidos y solo los que existen en el
+     * catálogo (config/permisos.php). Los exclusivos del Administrador solo cuentan
+     * si el rol lo es, aunque la lista guardada los trajera. No mira si la cuenta
+     * está habilitada.
+     *
+     * @return list<string>
+     */
+    public function permisosAsignados(): array
+    {
+        $catalogo = array_keys(config('permisos.catalogo'));
+        $soloAdministrador = $this->rol === RolUsuario::Administrador ? [] : config('permisos.solo_administrador');
+
+        return array_values(array_filter(
+            $catalogo,
+            fn (string $permiso): bool => in_array($permiso, (array) $this->permisos, true) && ! in_array($permiso, $soloAdministrador, true),
+        ));
+    }
+
+    /**
+     * ¿Puede esta cuenta hacer lo que describe el permiso? Una cuenta
+     * deshabilitada no tiene ninguno. Es lo que leen los Gates, las policies y el menú.
+     */
+    public function tienePermiso(string $permiso): bool
+    {
+        return $this->habilitado && in_array($permiso, $this->permisosAsignados(), true);
+    }
+
+    /**
+     * Cuenta habilitada con al menos un permiso operativo (cualquiera salvo los
+     * exclusivos del Administrador). Para saber si la cuenta puede hacer algo
+     * en el sistema; lo concreto se decide con tienePermiso().
      */
     public function puedeOperar(): bool
     {
         return $this->habilitado
-            && in_array($this->rol, [RolUsuario::Administrador, RolUsuario::FuncionarioBienestar], true);
-    }
-
-    /**
-     * Permiso por rol según config/permisos.php (hoy por rol; después, por cuenta).
-     */
-    public function tienePermiso(string $permiso): bool
-    {
-        return $this->habilitado
-            && $this->rol !== null
-            && in_array($permiso, config("permisos.por_rol.{$this->rol->value}", []), true);
+            && array_diff($this->permisosAsignados(), config('permisos.solo_administrador')) !== [];
     }
 
     /**

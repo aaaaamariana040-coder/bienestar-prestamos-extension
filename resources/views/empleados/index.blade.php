@@ -3,7 +3,9 @@
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Empleados</h1>
-        <a href="{{ route('empleados.create') }}" class="btn btn-primary">Nuevo empleado</a>
+        @can('empleados.gestionar')
+            <a href="{{ route('empleados.create') }}" class="btn btn-primary">Nuevo empleado</a>
+        @endcan
     </div>
 
     <form method="GET" action="{{ route('empleados.index') }}" id="filtros-empleados" class="row g-2 align-items-end mb-3">
@@ -48,10 +50,14 @@
                     <td>{{ number_format($empleado->salario, 2) }}</td>
                     <td class="text-end">
                         <a href="{{ route('empleados.show', $empleado) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
-                        <a href="{{ route('empleados.edit', $empleado) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modal-confirmar-eliminacion"
-                                data-eliminar-action="{{ route('empleados.destroy', $empleado) }}"
-                                data-eliminar-nombre="{{ $empleado->nombre_completo }} (cédula {{ $empleado->cedula }})">Eliminar</button>
+                        @can('empleados.gestionar')
+                            <a href="{{ route('empleados.edit', $empleado) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        @endcan
+                        @can('empleados.eliminar')
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modal-confirmar-eliminacion"
+                                    data-eliminar-action="{{ route('empleados.destroy', $empleado) }}"
+                                    data-eliminar-nombre="{{ $empleado->nombre_completo }} (cédula {{ $empleado->cedula }})">Eliminar</button>
+                        @endcan
                     </td>
                 </tr>
             @empty

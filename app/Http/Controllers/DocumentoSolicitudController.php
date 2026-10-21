@@ -9,6 +9,7 @@ use App\Models\TipoDocumento;
 use App\Services\DocumentoSolicitudService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentoSolicitudController extends Controller
@@ -20,7 +21,7 @@ class DocumentoSolicitudController extends Controller
 
     public function store(StoreDocumentoSolicitudRequest $request, SolicitudCredito $solicitud): RedirectResponse
     {
-        $this->authorize('view', $solicitud);
+        $this->authorize('create', SolicitudCredito::class);
 
         $documentos = $this->documentoSolicitudService->subir(
             $solicitud,
@@ -45,7 +46,7 @@ class DocumentoSolicitudController extends Controller
 
     public function destroy(Request $request, DocumentoSolicitud $documento): RedirectResponse
     {
-        $this->authorize('view', $documento->solicitud);
+        Gate::authorize('solicitudes.eliminar-documentos');
 
         $solicitud = $documento->solicitud;
 

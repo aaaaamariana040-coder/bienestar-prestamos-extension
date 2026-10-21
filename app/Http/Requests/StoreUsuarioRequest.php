@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\RolUsuario;
 use App\Http\Requests\Concerns\ValidaContrasenaSegura;
+use App\Http\Requests\Concerns\ValidaPermisosDeUsuario;
 use App\Models\Usuario;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -11,10 +12,11 @@ use Illuminate\Validation\Rule;
 class StoreUsuarioRequest extends FormRequest
 {
     use ValidaContrasenaSegura;
+    use ValidaPermisosDeUsuario;
 
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', Usuario::class) ?? false;
     }
 
     protected function prepareForValidation(): void
@@ -35,6 +37,7 @@ class StoreUsuarioRequest extends FormRequest
             'apellido' => ['required', 'string', 'max:80'],
             'password' => $this->reglasContrasena(),
             'rol' => ['required', Rule::enum(RolUsuario::class)],
+            ...$this->reglasDePermisos(),
         ];
     }
 
@@ -54,6 +57,7 @@ class StoreUsuarioRequest extends FormRequest
             'apellido.required' => 'El apellido es obligatorio.',
             'apellido.max' => 'El apellido no puede superar los 80 caracteres.',
             'rol.required' => 'El rol es obligatorio.',
+            ...$this->mensajesDePermisos(),
         ];
     }
 }

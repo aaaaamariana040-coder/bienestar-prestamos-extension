@@ -3,15 +3,15 @@
     $cuotasPorConfirmar = count($quincenasPendientes ?? []);
 
     // Cada grupo se muestra solo si el usuario puede ver al menos uno de sus submenús.
-    // Los de Administrador dependen de las políticas de usuarios y auditoría (solo ese rol).
+    // Cada ítem depende del permiso de la cuenta que lo habilita (config/permisos.php).
     $grupos = [
         [
             'id' => 'administrador',
             'titulo' => 'Administrador',
             'icono' => 'administrador',
             'items' => [
-                ['texto' => 'Usuarios', 'ruta' => 'usuarios.index', 'activo' => 'usuarios.*', 'visible' => $usuario->can('viewAny', \App\Models\Usuario::class)],
-                ['texto' => 'Auditoría', 'ruta' => 'auditoria.index', 'activo' => 'auditoria.*', 'visible' => $usuario->can('viewAny', \App\Models\Auditoria::class)],
+                ['texto' => 'Usuarios', 'ruta' => 'usuarios.index', 'activo' => 'usuarios.*', 'visible' => $usuario->can('usuarios.gestionar')],
+                ['texto' => 'Auditoría', 'ruta' => 'auditoria.index', 'activo' => 'auditoria.*', 'visible' => $usuario->can('auditoria.ver')],
             ],
         ],
         [
@@ -19,8 +19,8 @@
             'titulo' => 'Empleados',
             'icono' => 'empleados',
             'items' => [
-                ['texto' => 'Lista de empleados', 'ruta' => 'empleados.index', 'activo' => ['empleados.index', 'empleados.show', 'empleados.edit', 'empleados.retiro'], 'visible' => true],
-                ['texto' => 'Nuevo empleado', 'ruta' => 'empleados.create', 'activo' => 'empleados.create', 'visible' => true],
+                ['texto' => 'Lista de empleados', 'ruta' => 'empleados.index', 'activo' => ['empleados.index', 'empleados.show', 'empleados.edit', 'empleados.retiro'], 'visible' => $usuario->can('empleados.ver')],
+                ['texto' => 'Nuevo empleado', 'ruta' => 'empleados.create', 'activo' => 'empleados.create', 'visible' => $usuario->can('empleados.gestionar')],
             ],
         ],
         [
@@ -28,10 +28,10 @@
             'titulo' => 'Modalidades y presupuesto',
             'icono' => 'modalidades',
             'items' => [
-                ['texto' => 'Modalidades', 'ruta' => 'tipos-prestamo.index', 'activo' => 'tipos-prestamo.*', 'visible' => $usuario->can('viewAny', \App\Models\TipoPrestamo::class)],
-                ['texto' => 'Tasa de vehículo', 'ruta' => 'tasa-vehiculo.index', 'activo' => 'tasa-vehiculo.*', 'visible' => $usuario->can('viewAny', \App\Models\TipoPrestamo::class)],
-                ['texto' => 'Presupuesto', 'ruta' => 'presupuestos.index', 'activo' => 'presupuestos.*', 'visible' => $usuario->can('viewAny', \App\Models\PresupuestoAnual::class)],
-                ['texto' => 'Salario mínimo (SMMLV)', 'ruta' => 'smmlv.index', 'activo' => 'smmlv.*', 'visible' => $usuario->can('viewAny', \App\Models\SmmlvAnual::class)],
+                ['texto' => 'Modalidades', 'ruta' => 'tipos-prestamo.index', 'activo' => 'tipos-prestamo.*', 'visible' => $usuario->can('modalidades.ver')],
+                ['texto' => 'Tasa de vehículo', 'ruta' => 'tasa-vehiculo.index', 'activo' => 'tasa-vehiculo.*', 'visible' => $usuario->can('modalidades.ver')],
+                ['texto' => 'Presupuesto', 'ruta' => 'presupuestos.index', 'activo' => 'presupuestos.*', 'visible' => $usuario->can('presupuesto.ver')],
+                ['texto' => 'Salario mínimo (SMMLV)', 'ruta' => 'smmlv.index', 'activo' => 'smmlv.*', 'visible' => $usuario->can('smmlv.ver')],
             ],
         ],
         [
@@ -39,11 +39,11 @@
             'titulo' => 'Solicitudes y préstamos',
             'icono' => 'solicitudes',
             'items' => [
-                ['texto' => 'Solicitudes', 'ruta' => 'solicitudes.index', 'activo' => ['solicitudes.index', 'solicitudes.show'], 'visible' => $usuario->can('viewAny', \App\Models\SolicitudCredito::class)],
-                ['texto' => 'Registrar solicitud', 'ruta' => 'solicitudes.create', 'activo' => 'solicitudes.create', 'visible' => $usuario->can('create', \App\Models\SolicitudCredito::class)],
+                ['texto' => 'Solicitudes', 'ruta' => 'solicitudes.index', 'activo' => ['solicitudes.index', 'solicitudes.show'], 'visible' => $usuario->can('solicitudes.ver')],
+                ['texto' => 'Registrar solicitud', 'ruta' => 'solicitudes.create', 'activo' => 'solicitudes.create', 'visible' => $usuario->can('solicitudes.registrar')],
                 ['texto' => 'Simulador de crédito', 'ruta' => 'simulador.index', 'activo' => 'simulador.*', 'visible' => $usuario->can('simulador.usar')],
-                ['texto' => 'Préstamos', 'ruta' => 'prestamos.index', 'activo' => 'prestamos.*', 'visible' => $usuario->can('viewAny', \App\Models\Prestamo::class)],
-                ['texto' => 'Proveedores', 'ruta' => 'proveedores.index', 'activo' => 'proveedores.*', 'visible' => $usuario->can('viewAny', \App\Models\Proveedor::class)],
+                ['texto' => 'Préstamos', 'ruta' => 'prestamos.index', 'activo' => 'prestamos.*', 'visible' => $usuario->can('prestamos.ver')],
+                ['texto' => 'Proveedores', 'ruta' => 'proveedores.index', 'activo' => 'proveedores.*', 'visible' => $usuario->can('proveedores.ver')],
             ],
         ],
         [
@@ -52,8 +52,8 @@
             'icono' => 'pagos',
             'items' => [
                 // Los pagos y abonos se registran desde el detalle de cada préstamo.
-                ['texto' => 'Registrar pago o abono', 'ruta' => 'prestamos.index', 'activo' => null, 'visible' => $usuario->can('viewAny', \App\Models\Prestamo::class)],
-                ['texto' => 'Quincenas', 'ruta' => 'quincenas.index', 'activo' => 'quincenas.*', 'visible' => $usuario->can('viewAny', \App\Models\ProcesoQuincena::class), 'insignia' => $cuotasPorConfirmar],
+                ['texto' => 'Registrar pago o abono', 'ruta' => 'prestamos.index', 'activo' => null, 'visible' => $usuario->can('prestamos.ver') && ($usuario->can('pagos.registrar-cuota') || $usuario->can('pagos.registrar-abono') || $usuario->can('pagos.cancelar-prestamo'))],
+                ['texto' => 'Quincenas', 'ruta' => 'quincenas.index', 'activo' => 'quincenas.*', 'visible' => $usuario->can('quincenas.ver'), 'insignia' => $cuotasPorConfirmar],
                 ['texto' => 'Resumen de pagos', 'ruta' => 'reportes.pagos', 'activo' => 'reportes.pagos', 'visible' => $usuario->can('reportes.ver')],
             ],
         ],

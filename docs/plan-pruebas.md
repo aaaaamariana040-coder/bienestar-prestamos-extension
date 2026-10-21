@@ -153,6 +153,24 @@ Automatizados en `tests/Feature/EnvioComiteTest.php` (con `Mail::fake` y `Storag
 | PP-090 | Fallo del correo | Servidor de correo que falla | Enviar | Mensaje claro; sin registro «Enviado» ni marca; el intento fallido queda en la auditoría | ⬜ |
 | PP-091 | Adjuntos | Documentos de distinto tamaño, uno sin archivo | Marcar/desmarcar y enviar | Solo van los marcados; el archivo faltante y el exceso de 15 MB bloquean el envío; sin documentos se permite con aviso (o se exige con el interruptor) | ⬜ |
 
+## 13. Permisos por cuenta (RF-001, RNF-001)
+
+Automatizados en `tests/Feature/PermisosCaracterizacionTest.php`, `PermisosCatalogoTest.php`, `PermisosPorCuentaTest.php` y `UsuarioSalvaguardasTest.php`. La columna final queda ⬜ hasta la prueba manual en el navegador.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-092 | El Funcionario conserva lo que hacía | Cuenta Funcionario con los permisos por defecto | Recorrer todas las rutas de la aplicación | Solo recibe 403 en Usuarios y Auditoría; en todo lo demás pasa la autorización. El Administrador pasa en todas | ⬜ |
+| PP-093 | Defaults del perfil | Catálogo de `config/permisos.php` | Comparar los defaults | Funcionario = catálogo − Usuarios − Auditoría; Administrador = todos; cambiar los defaults no altera las cuentas existentes | ⬜ |
+| PP-094 | Ninguna ruta sin permiso | Rutas con nombre | Revisar el middleware de cada ruta | Todas llevan `can:` salvo inicio y contraseña propia; cada permiso del catálogo protege alguna ruta | ⬜ |
+| PP-095 | Sin el permiso, 403 | Cuenta con todos los permisos menos uno | Abrir cada ruta de ese permiso, también escribiendo la dirección a mano | 403; con solo ese permiso la ruta pasa la autorización | ⬜ |
+| PP-096 | Menú y botones por permiso | Cuentas con permisos recortados | Entrar con cada una | El menú y los botones (aprobar, rechazar, documentos, pagos, abonos, cancelación, empleados) solo aparecen con su permiso; una cuenta sin permisos ve solo el inicio | ⬜ |
+| PP-097 | Crear usuario con casillas | Administrador en «Nuevo usuario» | Elegir perfil y marcar/desmarcar casillas | Las casillas parten del perfil; «gestionar» marca «ver»; Usuarios y Auditoría solo con rol Administrador (el servidor lo rechaza si no) | ⬜ |
+| PP-098 | Editar sin sobrescribir | Cuenta con permisos personalizados | Cambiar el rol y guardar | Las casillas no cambian; aparece «Personalizado»; «Restablecer a los permisos del perfil» las devuelve a las del perfil | ⬜ |
+| PP-099 | Último administrador activo | Un solo administrador activo | Intentar quitarle permisos o cambiarle el rol | Se rechaza con un mensaje claro; puede cambiar su nombre y recibir más permisos | ⬜ |
+| PP-100 | Auto-bloqueo y gestión de usuarios | Dos administradores | Quitarse a sí mismo Usuarios; dejar al sistema sin cuenta que gestione usuarios | Se rechaza en ambos casos; sí puede quitarle Usuarios a otro mientras quede quien gestione | ⬜ |
+| PP-101 | Auditoría de cuentas | Administrador con sesión | Crear usuario, cambiar rol, cambiar permisos, habilitar y deshabilitar | Cada acción deja su registro: quién, a quién y, en permisos, qué se agregó y qué se quitó; sin cambios o con un cambio rechazado no se registra nada | ⬜ |
+| PP-102 | Migración de cuentas existentes | Cuentas anteriores a los permisos por cuenta | Aplicar la migración | Administrador recibe todos; Funcionario, todos menos Usuarios y Auditoría; «Sistema», ninguno | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -174,3 +192,4 @@ Automatizados en `tests/Feature/EnvioComiteTest.php` (con `Mail::fake` y `Storag
 | Sprint 4 (reportes, auditoría) | Cubierto — PP-046 a PP-052 |
 | Confirmación de la quincena (posterior al Sprint 4) | Automatizada — PP-059 a PP-079; falta la prueba manual en el navegador |
 | Envío de solicitudes al comité (posterior) | Automatizada — PP-080 a PP-091; falta la prueba manual en el navegador |
+| Permisos por cuenta (posterior) | Automatizada — PP-092 a PP-102; falta la prueba manual en el navegador |

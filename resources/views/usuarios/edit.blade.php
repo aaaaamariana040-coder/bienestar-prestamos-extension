@@ -45,6 +45,8 @@
             </select>
         </div>
 
+        @include('usuarios._permisos', ['modo' => 'editar'])
+
         <button type="submit" class="btn btn-primary">Guardar cambios</button>
         <a href="{{ route('usuarios.index') }}" class="btn btn-outline-secondary">Cancelar</a>
     </form>

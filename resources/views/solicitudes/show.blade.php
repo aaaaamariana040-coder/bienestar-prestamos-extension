@@ -138,12 +138,14 @@
                             <td>{{ $documento->created_at->format('Y-m-d H:i') }}</td>
                             <td class="text-end text-nowrap">
                                 <a href="{{ route('documentos.download', $documento) }}" class="btn btn-sm btn-outline-primary">Descargar</a>
-                                <form method="POST" action="{{ route('documentos.destroy', $documento) }}" class="d-inline"
-                                      onsubmit="return confirm('¿Eliminar el documento «{{ addslashes($documento->nombre_original) }}»?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                                </form>
+                                @can('solicitudes.eliminar-documentos')
+                                    <form method="POST" action="{{ route('documentos.destroy', $documento) }}" class="d-inline"
+                                          onsubmit="return confirm('¿Eliminar el documento «{{ addslashes($documento->nombre_original) }}»?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                    </form>
+                                @endcan
                             </td>
                         </tr>
                     @endforeach
@@ -152,6 +154,7 @@
         </div>
     @endif
 
+    @can('create', \App\Models\SolicitudCredito::class)
     <form method="POST" action="{{ route('documentos.store', $solicitud) }}" enctype="multipart/form-data" class="card card-body mb-4">
         @csrf
         <div class="row align-items-end">
@@ -174,8 +177,9 @@
         </div>
         <div class="small text-muted">Máximo 15 documentos por solicitud (tiene {{ $documentos->count() }}).</div>
     </form>
+    @endcan
 
-    @can('decidir', $solicitud)
+    @canany(['aprobar', 'rechazar'], $solicitud)
         @if ($problemas !== [])
             <div class="alert alert-warning">
                 <p class="mb-1">La solicitud no cumple las condiciones para ser aprobada:</p>
@@ -188,17 +192,22 @@
         @endif
 
         <div class="d-flex gap-2">
-            <form method="POST" action="{{ route('solicitudes.aprobar', $solicitud) }}">
-                @csrf
-                @method('PATCH')
-                <button type="submit" class="btn btn-success">Aprobar</button>
-            </form>
+            @can('aprobar', $solicitud)
+                <form method="POST" action="{{ route('solicitudes.aprobar', $solicitud) }}">
+                    @csrf
+                    @method('PATCH')
+                    <button type="submit" class="btn btn-success">Aprobar</button>
+                </form>
+            @endcan
 
-            <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#rechazar-form">
-                Rechazar
-            </button>
+            @can('rechazar', $solicitud)
+                <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#rechazar-form">
+                    Rechazar
+                </button>
+            @endcan
         </div>
 
+        @can('rechazar', $solicitud)
         <div id="rechazar-form" class="collapse mt-3">
             <form method="POST" action="{{ route('solicitudes.rechazar', $solicitud) }}" class="card card-body">
                 @csrf
@@ -210,5 +219,6 @@
                 <button type="submit" class="btn btn-danger align-self-start">Confirmar rechazo</button>
             </form>
         </div>
-    @endcan
+        @endcan
+    @endcanany
 @endsection

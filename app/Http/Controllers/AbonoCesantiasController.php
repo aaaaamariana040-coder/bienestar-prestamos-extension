@@ -12,7 +12,7 @@ class AbonoCesantiasController extends Controller
 {
     public function store(RegistrarAbonoCesantiasRequest $request, Prestamo $prestamo, CesantiasService $cesantiasService): RedirectResponse
     {
-        $this->authorize('registrarPago', $prestamo);
+        $this->authorize('registrarAbono', $prestamo);
 
         try {
             $cesantiasService->registrarAbono(

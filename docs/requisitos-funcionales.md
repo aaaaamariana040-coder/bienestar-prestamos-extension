@@ -2,7 +2,7 @@
 
 | ID | Funcionalidad general | Descripción del requisito |
 | ----- | ----- | ----- |
-| **RF-001** | Gestión de usuarios y acceso | El sistema debe permitir autenticar usuarios y administrar sus cuentas, roles y permisos de acceso a las funcionalidades de Bienestar Social. |
+| **RF-001** | Gestión de usuarios y acceso | El sistema debe permitir autenticar usuarios y administrar sus cuentas, roles y permisos de acceso a las funcionalidades de Bienestar Social. Al crear o editar una cuenta, el administrador ve una lista de casillas con los permisos de esa cuenta (agrupados por módulo, con «gestionar» implicando «ver»), marcadas por defecto según el perfil; puede personalizarlas y restablecerlas a las del perfil. Usuarios y Auditoría son exclusivos del Administrador. Cada cambio de permisos, de rol, de habilitación y la creación de cuentas queda en la auditoría, y el sistema impide dejar de tener al menos una cuenta activa que gestione usuarios. |
 | **RF-002** | Gestión de empleados | El sistema debe permitir registrar, consultar y actualizar la información de los empleados que soliciten o tengan préstamos administrados por Bienestar Social, incluyendo la consulta de su historial crediticio. |
 | **RF-003** | Gestión de modalidades y parámetros | El sistema debe permitir administrar las modalidades de crédito y configurar sus condiciones, incluyendo monto máximo, plazo, tasa de interés y demás parámetros establecidos por la institución y la normativa aplicable. |
 | **RF-004** | Gestión y control presupuestal | El sistema debe permitir registrar y administrar el presupuesto destinado a cada modalidad de crédito, mostrando los valores asignados, comprometidos y disponibles, así como su historial de modificaciones. |

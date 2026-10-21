@@ -46,6 +46,8 @@
             </select>
         </div>
 
+        @include('usuarios._permisos', ['modo' => 'crear'])
+
         <div class="mb-3">
             <label for="password" class="form-label">Contraseña</label>
             <input type="password" id="password" name="password" class="form-control" minlength="8" title="Mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número. La confirmación debe coincidir con la contraseña." aria-describedby="reglas-password" required>

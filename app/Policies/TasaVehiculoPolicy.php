@@ -9,11 +9,11 @@ class TasaVehiculoPolicy
 {
     public function viewAny(Usuario $actor): bool
     {
-        return true;
+        return $actor->tienePermiso('modalidades.ver');
     }
 
     public function update(Usuario $actor, TasaVehiculo $tasaVehiculo): bool
     {
-        return $actor->puedeOperar();
+        return $actor->tienePermiso('modalidades.gestionar');
     }
 }

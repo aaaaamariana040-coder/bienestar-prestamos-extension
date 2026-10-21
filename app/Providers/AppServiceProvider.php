@@ -27,11 +27,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::define('reportes.ver', fn (Usuario $usuario) => $usuario->puedeOperar());
-        Gate::define('simulador.usar', fn (Usuario $usuario) => $usuario->puedeOperar());
-
-        // Un Gate por cada permiso de config/permisos.php: las vistas usan @can('nombre.del-permiso').
-        foreach (array_unique(array_merge(...array_values(config('permisos.por_rol')))) as $permiso) {
+        // Un Gate por cada permiso del catálogo (config/permisos.php): las rutas usan can:nombre,
+        // las vistas @can('nombre') y todos leen la lista de permisos de la cuenta.
+        foreach (array_keys(config('permisos.catalogo')) as $permiso) {
             Gate::define($permiso, fn (Usuario $usuario) => $usuario->tienePermiso($permiso));
         }
 
@@ -43,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
             $usuario = auth()->user();
             $pendientes = [];
 
-            if ($usuario?->puedeOperar()) {
+            if ($usuario?->can('quincenas.confirmar')) {
                 try {
                     $pendientes = app(QuincenaService::class)->quincenasPendientes();
                 } catch (InvalidArgumentException) {
