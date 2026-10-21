@@ -32,6 +32,7 @@
                 <th>Plazo</th>
                 <th>Fecha</th>
                 <th>Estado</th>
+                <th>Comité</th>
                 <th class="text-end">Acciones</th>
             </tr>
         </thead>
@@ -44,13 +45,14 @@
                     <td>{{ $solicitud->plazo_solicitado_legible }}</td>
                     <td>{{ $solicitud->fecha_solicitud->format('Y-m-d') }}</td>
                     <td>{{ $solicitud->estado->value }}</td>
+                    <td>@if ($solicitud->ultimoEnvio) @include('solicitudes.comite.marca', ['envio' => $solicitud->ultimoEnvio]) @else <span class="text-muted">—</span> @endif</td>
                     <td class="text-end">
                         <a href="{{ route('solicitudes.show', $solicitud) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center text-muted">No hay solicitudes registradas.</td>
+                    <td colspan="8" class="text-center text-muted">No hay solicitudes registradas.</td>
                 </tr>
             @endforelse
         </tbody>

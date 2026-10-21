@@ -74,6 +74,24 @@ class SolicitudCredito extends Model
     }
 
     /**
+     * Envíos al comité, del más reciente al más antiguo.
+     *
+     * @return HasMany<EnvioComite, $this>
+     */
+    public function envios(): HasMany
+    {
+        return $this->hasMany(EnvioComite::class, 'id_solicitud', 'id_solicitud')->orderByDesc('enviado_en')->orderByDesc('id_envio');
+    }
+
+    /**
+     * @return HasOne<EnvioComite, $this>
+     */
+    public function ultimoEnvio(): HasOne
+    {
+        return $this->hasOne(EnvioComite::class, 'id_solicitud', 'id_solicitud')->latestOfMany('id_envio');
+    }
+
+    /**
      * @return HasMany<DocumentoSolicitud, $this>
      */
     public function documentos(): HasMany

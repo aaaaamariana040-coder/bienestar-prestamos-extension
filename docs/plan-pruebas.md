@@ -134,6 +134,25 @@ Detalle del diseño en `docs/quincena-automatica.md`. Automatizados en `tests/Fe
 | PP-077 | Permisos | Administrador, Funcionario, invitado y cuenta deshabilitada | Abrir `Quincenas` y confirmar | Administrador y Funcionario pueden; el invitado y la cuenta deshabilitada son enviados al inicio de sesión | ⬜ |
 | PP-078 | Detalle de un proceso confirmado | Proceso con cuotas pagadas y excluidas | Abrir «Ver» en Quincenas confirmadas | Muestra quién, cuándo, cuotas pagadas y excluidas con su motivo | ⬜ |
 | PP-079 | Comando en modo confirmar | `QUINCENA_MODO_MARCADO=confirmar` | `php artisan quincena:procesar --anio=… --quincena=… --ejecutar` | Muestra la vista previa y no crea proceso ni pagos | ⬜ |
+## 12. Envío de solicitudes al comité
+
+Automatizados en `tests/Feature/EnvioComiteTest.php` (con `Mail::fake` y `Storage::fake`; nunca se envía correo real). La columna final queda ⬜ hasta la prueba manual en el navegador.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-080 | Botón y estado | Solicitudes Radicada, Aprobada y Rechazada | Abrir cada una | «Enviar al comité» solo en la Radicada; en otro estado el servidor rechaza el envío | ⬜ |
+| PP-081 | Permiso | Administrador, Funcionario, invitado, cuenta deshabilitada y rol sin el permiso | Abrir la vista previa y enviar | Administrador y Funcionario pueden; invitado y deshabilitada van al login; sin permiso, 403 y sin botón | ⬜ |
+| PP-082 | Vista previa | Solicitud con documentos | Pulsar «Enviar al comité» | Muestra Para, Con copia, Asunto, cuerpo y adjuntos; no envía ni guarda nada | ⬜ |
+| PP-083 | Contenido del cuerpo | Solicitud con tasa y capacidad | Ver la vista previa | Empleado, cédula, modalidad, monto, plazo, tasa, cuota y capacidad; **sin salario**; observaciones si hay incumplimientos y el interruptor está activo | ⬜ |
+| PP-084 | Envío | Vista previa sin bloqueos | Pulsar «Enviar» | Un correo con los adjuntos marcados; registro (quién, cuándo, destinatarios, adjuntos, cifras); auditoría; marca «Enviada al comité»; el estado sigue Radicada y aprobar/rechazar funcionan | ⬜ |
+| PP-085 | Simulado en desarrollo | `MAIL_MAILER=log` | Enviar | Pantalla y registro dicen «simulado (no se envió)»; el log tiene solo destinatarios, asunto y nombres/tamaños de adjuntos | ⬜ |
+| PP-086 | Producción sin correo real | Entorno production con `log`/`array` o direcciones `.test` | Enviar | Se rechaza con «correo no configurado»; no hay registro ni marca | ⬜ |
+| PP-087 | Sin destinatarios | `COMITE_DESTINATARIOS` vacío | Abrir la vista previa | Mensaje claro y botón deshabilitado; el servidor también rechaza | ⬜ |
+| PP-088 | Reenvío | Solicitud ya enviada | Reenviar sin y con «Confirmo el reenvío» | Sin confirmar se rechaza; confirmado, sale otro correo marcado como reenvío con su auditoría | ⬜ |
+| PP-089 | Doble clic | Solicitud recién enviada | Enviar de nuevo de inmediato | El botón se deshabilita al enviar y el servidor rechaza un segundo envío en menos de 60 s | ⬜ |
+| PP-090 | Fallo del correo | Servidor de correo que falla | Enviar | Mensaje claro; sin registro «Enviado» ni marca; el intento fallido queda en la auditoría | ⬜ |
+| PP-091 | Adjuntos | Documentos de distinto tamaño, uno sin archivo | Marcar/desmarcar y enviar | Solo van los marcados; el archivo faltante y el exceso de 15 MB bloquean el envío; sin documentos se permite con aviso (o se exige con el interruptor) | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -154,3 +173,4 @@ Detalle del diseño en `docs/quincena-automatica.md`. Automatizados en `tests/Fe
 | Sprint 3 (situaciones especiales) | **Parcial** — reliquidación y cesantías cubiertas; retiro/liquidación pendiente (PP-044, PP-045) |
 | Sprint 4 (reportes, auditoría) | Cubierto — PP-046 a PP-052 |
 | Confirmación de la quincena (posterior al Sprint 4) | Automatizada — PP-059 a PP-079; falta la prueba manual en el navegador |
+| Envío de solicitudes al comité (posterior) | Automatizada — PP-080 a PP-091; falta la prueba manual en el navegador |

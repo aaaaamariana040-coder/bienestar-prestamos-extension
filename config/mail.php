@@ -70,8 +70,11 @@ return [
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
         ],
 
+        // «log-resumen» (App\Mail\Transport\LogResumenTransport) registra solo destinatarios, asunto y
+        // nombres/tamaños de adjuntos, nunca el cuerpo ni el contenido. El transporte «log» de Laravel
+        // escribe el mensaje completo, adjuntos incluidos.
         'log' => [
-            'transport' => 'log',
+            'transport' => 'log-resumen',
             'channel' => env('MAIL_LOG_CHANNEL'),
         ],
 

@@ -25,7 +25,7 @@ class SolicitudCreditoController extends Controller
 
         $cedula = substr(preg_replace('/\D+/', '', (string) $request->query('cedula', '')), 0, 10);
 
-        $solicitudes = SolicitudCredito::with(['empleado', 'tipoPrestamo'])
+        $solicitudes = SolicitudCredito::with(['empleado', 'tipoPrestamo', 'ultimoEnvio'])
             ->when($cedula !== '', fn ($consulta) => $consulta->where('cedula_empleado', 'like', $cedula.'%'))
             ->orderByDesc('fecha_solicitud')
             ->get();
@@ -110,7 +110,7 @@ class SolicitudCreditoController extends Controller
     {
         $this->authorize('view', $solicitud);
 
-        $solicitud->loadMissing(['empleado', 'tipoPrestamo', 'prestamo']);
+        $solicitud->loadMissing(['empleado', 'tipoPrestamo', 'prestamo', 'envios.usuario']);
         $documentos = $solicitud->documentos()->with(['tipoDocumento', 'subidoPor'])->orderBy('created_at')->get();
         $tiposDocumento = TipoDocumento::where('activo', true)->orderBy('nombre')->get();
 
