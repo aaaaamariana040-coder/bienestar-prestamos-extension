@@ -9,6 +9,7 @@ use App\Models\SolicitudCredito;
 use App\Models\TasaInt;
 use App\Models\TipoPrestamo;
 use Carbon\Carbon;
+use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
 
 class PrestamoService
@@ -101,9 +102,36 @@ class PrestamoService
         return $this->calculoFinanciero->cuotaFija($monto, $tasaPeriodica, $numCuotas);
     }
 
+    /**
+     * La primera cuota vence 15 días después de la autorización.
+     */
+    public function fechaPrimeraCuota(DateTimeInterface|string $fechaAutorizacion): string
+    {
+        return Carbon::parse($fechaAutorizacion)->addDays(15)->toDateString();
+    }
+
+    /**
+     * Fechas de vencimiento de las cuotas: la primera dada y cada una de las
+     * siguientes 15 días después. Es el generador de fechas de las cuotas
+     * reales, y el simulador lo usa para rotular sus fechas estimadas.
+     *
+     * @return list<string>
+     */
+    public function fechasDeVencimiento(string $fechaPrimeraCuota, int $numCuotas): array
+    {
+        $primera = Carbon::parse($fechaPrimeraCuota);
+        $fechas = [];
+
+        for ($i = 0; $i < $numCuotas; $i++) {
+            $fechas[] = $primera->copy()->addDays(15 * $i)->toDateString();
+        }
+
+        return $fechas;
+    }
+
     private function generarTablaAmortizacion(Prestamo $prestamo, float $tasaPeriodica): void
     {
-        $primeraFecha = Carbon::parse($prestamo->fecha_autorizacion)->addDays(15)->toDateString();
+        $primeraFecha = $this->fechaPrimeraCuota($prestamo->fecha_autorizacion);
 
         $this->generarCuotasDesde(
             $prestamo,
@@ -130,16 +158,12 @@ class PrestamoService
         int $numeroInicial,
         string $fechaPrimeraCuota,
     ): void {
-        $fecha = Carbon::parse($fechaPrimeraCuota);
+        $fechas = $this->fechasDeVencimiento($fechaPrimeraCuota, $numCuotas);
 
         foreach ($this->calculoFinanciero->tablaAmortizacion($saldo, $tasaPeriodica, $numCuotas, $cuotaPeriodica) as $i => $fila) {
-            if ($i > 0) {
-                $fecha = $fecha->copy()->addDays(15);
-            }
-
             $prestamo->cuotas()->create([
                 'numero_cuota' => $numeroInicial + $i,
-                'fecha_vencimiento' => $fecha->toDateString(),
+                'fecha_vencimiento' => $fechas[$i],
                 'valor_capital' => $fila['capital'],
                 'valor_interes' => $fila['interes'],
                 'valor_total' => $fila['cuota'],

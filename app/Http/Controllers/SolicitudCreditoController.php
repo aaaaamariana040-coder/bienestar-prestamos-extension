@@ -33,14 +33,24 @@ class SolicitudCreditoController extends Controller
         return view('solicitudes.index', compact('solicitudes', 'cedula'));
     }
 
-    public function create(): View
+    /**
+     * Acepta valores previos por GET (cédula, modalidad, monto y plazo), como
+     * los que manda el simulador; solo prellenan el formulario, no registran nada.
+     */
+    public function create(Request $request): View
     {
         $this->authorize('create', SolicitudCredito::class);
 
         $tiposPrestamo = TipoPrestamo::where('habilitada', true)->orderBy('nombre')->get();
         $tiposDocumento = TipoDocumento::where('activo', true)->orderBy('nombre')->get();
+        $previos = [
+            'cedula_empleado' => substr(preg_replace('/\D+/', '', (string) $request->query('cedula_empleado', '')), 0, 10),
+            'id_tipo' => (string) $request->integer('id_tipo'),
+            'monto_solicitado' => is_numeric($request->query('monto_solicitado')) ? (string) $request->query('monto_solicitado') : '',
+            'plazo_solicitado' => (string) $request->integer('plazo_solicitado'),
+        ];
 
-        return view('solicitudes.create', compact('tiposPrestamo', 'tiposDocumento'));
+        return view('solicitudes.create', compact('tiposPrestamo', 'tiposDocumento', 'previos'));
     }
 
     /**

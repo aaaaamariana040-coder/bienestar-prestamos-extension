@@ -131,6 +131,37 @@ class CalculoFinancieroServiceTest extends TestCase
         $this->assertEqualsWithDelta($cuotaEsperada, $calculo->cuotaFija($saldo, $tasaPeriodica, $cuotas), self::TOLERANCIA);
     }
 
+    /**
+     * Casos de verificación del simulador contra el Excel del área: cuota fija
+     * quincenal sin seguro.
+     *
+     * @return array<string, array{0: float, 1: float, 2: int, 3: float}>
+     */
+    public static function casosExcelSimulador(): array
+    {
+        return [
+            '4.000.000 al 5,1 % en 72' => [4_000_000, 5.1, 72, 59_865.80],
+            '70.000.000 al 8,2 % en 168' => [70_000_000, 8.2, 168, 543_005.16],
+            '158.000.000 al 5 % en 480' => [158_000_000, 5, 480, 516_005.77],
+            '1.400.000 al 5 % en 36' => [1_400_000, 5, 36, 40_370.31],
+            '2.397.200 al 5,1 % en 24' => [2_397_200, 5.1, 24, 102_494.31],
+            '21.481.144 al 1,61 % en 130' => [21_481_144, 1.61, 130, 172_547.78],
+        ];
+    }
+
+    #[DataProvider('casosExcelSimulador')]
+    public function test_la_cuota_del_simulador_coincide_con_el_excel_del_area(float $monto, float $tasaEfectivaAnual, int $periodos, float $cuotaEsperada): void
+    {
+        $calculo = new CalculoFinancieroService;
+        $tasaPeriodica = $calculo->tasaPeriodicaQuincenal($tasaEfectivaAnual);
+
+        $this->assertEqualsWithDelta($cuotaEsperada, $calculo->cuotaFija($monto, $tasaPeriodica, $periodos), 0.005);
+
+        $tabla = $calculo->tablaAmortizacion($monto, $tasaPeriodica, $periodos);
+        $this->assertCount($periodos, $tabla);
+        $this->assertEqualsWithDelta(0.0, $tabla[$periodos - 1]['saldo'], self::TOLERANCIA);
+    }
+
     public function test_la_cuota_se_redondea_a_dos_decimales(): void
     {
         $calculo = new CalculoFinancieroService;

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\EstadoCuota;
 use App\Enums\EstadoPrestamo;
+use App\Models\Auditoria;
 use App\Models\CuantiaSmmlv;
 use App\Models\Cuota;
 use App\Models\Desembolso;
@@ -11,7 +12,9 @@ use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\PresupuestoAnual;
 use App\Models\SmmlvAnual;
+use App\Models\SolicitudCredito;
 use App\Models\TasaInt;
+use App\Models\TasaVehiculo;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
 use App\Services\PrestamoService;
@@ -98,7 +101,7 @@ class SimuladorPantallaTest extends TestCase
             ->json();
     }
 
-    public function test_la_pantalla_no_pide_monto_ni_plazo_y_esta_en_el_menu_de_creditos(): void
+    public function test_la_pantalla_pide_los_datos_de_la_simulacion_y_esta_en_el_menu_de_creditos(): void
     {
         $this->get(route('simulador.index'))
             ->assertOk()
@@ -107,9 +110,16 @@ class SimuladorPantallaTest extends TestCase
             ->assertSee('id="cedula_empleado"', false)
             ->assertSee('maxlength="10"', false)
             ->assertSee('Selecciona una modalidad')
-            ->assertSee(route('simulador.index'), false)
-            ->assertDontSee('Monto solicitado')
-            ->assertDontSee('Plazo (quincenas)');
+            ->assertSee('Monto')
+            ->assertSee('Plazo (quincenas)')
+            ->assertSee('Tasa efectiva anual (%)')
+            ->assertSee('Puntos adicionales (%)')
+            ->assertSee('Retención en la fuente (mensual)')
+            ->assertSee('Calcular')
+            ->assertSee('id="form-simulador"', false)
+            ->assertSee(json_encode(route('simulador.calcular')), false)
+            ->assertSee(json_encode(route('simulador.tasa')), false)
+            ->assertSee(route('simulador.index'), false);
     }
 
     public function test_el_simulador_esta_disponible_para_administrador_y_funcionario(): void
@@ -128,6 +138,8 @@ class SimuladorPantallaTest extends TestCase
         $this->get(route('simulador.index'))->assertRedirect(route('login'));
         $this->get(route('simulador.empleado', $empleado->cedula))->assertRedirect(route('login'));
         $this->get(route('simulador.modalidad', [$empleado->cedula, $modalidad->id_tipo]))->assertRedirect(route('login'));
+        $this->getJson(route('simulador.calcular'))->assertUnauthorized();
+        $this->getJson(route('simulador.tasa'))->assertUnauthorized();
     }
 
     public function test_un_usuario_deshabilitado_no_puede_usar_el_simulador(): void
@@ -135,6 +147,7 @@ class SimuladorPantallaTest extends TestCase
         $this->actingAs(Usuario::factory()->create(['habilitado' => false]));
 
         $this->get(route('simulador.index'))->assertRedirect(route('login'));
+        $this->getJson(route('simulador.calcular'))->assertUnauthorized();
     }
 
     public function test_cedula_inexistente_devuelve_un_mensaje_claro(): void
@@ -341,5 +354,209 @@ class SimuladorPantallaTest extends TestCase
         $this->assertSame((float) $esperado, (float) $resultado['monto_maximo']);
         $this->assertLessThanOrEqual(50_000.01, $resultado['cuota_quincenal']);
         $this->assertSame(72, $resultado['plazo_quincenas']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     * @return array<string, mixed>
+     */
+    private function parametros(Empleado $empleado, TipoPrestamo $modalidad, array $extra = []): array
+    {
+        return ['cedula' => $empleado->cedula, 'id_tipo' => $modalidad->id_tipo, 'monto' => '4.000.000', 'plazo' => 72, ...$extra];
+    }
+
+    public function test_calcular_devuelve_los_datos_y_el_resultado_ya_armado(): void
+    {
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $respuesta = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion)))
+            ->assertOk()
+            ->assertJsonPath('errores', [])
+            ->assertJsonPath('encabezado.periodos', 72)
+            ->assertJsonPath('encabezado.tasa_total', 4.85)
+            ->assertJsonPath('capacidad.usada', 'estimada')
+            ->assertJsonMissingPath('tabla_amortizacion');
+
+        $prestamoService = app(PrestamoService::class);
+        $this->assertEqualsWithDelta(
+            $prestamoService->calcularCuotaFrancesa(4_000_000, $prestamoService->tasaPeriodica(4.85), 72),
+            $respuesta->json('cuota_quincenal'),
+            0.001,
+        );
+
+        $html = $respuesta->json('html');
+        $this->assertStringContainsString('Cuota fija quincenal', $html);
+        $this->assertStringContainsString('Seguro (aparte)', $html);
+        $this->assertStringContainsString('Cuota + seguro', $html);
+        $this->assertStringContainsString('Tabla de amortización (72 cuotas)', $html);
+        $this->assertStringContainsString('fechas estimadas', $html);
+        $this->assertStringContainsString('Capacidad estimada con descuentos de ley', $html);
+        $this->assertStringContainsString('Capacidad guardada del empleado', $html);
+        $this->assertStringContainsString('Sugerencias para que quepa', $html);
+    }
+
+    public function test_el_boton_de_solicitud_lleva_cedula_modalidad_monto_y_plazo(): void
+    {
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $html = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion)))->assertOk()->json('html');
+
+        $enlace = route('solicitudes.create', [
+            'cedula_empleado' => $empleado->cedula,
+            'id_tipo' => $educacion->id_tipo,
+            'monto_solicitado' => '4000000',
+            'plazo_solicitado' => 72,
+        ]);
+        $this->assertStringContainsString('Crear solicitud con estos datos', $html);
+        $this->assertStringContainsString(e($enlace), $html);
+        $this->assertStringNotContainsString('Editaste la tasa', $html);
+    }
+
+    public function test_si_se_edita_la_tasa_el_boton_avisa_que_la_solicitud_usara_la_oficial(): void
+    {
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $respuesta = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['tasa_efectiva' => '8,2', 'puntos' => '1'])))
+            ->assertOk()
+            ->assertJsonPath('tasa.editada', true)
+            ->assertJsonPath('encabezado.tasa_total', 9.2);
+
+        $this->assertStringContainsString('Editaste la tasa', $respuesta->json('html'));
+        $this->assertStringContainsString('oficial de tasas_int', $respuesta->json('html'));
+    }
+
+    public function test_el_formulario_de_solicitud_acepta_valores_previos_del_simulador(): void
+    {
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $respuesta = $this->get(route('solicitudes.create', [
+            'cedula_empleado' => '1234567890',
+            'id_tipo' => $educacion->id_tipo,
+            'monto_solicitado' => '4000000',
+            'plazo_solicitado' => 72,
+        ]))->assertOk();
+
+        $respuesta->assertSee('value="1234567890"', false);
+        $respuesta->assertSee('value="4000000"', false);
+        $respuesta->assertSee('id="plazo_solicitado"', false);
+        $respuesta->assertSee('value="72"', false);
+        $respuesta->assertSeeInOrder(['<option value="'.$educacion->id_tipo.'" selected', 'Educación'], false);
+    }
+
+    public function test_el_formulario_de_solicitud_ignora_valores_previos_invalidos(): void
+    {
+        $this->get(route('solicitudes.create', ['cedula_empleado' => 'abc<script>', 'monto_solicitado' => 'x', 'plazo_solicitado' => 'y']))
+            ->assertOk()
+            ->assertDontSee('<script>alert', false)
+            ->assertDontSee('value="abc', false)
+            ->assertSee('id="plazo_solicitado"', false);
+    }
+
+    public function test_calcular_valida_los_datos_de_entrada(): void
+    {
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $this->getJson(route('simulador.calcular'))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['cedula', 'id_tipo', 'monto', 'plazo']);
+
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['cedula' => 'abc'])))->assertJsonValidationErrors('cedula');
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['id_tipo' => 9999])))->assertJsonValidationErrors('id_tipo');
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['monto' => '999'])))->assertJsonValidationErrors('monto');
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['plazo' => 0])))->assertJsonValidationErrors('plazo');
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['tasa_efectiva' => '120'])))->assertJsonValidationErrors('tasa_efectiva');
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['puntos' => '-1'])))->assertJsonValidationErrors('puntos');
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['retencion' => '-5'])))->assertJsonValidationErrors('retencion');
+    }
+
+    public function test_calcular_con_un_plazo_mayor_al_maximo_devuelve_el_error(): void
+    {
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['plazo' => 73])))
+            ->assertStatus(422)
+            ->assertJsonPath('errores', ['El plazo (73 quincenas) supera el máximo de la modalidad Educación: 72 quincenas.']);
+    }
+
+    public function test_calcular_con_cedula_inexistente_o_empleado_retirado(): void
+    {
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+        $retirado = Empleado::factory()->retirado()->create();
+
+        $this->getJson(route('simulador.calcular', ['cedula' => '5555555555', 'id_tipo' => $educacion->id_tipo, 'monto' => 4_000_000, 'plazo' => 72]))
+            ->assertNotFound()
+            ->assertJson(['mensaje' => 'No existe un empleado con la cédula 5555555555.']);
+
+        $this->getJson(route('simulador.calcular', $this->parametros($retirado, $educacion)))
+            ->assertStatus(422)
+            ->assertJson(['mensaje' => 'El empleado está retirado y no puede solicitar un crédito.']);
+    }
+
+    public function test_calcular_no_crea_solicitudes_prestamos_ni_auditoria(): void
+    {
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion)))->assertOk();
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['plazo' => 500])))->assertStatus(422);
+        $this->getJson(route('simulador.tasa', ['cedula' => $empleado->cedula, 'id_tipo' => $educacion->id_tipo, 'plazo' => 72]))->assertOk();
+
+        $this->assertSame(0, SolicitudCredito::count());
+        $this->assertSame(0, Prestamo::count());
+        $this->assertSame(0, Auditoria::count());
+    }
+
+    public function test_la_tasa_oficial_prellena_base_puntos_y_plazo_maximo(): void
+    {
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $this->getJson(route('simulador.tasa', ['cedula' => $empleado->cedula, 'id_tipo' => $educacion->id_tipo, 'plazo' => 72]))
+            ->assertOk()
+            ->assertJsonPath('base', 4.85)
+            ->assertJsonPath('puntos', 0)
+            ->assertJsonPath('total', 4.85)
+            ->assertJsonPath('plazo_maximo', 72)
+            ->assertJsonPath('avisos', []);
+
+        $this->getJson(route('simulador.tasa', ['cedula' => '5555555555', 'id_tipo' => $educacion->id_tipo]))->assertNotFound();
+        $this->getJson(route('simulador.tasa', ['cedula' => $empleado->cedula]))->assertJsonValidationErrors('id_tipo');
+    }
+
+    public function test_la_tasa_de_vehiculo_trae_puntos_y_avisa_si_falta_la_fila(): void
+    {
+        $empleado = $this->empleado();
+        $vehiculo = $this->modalidad('Vehículo', 168, 50);
+        TasaVehiculo::factory()->create(['plazo_anios' => 4, 'es_primera_solicitud' => true, 'puntos_adicionales_ipc' => 1]);
+
+        $this->getJson(route('simulador.tasa', ['cedula' => $empleado->cedula, 'id_tipo' => $vehiculo->id_tipo, 'plazo' => 96]))
+            ->assertOk()
+            ->assertJsonPath('base', 4.85)
+            ->assertJsonPath('puntos', 1)
+            ->assertJsonPath('total', 5.85)
+            ->assertJsonPath('avisos', []);
+
+        $this->getJson(route('simulador.tasa', ['cedula' => $empleado->cedula, 'id_tipo' => $vehiculo->id_tipo, 'plazo' => 144]))
+            ->assertOk()
+            ->assertJsonPath('puntos', 0)
+            ->assertJsonPath('total', 4.85)
+            ->assertJsonCount(1, 'avisos');
+    }
+
+    public function test_calcular_con_el_interruptor_apagado_usa_la_capacidad_guardada(): void
+    {
+        config(['prestamos.simulador.restar_descuentos_ley' => false]);
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion)))
+            ->assertOk()
+            ->assertJsonPath('capacidad.usada', 'guardada')
+            ->assertJsonPath('capacidad.restar_descuentos_ley', false);
     }
 }
