@@ -18,6 +18,7 @@ use App\Models\TasaVehiculo;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
 use App\Services\PrestamoService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -558,5 +559,160 @@ class SimuladorPantallaTest extends TestCase
             ->assertOk()
             ->assertJsonPath('capacidad.usada', 'guardada')
             ->assertJsonPath('capacidad.restar_descuentos_ley', false);
+    }
+
+    public function test_la_pantalla_trae_el_contenedor_de_la_hoja_impresa_y_oculta_el_resto_al_imprimir(): void
+    {
+        $this->get(route('simulador.index'))
+            ->assertOk()
+            ->assertSee('id="hoja-impresion"', false)
+            ->assertSee('class="no-imprimir"', false)
+            ->assertSee('solo-impresion', false)
+            ->assertDontSee('id="imprimir-simulacion"', false);
+    }
+
+    public function test_el_boton_imprimir_solo_viene_con_un_resultado_calculado(): void
+    {
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $respuesta = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion)))->assertOk();
+
+        $this->assertStringContainsString('id="imprimir-simulacion"', $respuesta->json('html'));
+        $this->assertStringContainsString('>Imprimir</button>', $respuesta->json('html'));
+        $this->assertStringNotContainsString('hoja-simulacion', $respuesta->json('html'));
+
+        $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['plazo' => 500])))
+            ->assertStatus(422)
+            ->assertJsonMissingPath('html')
+            ->assertJsonMissingPath('html_impresion');
+    }
+
+    public function test_la_hoja_impresa_trae_todos_los_bloques_para_archivar(): void
+    {
+        Carbon::setTestNow(now()->setTime(15, 30));
+        $empleado = $this->empleado();
+        $empleado->update(['nombre_completo' => 'Ana María Pérez', 'tipo_vinculacion' => 'Docente']);
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $hoja = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion)))->assertOk()->json('html_impresion');
+
+        foreach ([
+            'Politécnico Colombiano Jaime Isaza Cadavid',
+            'alt="Politécnico Colombiano Jaime Isaza Cadavid"',
+            'Simulación de crédito',
+            'Ana María Pérez',
+            $empleado->cedula,
+            'Tipo de vinculación',
+            'Docente',
+            'Educación',
+            '$4.000.000',
+            '72 quincenas',
+            'Tasa efectiva anual',
+            'Puntos adicionales',
+            'Cuota fija quincenal',
+            'Seguro estimado (aparte)',
+            'Cuota + seguro',
+            'Veredicto:',
+            'Capacidad estimada con descuentos de ley',
+            'Capacidad guardada del empleado',
+            'Tabla de amortización (72 cuotas)',
+            'Simulación informativa; no constituye aprobación del crédito.',
+            'por '.auth()->user()->nombre_completo,
+            'Simulación realizada el '.now()->format('d/m/Y').' 10:30',
+        ] as $esperado) {
+            $this->assertStringContainsString($esperado, $hoja);
+        }
+
+        $this->assertStringContainsString('<thead>', $hoja);
+        $this->assertSame(72, preg_match_all('#<tr>\s*<td>\d+</td>\s*<td>\d{2}/\d{2}/\d{4}</td>#', $hoja));
+        $this->assertStringNotContainsString('Crear solicitud', $hoja);
+        $this->assertStringNotContainsString('Sugerencias para que quepa', $hoja);
+        $this->assertStringNotContainsString('<details', $hoja);
+        $this->assertStringNotContainsString('<button', $hoja);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_las_cifras_de_la_hoja_impresa_son_las_de_la_pantalla(): void
+    {
+        $empleado = $this->empleado(salario: 4_200_000);
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $respuesta = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['retencion' => '150000'])))->assertOk();
+        $pantalla = $respuesta->json('html');
+        $hoja = $respuesta->json('html_impresion');
+        $pesos = fn (float $valor): string => '$'.number_format($valor, 2, ',', '.');
+        $estimada = $respuesta->json('capacidad.estimada');
+
+        foreach ([
+            $pesos($respuesta->json('cuota_quincenal')),
+            $pesos($respuesta->json('seguro')),
+            $pesos($respuesta->json('cuota_mas_seguro')),
+            $pesos($respuesta->json('total_intereses')),
+            $pesos($respuesta->json('total_a_pagar')),
+            $pesos($respuesta->json('capacidad.cuota_mensual')),
+            $pesos(abs($respuesta->json('capacidad.margen'))),
+            $pesos($respuesta->json('capacidad.comprometida')),
+            $pesos($estimada['salud']['valor']),
+            $pesos($estimada['pension']['valor']),
+            $pesos($estimada['solidaridad']['valor']),
+            $pesos($estimada['retencion']),
+            $pesos($estimada['base']),
+            $pesos($estimada['capacidad']),
+            $pesos($estimada['disponible']),
+            $pesos($respuesta->json('capacidad.guardada.capacidad')),
+            $pesos($respuesta->json('capacidad.guardada.disponible')),
+        ] as $cifra) {
+            $this->assertStringContainsString($cifra, $pantalla, "Falta {$cifra} en la pantalla");
+            $this->assertStringContainsString($cifra, $hoja, "Falta {$cifra} en la hoja impresa");
+        }
+
+        $this->assertStringContainsString('$150.000,00', $hoja);
+    }
+
+    public function test_la_tasa_corregida_a_mano_se_ve_claramente_en_la_hoja_impresa(): void
+    {
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $corregida = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['tasa_efectiva' => '8,2', 'puntos' => '1'])))
+            ->assertOk()
+            ->json('html_impresion');
+
+        $this->assertStringContainsString('TASA CORREGIDA A MANO', $corregida);
+        $this->assertStringContainsString('4,8500 % E.A. en total', $corregida);
+        $this->assertStringContainsString('9,2000 %', $corregida);
+        $this->assertStringNotContainsString('sin correcciones', $corregida);
+
+        $oficial = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion)))->assertOk()->json('html_impresion');
+
+        $this->assertStringNotContainsString('TASA CORREGIDA A MANO', $oficial);
+        $this->assertStringContainsString('Tasa oficial de la modalidad, sin correcciones.', $oficial);
+    }
+
+    public function test_la_hoja_impresa_incluye_los_avisos_de_la_simulacion(): void
+    {
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $respuesta = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion, ['monto' => '900.000.000'])))->assertOk();
+
+        $this->assertNotEmpty($respuesta->json('avisos'));
+
+        foreach ($respuesta->json('avisos') as $aviso) {
+            $this->assertStringContainsString(e($aviso), $respuesta->json('html_impresion'));
+        }
+
+        $this->assertStringContainsString('<h2>Avisos</h2>', $respuesta->json('html_impresion'));
+    }
+
+    public function test_la_pantalla_define_los_estilos_de_impresion_de_la_hoja(): void
+    {
+        $pantalla = $this->get(route('simulador.index'))->assertOk()->getContent();
+
+        foreach (['@page simulacion', '.hoja-simulacion', 'table-header-group', '.hoja-pie', 'position: fixed', 'size: A4 portrait'] as $regla) {
+            $this->assertStringContainsString($regla, $pantalla);
+        }
     }
 }

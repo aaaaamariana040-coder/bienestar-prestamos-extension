@@ -1,6 +1,196 @@
 @extends('layouts.app')
 
 @section('content')
+    {{--
+        Simulador: hoja impresa (Simulación de crédito).
+        La hoja vive en #hoja-impresion, oculta en pantalla (.solo-impresion); al imprimir solo se ve ella.
+        Se archiva en la carpeta física del crédito: A4 vertical, bordes finos en lugar de colores de fondo
+        (se lee igual con «gráficos de fondo» apagado), encabezado de la tabla repetido en cada página y
+        pie con el aviso en todas las hojas.
+        Los estilos van aquí y no en tema-institucional.css: solo se usan en esta pantalla.
+    --}}
+    <style>
+        @page simulacion {
+            size: A4 portrait;
+            margin: 12mm 12mm 22mm;
+        }
+
+        @media print {
+            .hoja-simulacion {
+                page: simulacion;
+                font-size: 9pt;
+                line-height: 1.35;
+                color: #000;
+            }
+
+            .hoja-simulacion h1,
+            .hoja-simulacion h2,
+            .hoja-simulacion p {
+                margin: 0;
+            }
+
+            .hoja-encabezado {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding-bottom: 6px;
+                border-bottom: 1.5pt solid #000;
+            }
+
+            .hoja-institucion {
+                font-size: 12pt;
+                font-weight: 700;
+            }
+
+            .hoja-area {
+                font-size: 9pt;
+            }
+
+            .hoja-titulo {
+                margin: 8px 0 6px !important;
+                font-size: 16pt;
+                text-align: center;
+            }
+
+            .hoja-bloque {
+                margin-bottom: 8px;
+            }
+
+            .hoja-bloque h2 {
+                margin-bottom: 3px;
+                padding-bottom: 1px;
+                border-bottom: 0.5pt solid #000;
+                font-size: 10pt;
+                font-weight: 700;
+                break-after: avoid;
+            }
+
+            .hoja-datos {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1px 16px;
+                margin: 0;
+            }
+
+            .hoja-datos > div {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+                border-bottom: 0.25pt dotted #777;
+            }
+
+            .hoja-datos dt {
+                font-weight: 400;
+            }
+
+            .hoja-datos dd {
+                margin: 0;
+                text-align: right;
+                font-weight: 600;
+            }
+
+            .hoja-alerta {
+                margin-top: 4px !important;
+                padding: 3px 6px;
+                border: 1.5pt solid #000;
+                font-size: 9pt;
+                break-inside: avoid;
+            }
+
+            .hoja-nota {
+                margin-top: 3px !important;
+                font-size: 8pt;
+            }
+
+            .hoja-veredicto {
+                margin-bottom: 3px !important;
+                padding: 3px 6px;
+                border: 1pt solid #000;
+                font-weight: 700;
+                break-inside: avoid;
+            }
+
+            .hoja-columnas {
+                display: grid;
+                grid-template-columns: 1.4fr 1fr;
+                gap: 12px;
+                margin-top: 4px;
+                align-items: start;
+                break-inside: avoid;
+            }
+
+            .hoja-tabla-simple,
+            .hoja-tabla {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .hoja-tabla-simple caption {
+                padding: 0 0 2px;
+                caption-side: top;
+                font-weight: 700;
+                text-align: left;
+                color: #000;
+            }
+
+            .hoja-tabla-simple td {
+                padding: 1px 3px;
+                border-bottom: 0.25pt solid #999;
+            }
+
+            .hoja-tabla-simple td:last-child {
+                text-align: right;
+                white-space: nowrap;
+            }
+
+            .hoja-tabla-simple tr.total td {
+                font-weight: 700;
+            }
+
+            .hoja-tabla th,
+            .hoja-tabla td {
+                padding: 1px 4px;
+                border: 0.5pt solid #555;
+                text-align: right;
+                font-size: 8pt;
+            }
+
+            .hoja-tabla th:first-child,
+            .hoja-tabla td:first-child,
+            .hoja-tabla th:nth-child(2),
+            .hoja-tabla td:nth-child(2) {
+                text-align: left;
+            }
+
+            .hoja-tabla th {
+                font-weight: 700;
+            }
+
+            /* Encabezado repetido en cada página y ninguna fila partida entre dos. */
+            .hoja-tabla thead {
+                display: table-header-group;
+            }
+
+            .hoja-tabla tr {
+                break-inside: avoid;
+            }
+
+            /* Pie fijo: se repite en todas las páginas. */
+            .hoja-pie {
+                position: fixed;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                padding-top: 3px;
+                border-top: 0.5pt solid #000;
+                font-size: 8pt;
+                text-align: center;
+                background: #fff;
+            }
+        }
+    </style>
+
+    <div class="no-imprimir">
     <h1 class="h3 mb-1">Simulador de crédito</h1>
     <p class="text-muted mb-4">Calcula la cuota y la tabla de amortización de un crédito y la compara con la capacidad de endeudamiento del empleado. Es solo una simulación: no registra ninguna solicitud ni préstamo.</p>
 
@@ -104,6 +294,10 @@
             <div id="resultado-simulacion" aria-live="polite"></div>
         </div>
     </div>
+    </div>
+
+    {{-- Hoja que se imprime: se llena con la misma respuesta que la pantalla; en pantalla está oculta. --}}
+    <div id="hoja-impresion" class="solo-impresion"></div>
 
     <script>
         (function () {
@@ -115,6 +309,7 @@
             const selector = document.getElementById('modalidad');
             const resultadoModalidad = document.getElementById('resultado-modalidad');
             const resultadoSimulacion = document.getElementById('resultado-simulacion');
+            const hojaImpresion = document.getElementById('hoja-impresion');
             const avisosTasa = document.getElementById('avisos-tasa');
             const formulario = document.getElementById('form-simulador');
             const campoMonto = document.getElementById('monto');
@@ -164,6 +359,27 @@
 
             function limpiarSimulacion() {
                 resultadoSimulacion.innerHTML = '';
+                hojaImpresion.innerHTML = '';
+            }
+
+            // Imprime la hoja de la simulación que está en pantalla. El título del documento
+            // sugiere el nombre del archivo al «Guardar como PDF».
+            function imprimirSimulacion() {
+                const hoja = hojaImpresion.querySelector('.hoja-simulacion');
+
+                if (hoja === null) {
+                    return;
+                }
+
+                const tituloAnterior = document.title;
+                const restaurar = function () {
+                    document.title = tituloAnterior;
+                    window.removeEventListener('afterprint', restaurar);
+                };
+
+                document.title = hoja.dataset.titulo || tituloAnterior;
+                window.addEventListener('afterprint', restaurar);
+                window.print();
             }
 
             function mostrarAviso(mensaje, clase) {
@@ -374,6 +590,7 @@
 
                 peticionCalculo = new AbortController();
                 resultadoSimulacion.innerHTML = '<p class="text-muted">Calculando…</p>';
+                hojaImpresion.innerHTML = '';
 
                 fetch(urlCalcular + '?' + parametros.toString(), { signal: peticionCalculo.signal, headers: { 'Accept': 'application/json' } })
                     .then(function (respuesta) {
@@ -384,6 +601,7 @@
                     .then(function (r) {
                         if (r.ok) {
                             resultadoSimulacion.innerHTML = r.datos.html;
+                            hojaImpresion.innerHTML = r.datos.html_impresion;
                         } else {
                             pintarErrores(listaDeErrores(r.datos));
                         }
@@ -437,6 +655,12 @@
             document.getElementById('restablecer-tasa').addEventListener('click', function () {
                 tasaEditada = false;
                 cargarTasa();
+            });
+
+            resultadoSimulacion.addEventListener('click', function (evento) {
+                if (evento.target.closest('#imprimir-simulacion') !== null) {
+                    imprimirSimulacion();
+                }
             });
 
             formulario.addEventListener('submit', function (evento) {
