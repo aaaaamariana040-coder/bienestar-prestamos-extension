@@ -50,8 +50,10 @@ class PagoController extends Controller
     }
 
     /**
-     * Vista previa del abono: no guarda nada. Indica si el monto alcanza el
-     * umbral y, si el operador ya eligió una opción, cómo quedaría el préstamo.
+     * Vista previa del abono: no guarda nada. Indica si el monto supera el
+     * umbral. Si no lo supera no hay elección y el plan es el automático (baja
+     * el plazo con la misma cuota); si lo supera, el plan sale cuando el
+     * operador ya eligió una opción.
      */
     public function vistaPreviaAbono(VistaPreviaAbonoRequest $request, Prestamo $prestamo, ReliquidacionService $reliquidacionService): JsonResponse
     {
@@ -66,10 +68,10 @@ class PagoController extends Controller
 
         $modo = $request->validated('modo_reliquidacion');
 
-        if ($respuesta['supera_umbral'] && $modo !== null) {
+        if (! $respuesta['supera_umbral'] || $modo !== null) {
             try {
                 $numCuotas = $request->validated('num_cuotas');
-                $respuesta['plan'] = collect($reliquidacionService->calcular($prestamo, $monto, $modo, $numCuotas !== null ? (int) $numCuotas : null))
+                $respuesta['plan'] = collect($reliquidacionService->calcular($prestamo, $monto, (string) $modo, $numCuotas !== null ? (int) $numCuotas : null, ! $respuesta['supera_umbral']))
                     ->except('tasa_periodica')
                     ->all();
             } catch (RuntimeException $e) {

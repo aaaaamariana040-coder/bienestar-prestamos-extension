@@ -124,8 +124,12 @@ Puede reliquidarse semestralmente si al momento de la solicitud el empleado tien
 ## 9. Abonos extraordinarios y reliquidación
 - El beneficiario puede abonar total o parcialmente el capital en cualquier momento, eligiendo entre disminuir cuota o plazo (Art. 12, parágrafos 3 y 4).
 - El Acuerdo (Art. 12, parágrafo 5) dice que, si el abono es "superior a diez (10) cuotas quincenales", se genera nueva liquidación de la cuota según el plazo pendiente; en esos casos el empleado elige entre bajar la cuota o el plazo.
-- **Por confirmar (reunión 14-oct):** si el umbral es "superior a" 10 cuotas o "desde" 10 cuotas.
-- **Por confirmar (reunión 14-oct):** cómo se aplica un abono menor al umbral. Hoy el sistema solo registra el pago; no baja el saldo pendiente ni el interés futuro.
+- **Decidido (Bienestar):** la elección entre bajar la cuota o el plazo aplica a **todas** las modalidades (`ABONO_MODALIDADES`, por defecto `*`), con el umbral de 10 cuotas quincenales (`ABONO_UMBRAL_CUOTAS`).
+- **Decidido:** el umbral compara el abono con 10 veces la cuota real del préstamo, **sin seguro** (el seguro no forma parte de la cuota real).
+- **Decidido:** un abono **mayor** a 10 cuotas obliga a elegir entre bajar la cuota o el plazo. Uno **menor o igual** no pide elección: se reliquida solo, siempre en modo plazo. El saldo de capital baja, la cuota queda exactamente igual y baja el número de cuotas con la fórmula financiera (misma cuota, saldo menor); la última cuota puede quedar menor. Si el abono es menor que una cuota el número de cuotas puede no cambiar, pero el saldo baja y la última cuota queda menor.
+- Las cuotas pendientes que se conservan mantienen su fecha de vencimiento: al bajar el plazo se eliminan las últimas cuotas de la tabla, no se corren las fechas. Las cuotas pagadas no se tocan. Se usa la tasa original del préstamo (la del año de la solicitud), no la vigente.
+- Un abono igual o mayor al saldo se rechaza y se manda a «Cancelación total».
+- La reliquidación automática queda en el historial de reliquidaciones marcada como «automática: abono bajo el umbral» y en la auditoría.
 - Los abonos con liquidaciones de cesantías también generan reliquidación (Art. 12, parágrafo 6).
 
 ## 10. Cesantías

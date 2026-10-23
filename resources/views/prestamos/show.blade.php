@@ -179,11 +179,11 @@
                     <div class="card-body">
                         <h3 class="h6 mb-3">Registrar abono extraordinario</h3>
                         <p class="text-muted small">
-                            Un abono menor a {{ $umbralCuotas }} cuotas ({{ number_format($umbralCuotas * (float) $prestamo->cuota_periodica, 2) }}) se aplica a capital sin reliquidar.
+                            Un abono de hasta {{ $umbralCuotas }} cuotas ({{ number_format($umbralCuotas * (float) $prestamo->cuota_periodica, 2) }}) baja el saldo y el plazo; la cuota queda igual.
                             @if ($abonoAplicaAModalidad)
-                                Si es igual o mayor, elija si baja la cuota o el plazo (Art. 12 §4 y §5).
+                                Si es mayor, elija si baja la cuota o el plazo (Art. 12 §4 y §5).
                             @else
-                                Esta modalidad no tiene reliquidación por abono.
+                                En esta modalidad todo abono baja el plazo con la misma cuota.
                             @endif
                         </p>
                         <form method="POST" action="{{ route('pagos.store-abono', $prestamo) }}" id="form-abono" class="row g-2 align-items-end">
@@ -212,6 +212,7 @@
                                 </div>
                             </div>
                             <div class="col-12 d-none" id="abono-vista-previa">
+                                <p class="small text-muted d-none" id="vp-automatica">Este abono no supera el umbral: se reliquida solo, bajando el número de cuotas. La cuota queda igual y la última puede quedar menor.</p>
                                 <table class="table table-sm bg-white mb-0">
                                     <tbody>
                                         <tr><th>Saldo anterior</th><td id="vp-saldo-anterior"></td><th>Saldo nuevo</th><td id="vp-saldo-nuevo"></td></tr>
@@ -306,7 +307,7 @@
                 <tr>
                     <td>{{ $reliquidacion->fecha->format('Y-m-d') }}</td>
                     <td>{{ $reliquidacion->motivo->value }}</td>
-                    <td>{{ match ($reliquidacion->opcion_elegida) { 'cuota' => 'Bajó la cuota', 'plazo' => 'Bajó el plazo', default => '—' } }}</td>
+                    <td>{{ match ($reliquidacion->opcion_elegida) { 'cuota' => 'Bajó la cuota', 'plazo' => $reliquidacion->automatica ? 'Bajó el plazo (automática: abono bajo el umbral)' : 'Bajó el plazo', default => '—' } }}</td>
                     <td>{{ number_format($reliquidacion->saldo_anterior, 2) }}</td>
                     <td>{{ $reliquidacion->saldo_nuevo !== null ? number_format($reliquidacion->saldo_nuevo, 2) : 'Pendiente de cálculo' }}</td>
                     <td>{{ $reliquidacion->tasa_aplicada !== null ? number_format($reliquidacion->tasa_aplicada, 4).'%' : '—' }}</td>
@@ -359,6 +360,7 @@
                 const opciones = document.getElementById('abono-opciones');
                 const plazo = document.getElementById('abono-plazo');
                 const tabla = document.getElementById('abono-vista-previa');
+                const automatica = document.getElementById('vp-automatica');
                 const error = document.getElementById('abono-error');
                 const modos = document.querySelectorAll('input[name="modo_reliquidacion"]');
                 let temporizador = null;
@@ -388,18 +390,17 @@
                     fetch(url + '?' + params.toString(), {headers: {'Accept': 'application/json'}})
                         .then((r) => r.ok ? r.json() : Promise.reject())
                         .then((d) => {
-                            if (! d.supera_umbral) { return limpiar(); }
-
-                            opciones.classList.remove('d-none');
-                            modos.forEach((m) => { m.required = true; });
-                            plazo.classList.toggle('d-none', modoElegido() !== 'plazo');
-                            numInput.disabled = modoElegido() !== 'plazo';
+                            automatica.classList.toggle('d-none', d.supera_umbral);
+                            opciones.classList.toggle('d-none', ! d.supera_umbral);
+                            modos.forEach((m) => { m.required = d.supera_umbral; if (! d.supera_umbral) { m.checked = false; } });
+                            plazo.classList.toggle('d-none', ! d.supera_umbral || modoElegido() !== 'plazo');
+                            numInput.disabled = ! d.supera_umbral || modoElegido() !== 'plazo';
                             error.classList.toggle('d-none', ! d.error);
                             error.textContent = d.error || '';
 
                             if (! d.plan) { return tabla.classList.add('d-none'); }
 
-                            if (d.plan.n_sugerido !== null && ! numEditado) { numInput.value = d.plan.n_sugerido; }
+                            if (d.supera_umbral && d.plan.n_sugerido !== null && ! numEditado) { numInput.value = d.plan.n_sugerido; }
                             numInput.max = d.plan.cuotas_actuales;
                             document.getElementById('vp-saldo-anterior').textContent = dinero(d.plan.saldo_anterior);
                             document.getElementById('vp-saldo-nuevo').textContent = dinero(d.plan.saldo_nuevo);

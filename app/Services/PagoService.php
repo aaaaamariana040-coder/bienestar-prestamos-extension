@@ -69,11 +69,12 @@ class PagoService
 
     /**
      * Abono extraordinario a capital (Art. 12 parágrafos 3 y 4): no está ligado
-     * a una cuota puntual. Si alcanza el umbral configurado (por defecto 10
-     * cuotas) en una modalidad a la que aplica, el operador debe elegir en
-     * $modoReliquidacion ('cuota' o 'plazo') y se reliquida (parágrafos 4 y 5);
-     * $numCuotas fija a mano el plazo nuevo. Por debajo del umbral solo se
-     * registra el pago, sin reliquidación.
+     * a una cuota puntual y siempre reliquida. Si supera el umbral configurado
+     * (por defecto 10 cuotas) en una modalidad a la que aplica, el operador debe
+     * elegir en $modoReliquidacion ('cuota' o 'plazo'); $numCuotas fija a mano
+     * el plazo nuevo (parágrafos 4 y 5). Si es menor o igual al umbral no hay
+     * elección: se baja el plazo con la misma cuota y la reliquidación queda
+     * marcada como automática.
      */
     public function registrarAbonoExtraordinario(Prestamo $prestamo, float $monto, string $fechaPago, Usuario $actor, ?string $modoReliquidacion = null, ?int $numCuotas = null): Pago
     {
@@ -98,17 +99,18 @@ class PagoService
                 'cedula_usu' => $actor->cedula,
             ]);
 
-            if ($this->reliquidacionService->superaUmbral($prestamo, $monto)) {
-                $this->reliquidacionService->reliquidar(
-                    $prestamo,
-                    $monto,
-                    MotivoReliquidacion::AbonoExtraordinario,
-                    (string) $modoReliquidacion,
-                    $fechaPago,
-                    $actor,
-                    $numCuotas,
-                );
-            }
+            $elige = $this->reliquidacionService->superaUmbral($prestamo, $monto);
+
+            $this->reliquidacionService->reliquidar(
+                $prestamo,
+                $monto,
+                MotivoReliquidacion::AbonoExtraordinario,
+                $elige ? (string) $modoReliquidacion : 'plazo',
+                $fechaPago,
+                $actor,
+                $elige ? $numCuotas : null,
+                ! $elige,
+            );
 
             $this->auditoriaService->registrar(
                 $actor,
