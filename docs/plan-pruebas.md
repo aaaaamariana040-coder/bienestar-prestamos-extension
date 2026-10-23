@@ -85,7 +85,10 @@ Este plan cubre las funcionalidades construidas hasta el Sprint 4 (según `plan-
 
 | ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
 |---|---|---|---|---|---|
-| PP-042 | Reliquidación por abono extraordinario | Abono superior a 10 cuotas quincenales | Registrar abono grande | Saldo recalculado, nueva tabla de cuotas generada | ⬜ |
+| PP-042 | Reliquidación por abono extraordinario | Abono superior a 10 cuotas quincenales, en cualquier modalidad | Registrar abono grande y elegir bajar la cuota o el plazo | Saldo recalculado, cuotas pendientes recalculadas con sus fechas; sin elección no se guarda nada | ⬜ |
+| PP-042a | Abono menor o igual al umbral (reliquidación automática) | Préstamo vigente; abono de hasta 10 cuotas (probar 8 cuotas y exactamente 10) | Registrar el abono sin elegir opción | Saldo de capital baja, cuota igual, menos cuotas pendientes con la última menor, fechas conservadas; historial «Bajó el plazo (automática: abono bajo el umbral)» | ⬜ |
+| PP-042b | Abono menor que una cuota | Préstamo vigente | Abonar media cuota | El saldo baja aunque el número de cuotas no cambie; la última cuota queda menor | ⬜ |
+| PP-042c | Abono que cancela el saldo | Abono igual o mayor al saldo de capital | Registrar el abono | Rechazado con aviso de «Cancelación total»; nada se guarda | ⬜ |
 | PP-043 | Registro de abono de cesantías | Préstamo de vivienda, febrero de año bianual correspondiente | Registrar abono de cesantías (50%) | Abono registrado y aplicado al saldo | ⬜ |
 | PP-044 *(pendiente)* | Retiro del empleado — liquidación de saldo | *(pendiente de confirmar proceso con el área)* | — | — | ⬜ |
 | PP-045 *(pendiente)* | Retiro del empleado — reliquidación a tasa DTF | *(pendiente de confirmar proceso con el área)* | — | — | ⬜ |

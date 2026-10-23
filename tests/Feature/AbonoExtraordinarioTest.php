@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\EstadoCuota;
 use App\Models\Prestamo;
+use App\Models\TasaInt;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
 use App\Services\CalculoFinancieroService;
@@ -71,30 +72,150 @@ class AbonoExtraordinarioTest extends TestCase
         ]);
     }
 
-    public function test_un_abono_menor_al_umbral_se_registra_sin_reliquidar_ni_pedir_opcion(): void
+    /**
+     * @return array{cuota: float, tasa: float, saldo: float}
+     */
+    private function referencia(Prestamo $prestamo): array
     {
-        $prestamo = $this->prestamo();
-        $monto = round((float) $prestamo->cuota_periodica * 9.99, 2);
+        return [
+            'cuota' => (float) $prestamo->cuota_periodica,
+            'tasa' => $this->calculo()->tasaPeriodicaQuincenal(self::TASA_EA),
+            'saldo' => $this->saldoPendiente($prestamo),
+        ];
+    }
 
-        $this->abonar(Usuario::factory()->create(), $prestamo, $monto)
+    public function test_un_abono_de_ocho_cuotas_baja_el_plazo_con_la_misma_cuota_y_sin_pedir_opcion(): void
+    {
+        $actor = Usuario::factory()->create();
+        $prestamo = $this->prestamo();
+        ['cuota' => $cuota, 'tasa' => $tasa, 'saldo' => $saldoAnterior] = $this->referencia($prestamo);
+        $monto = round($cuota * 8, 2);
+        $saldoNuevo = round($saldoAnterior - $monto, 2);
+        $esperadas = $this->calculo()->numPeriodosParaCuota($saldoNuevo, $tasa, $cuota);
+
+        $this->abonar($actor, $prestamo, $monto)
             ->assertRedirect(route('prestamos.show', $prestamo))
             ->assertSessionHas('status');
 
-        $this->assertDatabaseHas('pagos', ['id_prestamo' => $prestamo->id_prestamo, 'tipo' => 'Abono extraordinario', 'monto' => $monto]);
-        $this->assertDatabaseCount('reliquidaciones', 0);
-        $this->assertSame(self::NUM_CUOTAS, $this->pendientes($prestamo));
-        $this->assertEqualsWithDelta((float) $prestamo->cuota_periodica, (float) $prestamo->fresh()->cuota_periodica, 0.001);
+        $prestamo->refresh();
+        $cuotas = $prestamo->cuotas()->orderBy('numero_cuota')->get();
+
+        $this->assertLessThan(self::NUM_CUOTAS, $esperadas);
+        $this->assertSame($esperadas, $cuotas->count());
+        $this->assertSame($esperadas, $prestamo->num_cuotas);
+        $this->assertEqualsWithDelta($cuota, (float) $prestamo->cuota_periodica, 0.0001);
+        $this->assertEqualsWithDelta($saldoNuevo, $this->saldoPendiente($prestamo), 0.01);
+
+        foreach ($cuotas->slice(0, -1) as $fila) {
+            $this->assertEqualsWithDelta($cuota, (float) $fila->valor_total, 0.011);
+        }
+
+        $this->assertLessThanOrEqual($cuota + 0.011, (float) $cuotas->last()->valor_total);
+        $this->assertDatabaseHas('pagos', ['id_prestamo' => $prestamo->id_prestamo, 'tipo' => 'Abono extraordinario', 'monto' => $monto, 'monto_aplicado_capital' => $monto, 'cedula_usu' => $actor->cedula]);
+        $this->assertDatabaseHas('reliquidaciones', [
+            'id_prestamo' => $prestamo->id_prestamo,
+            'motivo' => 'Abono extraordinario',
+            'opcion_elegida' => 'plazo',
+            'automatica' => true,
+            'saldo_anterior' => $saldoAnterior,
+            'saldo_nuevo' => $saldoNuevo,
+            'cedula_usu' => $actor->cedula,
+        ]);
+        $this->assertDatabaseHas('auditorias', ['cedula_usu' => $actor->cedula, 'funcion_realizada' => 'Reliquidación de préstamo']);
     }
 
-    public function test_un_abono_de_exactamente_diez_cuotas_alcanza_el_umbral(): void
+    public function test_un_abono_exactamente_en_el_umbral_tampoco_pide_opcion(): void
     {
         $prestamo = $this->prestamo();
-        $monto = round((float) $prestamo->cuota_periodica * 10, 2);
+        $cuota = (float) $prestamo->cuota_periodica;
+
+        $this->abonar(Usuario::factory()->create(), $prestamo, round($cuota * 10, 2))
+            ->assertRedirect(route('prestamos.show', $prestamo))
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseHas('reliquidaciones', ['id_prestamo' => $prestamo->id_prestamo, 'opcion_elegida' => 'plazo', 'automatica' => true]);
+        $this->assertEqualsWithDelta($cuota, (float) $prestamo->fresh()->cuota_periodica, 0.0001);
+    }
+
+    public function test_un_poco_por_encima_del_umbral_exige_elegir(): void
+    {
+        $prestamo = $this->prestamo();
+        $monto = round((float) $prestamo->cuota_periodica * 10 + 0.01, 2);
+
+        $this->abonar(Usuario::factory()->create(), $prestamo, $monto)->assertSessionHas('error');
+
+        $this->assertDatabaseCount('pagos', 0);
+        $this->assertDatabaseCount('reliquidaciones', 0);
 
         $this->abonar(Usuario::factory()->create(), $prestamo, $monto, ['modo_reliquidacion' => 'cuota'])
-            ->assertRedirect(route('prestamos.show', $prestamo));
+            ->assertSessionHas('status');
 
-        $this->assertDatabaseCount('reliquidaciones', 1);
+        $this->assertDatabaseHas('reliquidaciones', ['id_prestamo' => $prestamo->id_prestamo, 'opcion_elegida' => 'cuota', 'automatica' => false]);
+    }
+
+    public function test_un_abono_de_menos_de_una_cuota_baja_el_saldo_aunque_no_cambie_el_numero_de_cuotas(): void
+    {
+        $prestamo = $this->prestamo();
+        ['cuota' => $cuota, 'saldo' => $saldoAnterior] = $this->referencia($prestamo);
+        $monto = round($cuota / 2, 2);
+
+        $this->abonar(Usuario::factory()->create(), $prestamo, $monto)->assertSessionHas('status');
+
+        $prestamo->refresh();
+
+        $this->assertSame(self::NUM_CUOTAS, $this->pendientes($prestamo));
+        $this->assertEqualsWithDelta($saldoAnterior - $monto, $this->saldoPendiente($prestamo), 0.01);
+        $this->assertEqualsWithDelta($cuota, (float) $prestamo->cuota_periodica, 0.0001);
+        $this->assertLessThan($cuota, (float) $prestamo->cuotas()->reorder('numero_cuota', 'desc')->first()->valor_total);
+        $this->assertDatabaseHas('reliquidaciones', ['id_prestamo' => $prestamo->id_prestamo, 'automatica' => true]);
+    }
+
+    public function test_el_abono_automatico_conserva_las_fechas_y_las_cuotas_pagadas_y_quita_las_ultimas(): void
+    {
+        $prestamo = $this->prestamo(cuotasPagadas: 3);
+        $columnas = ['id_cuota', 'numero_cuota', 'valor_total'];
+        $pagadas = $prestamo->cuotas()->where('estado', EstadoCuota::Pagada)->orderBy('numero_cuota')->get()->map->only($columnas)->all();
+        $fechas = $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->orderBy('numero_cuota')->get()
+            ->mapWithKeys(fn ($cuota) => [$cuota->numero_cuota => $cuota->fecha_vencimiento->toDateString()])->all();
+
+        $this->abonar(Usuario::factory()->create(), $prestamo, round((float) $prestamo->cuota_periodica * 8, 2))->assertSessionHas('status');
+
+        $despuesPagadas = $prestamo->cuotas()->where('estado', EstadoCuota::Pagada)->orderBy('numero_cuota')->get()->map->only($columnas)->all();
+        $despues = $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->orderBy('numero_cuota')->get()
+            ->mapWithKeys(fn ($cuota) => [$cuota->numero_cuota => $cuota->fecha_vencimiento->toDateString()])->all();
+
+        $this->assertSame($pagadas, $despuesPagadas);
+        $this->assertLessThan(count($fechas), count($despues));
+        $this->assertSame(array_slice($fechas, 0, count($despues), true), $despues);
+        $this->assertSame(4, array_key_first($despues));
+    }
+
+    public function test_el_abono_automatico_usa_la_tasa_original_del_prestamo_y_no_la_vigente(): void
+    {
+        $prestamo = $this->prestamo();
+        ['cuota' => $cuota, 'tasa' => $tasa, 'saldo' => $saldoAnterior] = $this->referencia($prestamo);
+        TasaInt::factory()->create(['id_tipo' => $prestamo->id_tipo, 'anio' => now()->year, 'tasa_anual' => 9.99]);
+        $monto = round($cuota * 8, 2);
+
+        $this->abonar(Usuario::factory()->create(), $prestamo, $monto);
+
+        $this->assertSame(
+            $this->calculo()->numPeriodosParaCuota(round($saldoAnterior - $monto, 2), $tasa, $cuota),
+            $this->pendientes($prestamo),
+        );
+    }
+
+    public function test_el_abono_automatico_funciona_en_todas_las_modalidades(): void
+    {
+        foreach (['Vivienda — compra de inmueble', 'Educación', 'Vehículo', 'Calamidad doméstica y necesidades especiales'] as $modalidad) {
+            $prestamo = $this->prestamo($modalidad);
+            $monto = round((float) $prestamo->cuota_periodica * 8, 2);
+
+            $this->abonar(Usuario::factory()->create(), $prestamo, $monto)->assertSessionHas('status');
+
+            $this->assertDatabaseHas('reliquidaciones', ['id_prestamo' => $prestamo->id_prestamo, 'automatica' => true]);
+            $this->assertLessThan(self::NUM_CUOTAS, $this->pendientes($prestamo), $modalidad);
+        }
     }
 
     public function test_sobre_el_umbral_es_obligatorio_elegir_y_nada_se_guarda_sin_la_eleccion(): void
@@ -262,28 +383,46 @@ class AbonoExtraordinarioTest extends TestCase
         $this->assertDatabaseCount('pagos', 1);
     }
 
-    public function test_en_una_modalidad_no_configurada_el_abono_grande_va_a_capital_sin_reliquidar(): void
+    public function test_por_defecto_la_eleccion_se_ofrece_en_todas_las_modalidades(): void
     {
+        $this->assertSame(['*'], config('prestamos.abono_extraordinario.modalidades'));
+
         $prestamo = $this->prestamo('Educación');
 
         $this->abonar(Usuario::factory()->create(), $prestamo, round((float) $prestamo->cuota_periodica * 15, 2))
+            ->assertSessionHas('error');
+
+        $this->abonar(Usuario::factory()->create(), $prestamo, round((float) $prestamo->cuota_periodica * 15, 2), ['modo_reliquidacion' => 'plazo'])
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseHas('reliquidaciones', ['id_prestamo' => $prestamo->id_prestamo, 'opcion_elegida' => 'plazo', 'automatica' => false]);
+    }
+
+    public function test_en_una_modalidad_fuera_de_la_configuracion_el_abono_grande_reliquida_solo_bajando_el_plazo(): void
+    {
+        config(['prestamos.abono_extraordinario.modalidades' => ['Vivienda']]);
+        $prestamo = $this->prestamo('Educación');
+        $cuota = (float) $prestamo->cuota_periodica;
+
+        $this->abonar(Usuario::factory()->create(), $prestamo, round($cuota * 15, 2))
             ->assertRedirect(route('prestamos.show', $prestamo))
             ->assertSessionHas('status');
 
-        $this->assertDatabaseHas('pagos', ['id_prestamo' => $prestamo->id_prestamo, 'tipo' => 'Abono extraordinario']);
-        $this->assertDatabaseCount('reliquidaciones', 0);
+        $this->assertDatabaseHas('reliquidaciones', ['id_prestamo' => $prestamo->id_prestamo, 'opcion_elegida' => 'plazo', 'automatica' => true]);
+        $this->assertEqualsWithDelta($cuota, (float) $prestamo->fresh()->cuota_periodica, 0.0001);
+        $this->assertLessThan(self::NUM_CUOTAS, $this->pendientes($prestamo));
     }
 
-    public function test_el_umbral_y_las_modalidades_se_pueden_cambiar_por_configuracion(): void
+    public function test_el_umbral_se_puede_cambiar_por_configuracion(): void
     {
-        config([
-            'prestamos.abono_extraordinario.umbral_cuotas' => 5,
-            'prestamos.abono_extraordinario.modalidades' => ['*'],
-        ]);
+        config(['prestamos.abono_extraordinario.umbral_cuotas' => 5]);
         $prestamo = $this->prestamo('Educación');
+        $cuota = (float) $prestamo->cuota_periodica;
 
-        $this->abonar(Usuario::factory()->create(), $prestamo, round((float) $prestamo->cuota_periodica * 5, 2), ['modo_reliquidacion' => 'cuota'])
-            ->assertRedirect(route('prestamos.show', $prestamo));
+        $this->abonar(Usuario::factory()->create(), $prestamo, round($cuota * 6, 2))->assertSessionHas('error');
+        $this->abonar(Usuario::factory()->create(), $prestamo, round($cuota * 6, 2), ['modo_reliquidacion' => 'cuota'])
+            ->assertRedirect(route('prestamos.show', $prestamo))
+            ->assertSessionHas('status');
 
         $this->assertDatabaseCount('reliquidaciones', 1);
     }
@@ -319,14 +458,41 @@ class AbonoExtraordinarioTest extends TestCase
         $this->actingAs($usuario)->getJson(route('pagos.vista-previa-abono', [$prestamo, 'monto' => 2_000_000]))->assertForbidden();
     }
 
-    public function test_la_vista_previa_bajo_el_umbral_no_ofrece_eleccion(): void
+    public function test_la_vista_previa_bajo_el_umbral_no_ofrece_eleccion_y_muestra_el_plan_automatico(): void
     {
         $prestamo = $this->prestamo();
+        ['cuota' => $cuota, 'tasa' => $tasa, 'saldo' => $saldoAnterior] = $this->referencia($prestamo);
+        $saldoNuevo = round($saldoAnterior - 500_000, 2);
 
         $this->actingAs(Usuario::factory()->create())
             ->getJson(route('pagos.vista-previa-abono', [$prestamo, 'monto' => 500_000]))
             ->assertOk()
-            ->assertJson(['supera_umbral' => false, 'umbral_cuotas' => 10])
+            ->assertJson([
+                'supera_umbral' => false,
+                'umbral_cuotas' => 10,
+                'plan' => [
+                    'automatica' => true,
+                    'saldo_nuevo' => $saldoNuevo,
+                    'cuota_actual' => $cuota,
+                    'cuota_nueva' => $cuota,
+                    'cuotas_actuales' => self::NUM_CUOTAS,
+                    'cuotas_nuevas' => $this->calculo()->numPeriodosParaCuota($saldoNuevo, $tasa, $cuota),
+                ],
+            ]);
+
+        $this->assertDatabaseCount('pagos', 0);
+        $this->assertDatabaseCount('reliquidaciones', 0);
+        $this->assertSame(self::NUM_CUOTAS, $this->pendientes($prestamo));
+    }
+
+    public function test_la_vista_previa_sobre_el_umbral_sin_eleccion_no_calcula_plan(): void
+    {
+        $prestamo = $this->prestamo();
+
+        $this->actingAs(Usuario::factory()->create())
+            ->getJson(route('pagos.vista-previa-abono', [$prestamo, 'monto' => 2_000_000]))
+            ->assertOk()
+            ->assertJson(['supera_umbral' => true])
             ->assertJsonMissingPath('plan');
     }
 
@@ -394,6 +560,19 @@ class AbonoExtraordinarioTest extends TestCase
             ->assertSee('20,000,000.00');
     }
 
+    public function test_el_historial_indica_que_la_reliquidacion_fue_automatica(): void
+    {
+        $usuario = Usuario::factory()->create();
+        $prestamo = $this->prestamo();
+
+        $this->abonar($usuario, $prestamo, 500_000);
+
+        $this->actingAs($usuario)->get(route('prestamos.show', $prestamo))
+            ->assertOk()
+            ->assertSee('Bajó el plazo (automática: abono bajo el umbral)')
+            ->assertSee('21,500,000.00');
+    }
+
     public function test_la_pantalla_del_prestamo_muestra_el_formulario_con_el_umbral(): void
     {
         $prestamo = $this->prestamo();
@@ -401,7 +580,7 @@ class AbonoExtraordinarioTest extends TestCase
         $this->actingAs(Usuario::factory()->create())->get(route('prestamos.show', $prestamo))
             ->assertOk()
             ->assertSee('Registrar abono extraordinario')
-            ->assertSee('Un abono menor a 10 cuotas', false)
+            ->assertSee('Un abono de hasta 10 cuotas', false)
             ->assertSee('abonos\/vista-previa', false);
     }
 }

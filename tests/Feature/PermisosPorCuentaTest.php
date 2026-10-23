@@ -381,7 +381,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_la_migracion_rellena_las_cuentas_existentes_segun_su_rol(): void
     {
-        $this->artisan('migrate:rollback', ['--step' => 1])->assertSuccessful();
+        $this->artisan('migrate:rollback', ['--path' => 'database/migrations/2026_10_22_100000_agrega_permisos_a_usuarios_table.php'])->assertSuccessful();
 
         $fila = fn (string $cedula, string $rol, bool $habilitado = true): array => [
             'cedula' => $cedula, 'nombre' => 'Persona', 'apellido' => 'Ficticia', 'contrasena_hash' => 'x',

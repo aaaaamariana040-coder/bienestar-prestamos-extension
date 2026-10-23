@@ -10,15 +10,19 @@ return [
      * Abono extraordinario con reliquidación (Acuerdo 19 de 2022, Art. 12
      * parágrafos 4 y 5).
      *
-     *  - umbral_cuotas: un abono igual o mayor a este número de cuotas vigentes
-     *                   permite elegir entre bajar la cuota o bajar el plazo.
-     *  - modalidades:   nombres de modalidad a las que aplica, comparados por
-     *                   prefijo (como TipoPrestamo::esVivienda). '*' = todas.
-     *                   Pendiente confirmar con Bienestar si aplica a todas.
+     *  - umbral_cuotas: un abono MAYOR a este número de cuotas quincenales
+     *                   vigentes (sin seguro) permite elegir entre bajar la cuota
+     *                   o bajar el plazo. Uno menor o igual reliquida solo, bajando
+     *                   el plazo con la misma cuota.
+     *  - modalidades:   nombres de modalidad en las que se ofrece esa elección,
+     *                   comparados por prefijo (como TipoPrestamo::esVivienda).
+     *                   '*' = todas (decisión de Bienestar: aplica a todas las
+     *                   modalidades). En una modalidad que no esté en la lista,
+     *                   todo abono reliquida solo, bajando el plazo.
      */
     'abono_extraordinario' => [
         'umbral_cuotas' => (int) env('ABONO_UMBRAL_CUOTAS', 10),
-        'modalidades' => array_filter(array_map('trim', explode(',', (string) env('ABONO_MODALIDADES', 'Vivienda')))),
+        'modalidades' => array_filter(array_map('trim', explode(',', (string) env('ABONO_MODALIDADES', '*')))),
     ],
 
     /*
