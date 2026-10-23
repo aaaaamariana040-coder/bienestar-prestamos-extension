@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\NormalizaMontos;
+use App\Rules\MontoColombiano;
 use App\Services\SimuladorCreditoService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
@@ -43,11 +44,11 @@ class SimularCreditoRequest extends FormRequest
         return [
             'cedula' => ['required', 'string', 'regex:/^[0-9]{1,10}$/'],
             'id_tipo' => ['required', 'integer', 'exists:tipos_prestamo,id_tipo'],
-            'monto' => ['required', 'numeric', 'min:'.SimuladorCreditoService::MONTO_MINIMO_SOLICITUD],
+            'monto' => ['bail', 'required', new MontoColombiano, 'numeric', 'min:'.SimuladorCreditoService::MONTO_MINIMO_SOLICITUD],
             'plazo' => ['required', 'integer', 'min:1'],
             'tasa_efectiva' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'puntos' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'retencion' => ['nullable', 'numeric', 'min:0'],
+            'retencion' => ['bail', 'nullable', new MontoColombiano, 'numeric', 'min:0'],
         ];
     }
 
@@ -61,7 +62,7 @@ class SimularCreditoRequest extends FormRequest
             'id_tipo' => 'modalidad',
             'tasa_efectiva' => 'tasa efectiva anual',
             'puntos' => 'puntos adicionales',
-            'retencion' => 'retención en la fuente',
+            'retencion' => 'valor de la retención en la fuente',
         ];
     }
 }

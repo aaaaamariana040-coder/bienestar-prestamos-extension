@@ -60,6 +60,18 @@ class PagoController extends Controller
         $this->authorize('registrarAbono', $prestamo);
 
         $monto = (float) $request->validated('monto');
+        $saldoCapital = $reliquidacionService->saldoCapitalPendiente($prestamo);
+
+        if (round($monto, 2) >= $saldoCapital) {
+            return response()->json([
+                'supera_umbral' => false,
+                'umbral_cuotas' => $reliquidacionService->umbralCuotas(),
+                'umbral_monto' => round($reliquidacionService->umbralCuotas() * (float) $prestamo->cuota_periodica, 2),
+                'cancelacion_total' => true,
+                'error' => $reliquidacionService->mensajeAbonoIgualOMayorAlSaldo($saldoCapital),
+            ]);
+        }
+
         $respuesta = [
             'supera_umbral' => $reliquidacionService->superaUmbral($prestamo, $monto),
             'umbral_cuotas' => $reliquidacionService->umbralCuotas(),

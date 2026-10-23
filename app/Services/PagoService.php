@@ -82,10 +82,10 @@ class PagoService
             throw new RuntimeException('El monto del abono debe ser mayor que cero.');
         }
 
-        $saldoCapital = round((float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_capital'), 2);
+        $saldoCapital = $this->reliquidacionService->saldoCapitalPendiente($prestamo);
 
         if (round($monto, 2) >= $saldoCapital) {
-            throw new RuntimeException('El abono debe ser menor que el saldo de capital pendiente; para pagar el saldo completo use «Cancelación total».');
+            throw new RuntimeException($this->reliquidacionService->mensajeAbonoIgualOMayorAlSaldo($saldoCapital));
         }
 
         return DB::transaction(function () use ($prestamo, $monto, $fechaPago, $actor, $modoReliquidacion, $numCuotas) {

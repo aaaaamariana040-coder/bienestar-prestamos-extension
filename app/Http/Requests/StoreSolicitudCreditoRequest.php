@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Http\Requests\Concerns\NormalizaMontos;
 use App\Http\Requests\Concerns\ValidaDocumentosSolicitud;
 use App\Models\Empleado;
+use App\Rules\MontoColombiano;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -31,7 +32,7 @@ class StoreSolicitudCreditoRequest extends FormRequest
         return [
             'cedula_empleado' => ['required', 'string', $this->empleadoExistenteYActivo()],
             'id_tipo' => ['required', 'integer', 'exists:tipos_prestamo,id_tipo'],
-            'monto_solicitado' => ['required', 'numeric', 'min:1000'],
+            'monto_solicitado' => ['bail', 'required', new MontoColombiano, 'numeric', 'min:1000'],
             'plazo_solicitado' => ['required', 'integer', 'min:1'],
             'fecha_solicitud' => ['required', 'date'],
             ...$this->reglasDocumentos(obligatorios: false),

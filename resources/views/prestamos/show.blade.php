@@ -388,8 +388,18 @@
                     }
 
                     fetch(url + '?' + params.toString(), {headers: {'Accept': 'application/json'}})
-                        .then((r) => r.ok ? r.json() : Promise.reject())
+                        .then((r) => r.status === 422
+                            ? r.json().then((j) => ({validacion: Object.values(j.errors || {}).flat()[0] || j.message || 'El monto no es válido.'}))
+                            : (r.ok ? r.json() : Promise.reject()))
                         .then((d) => {
+                            if (d.validacion || d.cancelacion_total) {
+                                limpiar();
+                                error.textContent = d.validacion || d.error;
+                                error.classList.remove('d-none');
+
+                                return;
+                            }
+
                             automatica.classList.toggle('d-none', d.supera_umbral);
                             opciones.classList.toggle('d-none', ! d.supera_umbral);
                             modos.forEach((m) => { m.required = d.supera_umbral; if (! d.supera_umbral) { m.checked = false; } });
