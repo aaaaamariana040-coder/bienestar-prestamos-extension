@@ -35,6 +35,10 @@ class MontosFormatoTest extends TestCase
             'puntos de miles sin decimales' => ['7.520.507', '7520507.00'],
             'comas de miles con punto decimal' => ['7,520,507.28', '7520507.28'],
             'simbolo con miles y coma decimal' => ['$ 7.520.507,28', '7520507.28'],
+            'un punto y tres digitos son miles (150.000)' => ['150.000', '150000.00'],
+            'un punto y tres digitos son miles (7.500)' => ['7.500', '7500.00'],
+            'mil con un punto (1.000)' => ['1.000', '1000.00'],
+            'simbolo con un punto de miles' => ['$ 150.000', '150000.00'],
         ];
     }
 
@@ -199,7 +203,8 @@ class MontosFormatoTest extends TestCase
             'punto decimal con cinco decimales y comas de miles' => ['7,520.50728'],
             'punto decimal con cinco decimales' => ['7520507.28123'],
             'miles con tres decimales' => ['7.520.507,281'],
-            'un punto con tres digitos (ambiguo)' => ['7.500'],
+            'cuatro digitos antes del punto y tres despues' => ['7520.507'],
+            'cero a la izquierda y tres decimales' => ['0.500'],
         ];
     }
 
@@ -403,16 +408,90 @@ class MontosFormatoTest extends TestCase
             ->assertJsonPath('errors.retencion', ['El valor de la retención en la fuente '.self::MENSAJE_DECIMALES]);
     }
 
-    public function test_la_regla_valida_el_monto_ya_normalizado(): void
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function normalizaciones(): array
+    {
+        return [
+            'miles con coma decimal' => ['7.520.507,28', '7520507.28'],
+            'punto decimal sin miles' => ['7520507.28', '7520507.28'],
+            'comas de miles con punto decimal' => ['7,520,507.28', '7520507.28'],
+            'solo digitos' => ['7520507', '7520507'],
+            'puntos de miles' => ['7.520.507', '7520507'],
+            'simbolo y espacios' => ['$ 7.520.507,28', '7520507.28'],
+            'un punto y tres digitos (150.000)' => ['150.000', '150000'],
+            'un punto y tres digitos (7.500)' => ['7.500', '7500'],
+            'el limite de tres cifras antes del punto (999.999)' => ['999.999', '999999'],
+            'coma y tres digitos son miles' => ['7,500', '7500'],
+            'un punto y un decimal (7.5)' => ['7.5', '7.5'],
+            'un punto y dos decimales (7.52)' => ['7.52', '7.52'],
+            'coma y un decimal (7,5)' => ['7,5', '7.5'],
+            'cero a la izquierda no es miles (0.500)' => ['0.500', '0.500'],
+            'cuatro digitos antes del punto no es miles (7520.507)' => ['7520.507', '7520.507'],
+            'cinco decimales se deja intacto' => ['7.520,50728', '7.520,50728'],
+            'texto se deja intacto' => ['abc', 'abc'],
+        ];
+    }
+
+    #[DataProvider('normalizaciones')]
+    public function test_la_normalizacion_interpreta_cada_formato(string $escrito, string $esperado): void
+    {
+        $this->assertSame($esperado, MontoColombiano::normalizar($escrito));
+    }
+
+    public function test_la_normalizacion_es_estable_si_se_aplica_dos_veces(): void
+    {
+        foreach (['7.520.507,28', '150.000', '7.500', '7.52', '7520507', '7,520,507.28'] as $escrito) {
+            $una = MontoColombiano::normalizar($escrito);
+
+            $this->assertSame($una, MontoColombiano::normalizar($una), $escrito);
+        }
+    }
+
+    public function test_la_regla_acepta_los_formatos_claros_y_rechaza_el_resto(): void
     {
         $regla = new MontoColombiano;
 
-        foreach (['7520507', '7520507.2', '7520507.28', '0.5'] as $valor) {
+        foreach (['7520507', '7520507.2', '7520507.28', '0.5', '150.000', '7.500', '7.520.507,28', '7,520,507.28', '$ 7.520.507,28', '7.5', '7.52'] as $valor) {
             $this->assertTrue(Validator::make(['monto' => $valor], ['monto' => ['required', $regla]])->passes(), $valor);
         }
 
-        foreach (['7520507.281', '7.520,50', 'abc'] as $valor) {
+        foreach (['7520507.281', '7.520,50728', '7520.507', '0.500', 'abc', '7.50.000', '12,5,5'] as $valor) {
             $this->assertTrue(Validator::make(['monto' => $valor], ['monto' => ['required', $regla]])->fails(), $valor);
         }
+    }
+
+    public function test_un_punto_con_tres_digitos_se_lee_como_miles_en_el_abono_la_vista_previa_y_el_simulador(): void
+    {
+        $prestamo = $this->prestamoConSaldo(100_000_000);
+        $usuario = Usuario::factory()->create();
+
+        $this->actingAs($usuario)->post(route('pagos.store-abono', $prestamo), ['monto' => '150.000', 'fecha_pago' => '2026-02-15'])
+            ->assertSessionDoesntHaveErrors();
+        $this->assertDatabaseHas('pagos', ['id_prestamo' => $prestamo->id_prestamo, 'monto' => '150000.00']);
+
+        $this->actingAs($usuario)->getJson(route('pagos.vista-previa-abono', [$prestamo, 'monto' => '7.500']))
+            ->assertOk()
+            ->assertJsonMissingPath('errors');
+
+        $empleado = Empleado::factory()->create();
+        $tipoPrestamo = TipoPrestamo::factory()->create();
+        $base = ['cedula' => $empleado->cedula, 'id_tipo' => $tipoPrestamo->id_tipo, 'monto' => '5.000.000', 'plazo' => 24];
+
+        $this->actingAs($usuario)->getJson(route('simulador.calcular', [...$base, 'retencion' => '150.000']))
+            ->assertJsonMissingValidationErrors('retencion');
+    }
+
+    public function test_un_punto_con_uno_o_dos_digitos_sigue_siendo_decimal(): void
+    {
+        $prestamo = $this->prestamoConSaldo(100_000_000);
+        $usuario = Usuario::factory()->create();
+
+        $this->actingAs($usuario)->post(route('pagos.store-abono', $prestamo), ['monto' => '7.52', 'fecha_pago' => '2026-02-15'])
+            ->assertSessionHasErrors(['monto' => 'El campo monto debe ser al menos 1000.']);
+
+        $this->actingAs($usuario)->post(route('pagos.store-abono', $prestamo), ['monto' => '7.5', 'fecha_pago' => '2026-02-15'])
+            ->assertSessionHasErrors(['monto' => 'El campo monto debe ser al menos 1000.']);
     }
 }

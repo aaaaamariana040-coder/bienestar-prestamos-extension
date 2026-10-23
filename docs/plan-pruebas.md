@@ -176,17 +176,18 @@ Automatizados en `tests/Feature/PermisosCaracterizacionTest.php`, `PermisosCatal
 
 ## 14. Formato de montos y mensajes en español (RNF-007)
 
-Automatizados en `tests/Feature/MontosFormatoTest.php`. Los montos se normalizan con `NormalizaMontos` y se validan con la regla `App\Rules\MontoColombiano` en el abono extraordinario (y su vista previa), el abono de cesantías, la solicitud, el simulador (monto y retención) y el SMMLV. Los mensajes salen de `lang/es/validation.php` (`APP_LOCALE=es`).
+Automatizados en `tests/Feature/MontosFormatoTest.php`. Los montos se normalizan con `NormalizaMontos` (que usa `MontoColombiano::normalizar()`) y se validan con la regla `App\Rules\MontoColombiano`. Un punto o una coma seguidos de exactamente tres dígitos son separador de miles (`150.000` = 150000, `7.500` = 7500), porque los pesos llevan máximo dos decimales en el abono extraordinario (y su vista previa), el abono de cesantías, la solicitud, el simulador (monto y retención) y el SMMLV. Los mensajes salen de `lang/es/validation.php` (`APP_LOCALE=es`).
 
 | ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
 |---|---|---|---|---|---|
-| PP-103 | Formatos de monto aceptados | Cualquiera de los campos de monto | Escribir `7.520.507,28`, `7520507.28`, `7520507`, `7.520.507`, `7,520,507.28`, `$ 7.520.507,28` | Todos se aceptan y se guardan como `7520507.28` o `7520507.00` | ⬜ |
-| PP-104 | Más de dos decimales | Campos de monto | Escribir `7.520,50728`, `7,520.50728`, `7520507.28123`, `7.520.507,281`, `7.500` | Un solo error en español: «El monto debe escribirse con máximo dos decimales (por ejemplo 7.520.507,28).»; no se guarda nada | ⬜ |
+| PP-103 | Formatos de monto aceptados | Cualquiera de los campos de monto | Escribir `7.520.507,28`, `7520507.28`, `7520507`, `7.520.507`, `7,520,507.28`, `$ 7.520.507,28`, `150.000`, `7.500` | Todos se aceptan y se guardan como `7520507.28`, `7520507.00`, `150000.00` o `7500.00` | ⬜ |
+| PP-104 | Más de dos decimales | Campos de monto | Escribir `7.520,50728`, `7,520.50728`, `7520507.28123`, `7.520.507,281`, `7520.507`, `0.500` | Un solo error en español: «El monto debe escribirse con máximo dos decimales (por ejemplo 7.520.507,28).»; no se guarda nada | ⬜ |
 | PP-105 | Formato irreconocible | Campos de monto | Escribir `abc`, `7.50.000`, `12,5,5`, `7.520,` | Un solo error: «Escribe el monto solo con números, puntos de miles y coma decimal (por ejemplo 7.520.507,28).» | ⬜ |
 | PP-106 | Sin errores duplicados | Monto inválido | Enviar el formulario | No aparecen a la vez los errores de «debe ser un número» y «al menos 1000» | ⬜ |
 | PP-107 | Mensajes de validación en español | Formularios con campos vacíos o fecha inválida | Enviar el formulario | «El campo monto es obligatorio.», «El campo fecha de pago debe ser una fecha válida.», etc.; ningún texto en inglés | ⬜ |
 | PP-108 | Vista previa del abono con monto inválido | Préstamo vigente, pantalla del préstamo | Escribir `7.520,50728` en «Monto» | El error en español aparece debajo del campo y se ocultan las opciones y la tabla | ⬜ |
 | PP-109 | Monto igual o mayor al saldo | Préstamo de 100 millones | Escribir `752050728` (o `100.000.000`) | Aviso «…use «Cancelación total»» en la vista previa, sin opciones de elegir cuota o plazo; al enviar se rechaza y no se guarda nada | ⬜ |
+| PP-110 | Un punto con tres dígitos son miles; con uno o dos, decimales | Campos de monto | Escribir `150.000` y `7.500`; luego `7.5` y `7.52` | `150.000` = 150000 y `7.500` = 7500 se aceptan; `7.5` y `7.52` se leen como decimales y se rechazan por ser menores al mínimo; nunca se pide aclarar | ⬜ |
 
 **Pendiente (no se tocó en este paso):** los campos `type="number"` (salario del empleado, presupuestos, cuantías) no usan este formato: el navegador no acepta separadores de miles y su comportamiento depende de la configuración regional.
 ## Pruebas no funcionales (verificación transversal)
@@ -211,4 +212,4 @@ Automatizados en `tests/Feature/MontosFormatoTest.php`. Los montos se normalizan
 | Confirmación de la quincena (posterior al Sprint 4) | Automatizada — PP-059 a PP-079; falta la prueba manual en el navegador |
 | Envío de solicitudes al comité (posterior) | Automatizada — PP-080 a PP-091; falta la prueba manual en el navegador |
 | Permisos por cuenta (posterior) | Automatizada — PP-092 a PP-102; falta la prueba manual en el navegador |
-| Formato de montos y mensajes en español (posterior) | Automatizada — PP-103 a PP-109; falta la prueba manual en el navegador |
+| Formato de montos y mensajes en español (posterior) | Automatizada — PP-103 a PP-110; falta la prueba manual en el navegador |
