@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SimularCreditoRequest;
 use App\Models\Empleado;
 use App\Models\TipoPrestamo;
+use App\Services\CalendarioQuincenalService;
 use App\Services\SimuladorCreditoService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -119,9 +121,16 @@ class SimuladorController extends Controller
             'plazo_solicitado' => $datos['plazo'],
         ]);
 
+        $datosHoja = [
+            'empleado' => $empleado,
+            'usuario' => $request->user(),
+            'generadaEn' => CarbonImmutable::now(CalendarioQuincenalService::ZONA),
+        ];
+
         return response()->json([
             ...Arr::except($resultado, 'tabla_amortizacion'),
             'html' => view('simulador.partials.resultado', $resultado + ['enlaceSolicitud' => $enlaceSolicitud])->render(),
+            'html_impresion' => view('simulador.partials.hoja-impresion', $resultado + $datosHoja)->render(),
         ]);
     }
 }

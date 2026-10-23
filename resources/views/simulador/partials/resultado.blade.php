@@ -11,6 +11,10 @@
     <div class="alert alert-info py-2 mb-2"><strong>Aviso:</strong> {{ $aviso }}</div>
 @endforeach
 
+<div class="d-flex justify-content-end mb-2">
+    <button type="button" class="btn btn-outline-secondary" id="imprimir-simulacion">Imprimir</button>
+</div>
+
 <div class="card mb-3">
     <div class="card-header">Resumen de la simulación — {{ $e['modalidad'] }}</div>
     <div class="card-body">
