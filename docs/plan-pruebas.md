@@ -174,6 +174,21 @@ Automatizados en `tests/Feature/PermisosCaracterizacionTest.php`, `PermisosCatal
 | PP-101 | Auditoría de cuentas | Administrador con sesión | Crear usuario, cambiar rol, cambiar permisos, habilitar y deshabilitar | Cada acción deja su registro: quién, a quién y, en permisos, qué se agregó y qué se quitó; sin cambios o con un cambio rechazado no se registra nada | ⬜ |
 | PP-102 | Migración de cuentas existentes | Cuentas anteriores a los permisos por cuenta | Aplicar la migración | Administrador recibe todos; Funcionario, todos menos Usuarios y Auditoría; «Sistema», ninguno | ⬜ |
 
+## 14. Formato de montos y mensajes en español (RNF-007)
+
+Automatizados en `tests/Feature/MontosFormatoTest.php`. Los montos se normalizan con `NormalizaMontos` y se validan con la regla `App\Rules\MontoColombiano` en el abono extraordinario (y su vista previa), el abono de cesantías, la solicitud, el simulador (monto y retención) y el SMMLV. Los mensajes salen de `lang/es/validation.php` (`APP_LOCALE=es`).
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-103 | Formatos de monto aceptados | Cualquiera de los campos de monto | Escribir `7.520.507,28`, `7520507.28`, `7520507`, `7.520.507`, `7,520,507.28`, `$ 7.520.507,28` | Todos se aceptan y se guardan como `7520507.28` o `7520507.00` | ⬜ |
+| PP-104 | Más de dos decimales | Campos de monto | Escribir `7.520,50728`, `7,520.50728`, `7520507.28123`, `7.520.507,281`, `7.500` | Un solo error en español: «El monto debe escribirse con máximo dos decimales (por ejemplo 7.520.507,28).»; no se guarda nada | ⬜ |
+| PP-105 | Formato irreconocible | Campos de monto | Escribir `abc`, `7.50.000`, `12,5,5`, `7.520,` | Un solo error: «Escribe el monto solo con números, puntos de miles y coma decimal (por ejemplo 7.520.507,28).» | ⬜ |
+| PP-106 | Sin errores duplicados | Monto inválido | Enviar el formulario | No aparecen a la vez los errores de «debe ser un número» y «al menos 1000» | ⬜ |
+| PP-107 | Mensajes de validación en español | Formularios con campos vacíos o fecha inválida | Enviar el formulario | «El campo monto es obligatorio.», «El campo fecha de pago debe ser una fecha válida.», etc.; ningún texto en inglés | ⬜ |
+| PP-108 | Vista previa del abono con monto inválido | Préstamo vigente, pantalla del préstamo | Escribir `7.520,50728` en «Monto» | El error en español aparece debajo del campo y se ocultan las opciones y la tabla | ⬜ |
+| PP-109 | Monto igual o mayor al saldo | Préstamo de 100 millones | Escribir `752050728` (o `100.000.000`) | Aviso «…use «Cancelación total»» en la vista previa, sin opciones de elegir cuota o plazo; al enviar se rechaza y no se guarda nada | ⬜ |
+
+**Pendiente (no se tocó en este paso):** los campos `type="number"` (salario del empleado, presupuestos, cuantías) no usan este formato: el navegador no acepta separadores de miles y su comportamiento depende de la configuración regional.
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -196,3 +211,4 @@ Automatizados en `tests/Feature/PermisosCaracterizacionTest.php`, `PermisosCatal
 | Confirmación de la quincena (posterior al Sprint 4) | Automatizada — PP-059 a PP-079; falta la prueba manual en el navegador |
 | Envío de solicitudes al comité (posterior) | Automatizada — PP-080 a PP-091; falta la prueba manual en el navegador |
 | Permisos por cuenta (posterior) | Automatizada — PP-092 a PP-102; falta la prueba manual en el navegador |
+| Formato de montos y mensajes en español (posterior) | Automatizada — PP-103 a PP-109; falta la prueba manual en el navegador |

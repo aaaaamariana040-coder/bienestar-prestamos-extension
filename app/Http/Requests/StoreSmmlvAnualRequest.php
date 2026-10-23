@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\NormalizaMontos;
+use App\Rules\MontoColombiano;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreSmmlvAnualRequest extends FormRequest
@@ -26,7 +27,7 @@ class StoreSmmlvAnualRequest extends FormRequest
     {
         return [
             'anio' => ['required', 'integer', 'digits:4', 'unique:smmlv_anual,anio'],
-            'valor' => ['required', 'numeric', 'min:1000'],
+            'valor' => ['bail', 'required', new MontoColombiano, 'numeric', 'min:1000'],
             'fuente_normativa' => ['nullable', 'string', 'max:100'],
         ];
     }

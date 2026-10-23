@@ -39,6 +39,23 @@ class ReliquidacionService
             && round($monto, 2) > round($this->umbralCuotas() * $cuota, 2);
     }
 
+    /**
+     * Saldo de capital de las cuotas pendientes.
+     */
+    public function saldoCapitalPendiente(Prestamo $prestamo): float
+    {
+        return round((float) $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->sum('valor_capital'), 2);
+    }
+
+    /**
+     * Un abono igual o mayor al saldo no es un abono: se paga con la
+     * cancelación total.
+     */
+    public function mensajeAbonoIgualOMayorAlSaldo(float $saldoCapital): string
+    {
+        return 'El abono debe ser menor que el saldo de capital pendiente ($'.number_format($saldoCapital, 2, ',', '.').'); para pagar el saldo completo use «Cancelación total».';
+    }
+
     public function umbralCuotas(): int
     {
         return (int) config('prestamos.abono_extraordinario.umbral_cuotas');
