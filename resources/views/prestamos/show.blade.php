@@ -31,6 +31,15 @@
                 <td>{{ number_format($prestamo->monto_aprobado, 2) }}</td>
             </tr>
             <tr>
+                <th>Tasa efectiva anual</th>
+                <td>
+                    {{ $tasa['tasa'] !== null ? number_format($tasa['tasa'], 4, ',', '.').' %' : '—' }}
+                    @if ($tasa['nota'])
+                        <div class="small text-info-emphasis mt-1" id="nota-tope-tasa">{{ $tasa['nota'] }}</div>
+                    @endif
+                </td>
+            </tr>
+            <tr>
                 <th>Cuota periódica</th>
                 <td>{{ number_format($prestamo->cuota_periodica, 2) }}</td>
             </tr>

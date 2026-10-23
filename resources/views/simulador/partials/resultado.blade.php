@@ -26,6 +26,9 @@
             <dt class="col-sm-4">Tasa por quincena</dt><dd class="col-sm-8">{{ number_format($e['tasa_periodica_quincenal'], 6, ',', '.') }} % <span class="text-muted small">= (1 + E.A.)^(1/24) − 1</span></dd>
             <dt class="col-sm-4">Periodos</dt><dd class="col-sm-8">{{ $e['periodos'] }} quincenas ({{ $e['plazo_legible'] }})</dd>
         </dl>
+        @if ($tasa['nota'])
+            <div class="alert alert-info py-2 mt-2 mb-0" id="nota-tope-tasa">{{ $tasa['nota'] }}</div>
+        @endif
         <hr>
         <dl class="row mb-0">
             <dt class="col-sm-4">Cuota fija quincenal</dt><dd class="col-sm-8 fs-5">{{ $pesos($cuota_quincenal, 2) }}</dd>

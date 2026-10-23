@@ -8,8 +8,8 @@ use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\SmmlvAnual;
 use App\Models\SolicitudCredito;
-use App\Models\TasaInt;
 use App\Models\TipoPrestamo;
+use DateTimeInterface;
 
 /**
  * Simulador de crédito: calcula sin guardar nada. Reutiliza la resolución de
@@ -222,9 +222,13 @@ class SimuladorCreditoService
      * completos y si es su primera solicitud de la modalidad). Es lo que
      * prellena el simulador; el operador puede cambiarla.
      *
-     * @return array{base: ?float, puntos: float, primera_solicitud: bool, avisos: list<string>}
+     * En vivienda la base ya viene limitada al tope del Acuerdo 11 de 2023: `registrada`
+     * es el IPC tal cual está en tasas_int, `limitada` indica si se recortó y `nota`
+     * es el texto que lo explica.
+     *
+     * @return array{base: ?float, puntos: float, primera_solicitud: bool, avisos: list<string>, registrada: ?float, limitada: bool, tope: ?float, nota: ?string}
      */
-    public function tasaOficial(Empleado $empleado, TipoPrestamo $modalidad, int $anio, int $plazoQuincenas): array
+    public function tasaOficial(Empleado $empleado, TipoPrestamo $modalidad, int $anio, int $plazoQuincenas, DateTimeInterface|string|null $fechaSolicitud = null): array
     {
         $esPrimeraSolicitud = ! Prestamo::where('cedula_empleado', $empleado->cedula)
             ->where('id_tipo', $modalidad->id_tipo)
@@ -232,13 +236,17 @@ class SimuladorCreditoService
         $avisos = [];
 
         if (! $modalidad->esVehiculo()) {
-            $tasaInt = TasaInt::where('id_tipo', $modalidad->id_tipo)->where('anio', $anio)->first();
+            $detalle = $this->prestamoService->tasaDetallada($modalidad, $anio, $plazoQuincenas, $esPrimeraSolicitud, $fechaSolicitud ?? now());
 
             return [
-                'base' => $tasaInt !== null ? (float) $tasaInt->tasa_anual : null,
+                'base' => $detalle['tasa'],
                 'puntos' => 0.0,
                 'primera_solicitud' => $esPrimeraSolicitud,
                 'avisos' => [],
+                'registrada' => $detalle['registrada'],
+                'limitada' => $detalle['limitada'],
+                'tope' => $detalle['tope'],
+                'nota' => $detalle['limitada'] ? $this->prestamoService->notaTopeVivienda($detalle['tope'], $detalle['registrada']) : null,
             ];
         }
 
@@ -259,6 +267,10 @@ class SimuladorCreditoService
             'puntos' => (float) ($componentes['puntos'] ?? 0),
             'primera_solicitud' => $esPrimeraSolicitud,
             'avisos' => $avisos,
+            'registrada' => $componentes['base'] ?? null,
+            'limitada' => false,
+            'tope' => null,
+            'nota' => null,
         ];
     }
 
@@ -302,6 +314,12 @@ class SimuladorCreditoService
             $errores[] = "No hay una tasa de interés registrada para {$modalidad->nombre} en {$anio}. Digita la tasa para simular.";
         }
 
+        $tope = $this->prestamoService->topeTasaVivienda($modalidad, now());
+
+        if ($tope !== null && $base !== null && round($base + ($puntos ?? $oficial['puntos']), 4) > $tope + 1e-9) {
+            $errores[] = 'En vivienda la tasa no puede superar el '.str_replace('.', ',', rtrim(rtrim(number_format($tope, 4, '.', ''), '0'), '.')).' % (Acuerdo 11 de 2023): escribiste '.str_replace('.', ',', rtrim(rtrim(number_format($base + ($puntos ?? $oficial['puntos']), 4, '.', ''), '0'), '.')).' % entre la tasa y los puntos. Corrígela o usa la tasa oficial.';
+        }
+
         if ($errores !== []) {
             return ['errores' => $errores, 'avisos' => []];
         }
@@ -341,6 +359,9 @@ class SimuladorCreditoService
                 'oficial_base' => $oficial['base'],
                 'oficial_puntos' => $oficial['puntos'],
                 'oficial_total' => $oficial['base'] === null ? null : round($oficial['base'] + $oficial['puntos'], 4),
+                'registrada' => $oficial['registrada'],
+                'limitada' => $oficial['limitada'] && ! $editada,
+                'nota' => $editada ? null : $oficial['nota'],
             ],
             'cuota_quincenal' => $cuota,
             'seguro' => $seguro,

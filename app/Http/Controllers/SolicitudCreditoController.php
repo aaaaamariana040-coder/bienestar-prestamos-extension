@@ -10,6 +10,7 @@ use App\Models\SolicitudCredito;
 use App\Models\TipoDocumento;
 use App\Models\TipoPrestamo;
 use App\Services\DocumentoSolicitudService;
+use App\Services\PrestamoService;
 use App\Services\SolicitudCreditoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -106,11 +107,11 @@ class SolicitudCreditoController extends Controller
         return redirect()->route('solicitudes.show', $solicitud)->with('status', 'Solicitud registrada correctamente.');
     }
 
-    public function show(SolicitudCredito $solicitud, SolicitudCreditoService $solicitudCreditoService): View
+    public function show(SolicitudCredito $solicitud, SolicitudCreditoService $solicitudCreditoService, PrestamoService $prestamoService): View
     {
         $this->authorize('view', $solicitud);
 
-        $solicitud->loadMissing(['empleado', 'tipoPrestamo', 'prestamo', 'envios.usuario']);
+        $solicitud->loadMissing(['empleado', 'tipoPrestamo', 'prestamo.tasaInt', 'prestamo.tipoPrestamo', 'envios.usuario']);
         $documentos = $solicitud->documentos()->with(['tipoDocumento', 'subidoPor'])->orderBy('created_at')->get();
         $tiposDocumento = TipoDocumento::where('activo', true)->orderBy('nombre')->get();
 
@@ -118,7 +119,9 @@ class SolicitudCreditoController extends Controller
             ? $solicitudCreditoService->validar($solicitud)
             : [];
 
-        return view('solicitudes.show', compact('solicitud', 'problemas', 'documentos', 'tiposDocumento'));
+        $tasa = $prestamoService->tasaDeSolicitud($solicitud);
+
+        return view('solicitudes.show', compact('solicitud', 'problemas', 'documentos', 'tiposDocumento', 'tasa'));
     }
 
     public function aprobar(Request $request, SolicitudCredito $solicitud, SolicitudCreditoService $solicitudCreditoService): RedirectResponse

@@ -34,6 +34,15 @@
                 <td>{{ $solicitud->plazo_solicitado_legible }}</td>
             </tr>
             <tr>
+                <th>Tasa efectiva anual</th>
+                <td>
+                    {{ $tasa['tasa'] !== null ? number_format($tasa['tasa'], 4, ',', '.').' %' : 'Sin tasa registrada para el año de la solicitud' }}
+                    @if ($tasa['nota'])
+                        <div class="small text-info-emphasis mt-1" id="nota-tope-tasa">{{ $tasa['nota'] }}</div>
+                    @endif
+                </td>
+            </tr>
+            <tr>
                 <th>Fecha de solicitud</th>
                 <td>{{ $solicitud->fecha_solicitud->format('Y-m-d') }}</td>
             </tr>

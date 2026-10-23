@@ -47,6 +47,10 @@
             <div><dt>Tasa por quincena</dt><dd>{{ number_format($e['tasa_periodica_quincenal'], 6, ',', '.') }} %</dd></div>
         </dl>
 
+        @if ($tasa['nota'])
+            <p class="hoja-alerta">{{ $tasa['nota'] }}</p>
+        @endif
+
         @if ($tasa['editada'])
             <p class="hoja-alerta">
                 <strong>TASA CORREGIDA A MANO.</strong>

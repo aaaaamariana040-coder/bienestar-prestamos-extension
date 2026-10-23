@@ -522,6 +522,10 @@
                             avisosTasa.innerHTML = '<div class="alert alert-warning py-2">No hay tasa oficial registrada para esta modalidad en el año actual: digita la tasa para simular.</div>';
                         }
 
+                        if (r.datos.nota) {
+                            avisosTasa.insertAdjacentHTML('beforeend', '<div class="alert alert-info py-2" id="nota-tope-tasa-previa">' + escapar(r.datos.nota) + '</div>');
+                        }
+
                         r.datos.avisos.forEach(function (aviso) {
                             avisosTasa.insertAdjacentHTML('beforeend', '<div class="alert alert-warning py-2">' + escapar(aviso) + '</div>');
                         });
