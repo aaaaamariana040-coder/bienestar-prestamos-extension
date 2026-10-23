@@ -11,6 +11,7 @@ use App\Models\SolicitudCredito;
 use App\Models\TasaInt;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
+use App\Services\CalendarioQuincenalService;
 use App\Services\DesembolsoService;
 use App\Services\EmpleadoService;
 use App\Services\PagoService;
@@ -83,9 +84,10 @@ class PlanPruebasSeeder extends Seeder
     private const MODALIDAD_DESHIPOTECA = 'Vivienda — cancelación total de hipoteca (deshipoteca)';
 
     /**
-     * Días hacia atrás en que se autoriza el préstamo más antiguo (estado de cuenta).
+     * Días hacia atrás, como máximo, en que se autoriza el préstamo más antiguo (estado de cuenta):
+     * tres vencimientos de calendario ya pasados (hasta 46 días) más los 15 de la primera cuota.
      */
-    private const DIAS_MAXIMOS_ATRAS = 50;
+    private const DIAS_MAXIMOS_ATRAS = 62;
 
     private Usuario $administrador;
 
@@ -265,13 +267,14 @@ class PlanPruebasSeeder extends Seeder
     }
 
     /**
-     * Préstamo autorizado hace 50 días: desembolsado y con las cuotas 1 a 3
-     * (vencidas hace 35, 20 y 5 días) pagadas en su fecha. No queda en mora.
+     * Préstamo desembolsado cuyas cuotas 1 a 3 son los tres últimos vencimientos de calendario
+     * (día 15 y fin de mes) ya pasados, pagadas en su fecha. No queda en mora: la cuota 4 vence
+     * en el próximo vencimiento. La autorización es 15 días antes de la primera cuota.
      */
     private function sembrarEstadoDeCuenta(): void
     {
         $empleado = $this->crearEmpleado(self::CEDULA_ESTADO_CUENTA, 'Prueba — Estado de Cuenta', 6_000_000);
-        $fechaAutorizacion = now()->subDays(self::DIAS_MAXIMOS_ATRAS)->startOfDay();
+        $fechaAutorizacion = $this->ultimosVencimientosPasados(3)[0]->copy()->subDays(15);
 
         $prestamo = $this->aprobarPrestamo($empleado, self::MODALIDAD_EDUCACION, 10_000_000, 48, $fechaAutorizacion);
 
@@ -292,13 +295,14 @@ class PlanPruebasSeeder extends Seeder
     }
 
     /**
-     * Préstamo autorizado hace 40 días: las cuotas 1 y 2 vencieron hace 25 y 10 días sin pagarse.
+     * Las cuotas 1 y 2 son los dos últimos vencimientos de calendario ya pasados y siguen sin
+     * pagarse (la 3 vence en el próximo). La autorización es 15 días antes de la primera cuota.
      */
     private function sembrarCuotaVencida(): void
     {
         $empleado = $this->crearEmpleado(self::CEDULA_CUOTA_VENCIDA, 'Prueba — Cuota Vencida', 6_000_000);
 
-        $this->aprobarPrestamo($empleado, self::MODALIDAD_VIVIENDA_COMPRA, 60_000_000, 240, now()->subDays(40)->startOfDay());
+        $this->aprobarPrestamo($empleado, self::MODALIDAD_VIVIENDA_COMPRA, 60_000_000, 240, $this->ultimosVencimientosPasados(2)[0]->copy()->subDays(15));
 
         $this->resumen[] = [$empleado->cedula, 'Vivienda con cuotas 1 y 2 vencidas sin pagar', 'PP-041, PP-046'];
     }
@@ -362,7 +366,7 @@ class PlanPruebasSeeder extends Seeder
 
     /**
      * Radica y aprueba la solicitud "en" $fechaAutorizacion, de modo que el
-     * préstamo y su primera cuota (15 días después) queden en esa línea de tiempo.
+     * préstamo y su primera cuota (desde 15 días después) queden en esa línea de tiempo.
      */
     private function aprobarPrestamo(Empleado $empleado, string $modalidad, float $monto, int $plazoQuincenas, Carbon $fechaAutorizacion): Prestamo
     {
@@ -375,6 +379,23 @@ class PlanPruebasSeeder extends Seeder
         } finally {
             $this->restaurarReloj();
         }
+    }
+
+    /**
+     * Los últimos $cantidad vencimientos de calendario (día 15 o fin de mes) anteriores a hoy, del más
+     * antiguo al más reciente.
+     *
+     * @return list<Carbon>
+     */
+    private function ultimosVencimientosPasados(int $cantidad): array
+    {
+        $hoy = now()->startOfDay();
+        $vencimientos = array_map(
+            fn (string $fecha): Carbon => Carbon::parse($fecha),
+            app(CalendarioQuincenalService::class)->vencimientosDesde($hoy->copy()->subDays(80)->toDateString(), 8),
+        );
+
+        return array_values(array_slice(array_filter($vencimientos, fn (Carbon $fecha): bool => $fecha->lt($hoy)), -$cantidad));
     }
 
     private function restaurarReloj(): void

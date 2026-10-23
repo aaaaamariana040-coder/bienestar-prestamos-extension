@@ -190,6 +190,22 @@ Automatizados en `tests/Feature/MontosFormatoTest.php`. Los montos se normalizan
 | PP-110 | Un punto con tres dígitos son miles; con uno o dos, decimales | Campos de monto | Escribir `150.000` y `7.500`; luego `7.5` y `7.52` | `150.000` = 150000 y `7.500` = 7500 se aceptan; `7.5` y `7.52` se leen como decimales y se rechazan por ser menores al mínimo; nunca se pide aclarar | ⬜ |
 
 **Pendiente (no se tocó en este paso):** los campos `type="number"` (salario del empleado, presupuestos, cuantías) no usan este formato: el navegador no acepta separadores de miles y su comportamiento depende de la configuración regional.
+## 15. Vencimientos por calendario y cierre provisional de novedades (RF-007)
+
+Automatizados en `tests/Feature/VencimientosCalendarioTest.php` (y `PlanPruebasSeederTest` para el seeder). Las cuotas vencen el día 15 y el último día real de cada mes; el cierre de novedades de nómina es un parámetro provisional (`QUINCENA_CIERRE_NOVEDADES_DIAS_ANTES`, por defecto 2) y solo informativo.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-111 | Fechas de vencimiento por calendario | Solicitud aprobada | Aprobar y abrir la tabla de cuotas del préstamo | Todas las fechas son día 15 o último día del mes (28/29 en febrero según el año, 30 o 31 en los demás); se alternan sin saltos ni corrimientos | ⬜ |
+| PP-112 | Primera cuota según la fecha base | Fecha base (autorización + 15 días) el día 14, 15, 16 y el último día del mes | Aprobar en cada fecha | La primera cuota vence el 15 o el último día, el primero que sea igual o posterior a la fecha base | ⬜ |
+| PP-113 | Cambio de año | Préstamo que cruza diciembre y enero | Ver la tabla de cuotas | …, 15 dic, 31 dic, 15 ene, 31 ene… | ⬜ |
+| PP-114 | Simulador igual a las cuotas reales | Simulación con una modalidad y plazo | Comparar las fechas de la tabla del simulador con las del préstamo aprobado el mismo día | Coinciden cuota por cuota | ⬜ |
+| PP-115 | La reliquidación conserva la secuencia | Préstamo con cuotas pagadas | Registrar un abono (automático, bajar cuota y bajar plazo) | Las cuotas pendientes que quedan mantienen sus fechas; siguen siendo 15 y fin de mes y se eliminan las últimas | ⬜ |
+| PP-116 | Cierre de novedades en la vista previa | Quincena iniciada | Abrir `Pagos › Quincenas › Revisar y confirmar` | Aparece «Cierre de novedades de nómina: <fecha>» con la etiqueta «provisional», 2 días antes del vencimiento de la quincena | ⬜ |
+| PP-117 | El cierre sigue la configuración | Cambiar `QUINCENA_CIERRE_NOVEDADES_DIAS_ANTES` | Recargar la vista previa | La fecha del cierre cambia (también en febrero, cruces de mes y de año) | ⬜ |
+| PP-118 | El cierre no bloquea nada | Cualquier valor del cierre (0, 2, 30…) | Aprobar, desembolsar, pagar una cuota y confirmar la quincena | Mismo resultado en cuotas, pagos, desembolso y proceso; ninguna operación se rechaza por el cierre | ⬜ |
+| PP-119 | Datos de prueba por calendario | Base vacía | Correr `PlanPruebasSeeder` | El préstamo de estado de cuenta tiene sus 3 primeras cuotas en los 3 últimos vencimientos ya pasados y ninguna en mora; el de cuota vencida tiene las 2 últimas sin pagar | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -213,3 +229,4 @@ Automatizados en `tests/Feature/MontosFormatoTest.php`. Los montos se normalizan
 | Envío de solicitudes al comité (posterior) | Automatizada — PP-080 a PP-091; falta la prueba manual en el navegador |
 | Permisos por cuenta (posterior) | Automatizada — PP-092 a PP-102; falta la prueba manual en el navegador |
 | Formato de montos y mensajes en español (posterior) | Automatizada — PP-103 a PP-110; falta la prueba manual en el navegador |
+| Vencimientos por calendario y cierre provisional (posterior) | Automatizada — PP-111 a PP-119; falta la prueba manual en el navegador |

@@ -12,6 +12,7 @@ use App\Models\PresupuestoAnual;
 use App\Models\SolicitudCredito;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
+use App\Services\CalendarioQuincenalService;
 use App\Services\PrestamoService;
 use App\Services\ReporteService;
 use App\Services\SolicitudCreditoService;
@@ -101,8 +102,15 @@ class PlanPruebasSeederTest extends TestCase
     {
         $filas = app(ReporteService::class)->carteraVencida();
 
+        // Las cuotas 1 y 2 son los dos últimos vencimientos de calendario (15 o fin de mes) ya pasados.
+        $vencimientos = collect(app(CalendarioQuincenalService::class)->vencimientosDesde(today()->subDays(80)->toDateString(), 8))
+            ->filter(fn (string $fecha) => $fecha < today()->toDateString())
+            ->take(-2)
+            ->values();
+
         $this->assertCount(2, $filas);
-        $this->assertSame([25, 10], $filas->pluck('dias_mora')->all());
+        $this->assertSame($vencimientos->all(), $filas->map(fn ($fila) => $fila->fecha_vencimiento->toDateString())->all());
+        $this->assertSame($vencimientos->map(fn (string $fecha) => (int) today()->diffInDays($fecha, true))->all(), $filas->pluck('dias_mora')->all());
         $this->assertSame(PlanPruebasSeeder::CEDULA_CUOTA_VENCIDA, $filas->first()->prestamo->cedula_empleado);
     }
 

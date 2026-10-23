@@ -121,6 +121,47 @@ class CalendarioQuincenalService
     }
 
     /**
+     * Vencimientos de calendario: el día 15 y el último día real de cada mes (28 o
+     * 29 en febrero, 30 o 31 en los demás). Devuelve $cantidad fechas seguidas
+     * (Y-m-d), la primera igual o posterior a la fecha base. Cada fecha se
+     * calcula por su número de vencimiento contado desde el año 0, no sumando
+     * meses a la anterior, para que el fin de mes no se corra.
+     *
+     * @return list<string>
+     */
+    public function vencimientosDesde(string|DateTimeInterface $fechaBase, int $cantidad): array
+    {
+        $base = CarbonImmutable::parse($fechaBase instanceof DateTimeInterface ? $fechaBase->format('Y-m-d') : $fechaBase, self::ZONA)->startOfDay();
+
+        // Cada mes tiene dos vencimientos: el número par es el día 15 y el impar, el último día.
+        $numero = ($base->year * 12 + $base->month - 1) * 2 + ($base->day <= 15 ? 0 : 1);
+        $fechas = [];
+
+        for ($i = 0; $i < $cantidad; $i++) {
+            $actual = $numero + $i;
+            $mes = intdiv($actual, 2);
+            $primerDia = CarbonImmutable::create(intdiv($mes, 12), $mes % 12 + 1, 1, 0, 0, 0, self::ZONA);
+
+            $fechas[] = ($actual % 2 === 0 ? $primerDia->setDay(15) : $primerDia->endOfMonth())->toDateString();
+        }
+
+        return $fechas;
+    }
+
+    /**
+     * Fecha provisional de cierre de las novedades de nómina para un
+     * vencimiento: los días calendario de config('quincena.cierre_novedades_dias_antes')
+     * antes de la fecha. Es solo informativa: ninguna operación la consulta
+     * para permitir o bloquear algo.
+     */
+    public function cierreDeNovedades(string|DateTimeInterface $vencimiento): CarbonImmutable
+    {
+        $fecha = CarbonImmutable::parse($vencimiento instanceof DateTimeInterface ? $vencimiento->format('Y-m-d') : $vencimiento, self::ZONA)->startOfDay();
+
+        return $fecha->subDays(max(0, (int) config('quincena.cierre_novedades_dias_antes')));
+    }
+
+    /**
      * Las quincenas pares (2, 4, …, 24) cierran el mes.
      */
     public function esQuincenaDeCierreDeMes(int $numero): bool

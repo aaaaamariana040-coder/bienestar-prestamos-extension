@@ -33,10 +33,11 @@ Todas las claves se pueden fijar en `.env` o en `config/quincena.php`.
 | `modo_marcado` | `QUINCENA_MODO_MARCADO` | `confirmar`: el proceso por consola solo calcula y muestra la vista previa; una persona confirma la quincena desde la pantalla. `automatico`: el proceso real crea los pagos con origen Automático a nombre de Sistema. | `confirmar` |
 | `inicio_primera_cuota` | `QUINCENA_INICIO_PRIMERA_CUOTA` | `desde_aprobacion` o `desde_desembolso`. | `desde_desembolso` |
 | `programador_activo` | `QUINCENA_PROGRAMADOR_ACTIVO` | `true` / `false`. | `false` |
+| `cierre_novedades_dias_antes` | `QUINCENA_CIERRE_NOVEDADES_DIAS_ANTES` | Días calendario antes de cada vencimiento. **Provisional** y solo informativo: se muestra en la vista previa de la quincena y no bloquea nada. | `2` |
 
 Un valor inválido en `regla_vencimiento` o `modo_marcado` hace fallar el proceso con un mensaje claro: nunca se adivina ni se cae en el modo automático.
 
-> **`inicio_primera_cuota` todavía no cambia nada.** Hoy `PrestamoService` genera las cuotas con `fecha_autorizacion + 15 días`, y cada cuota suma 15 días más. La clave deja registrada la decisión de Bienestar; aplicarla a la generación de cuotas es un cambio de negocio aparte, que se hará cuando respondan.
+> **`inicio_primera_cuota` todavía no cambia nada.** Hoy `PrestamoService` toma como fecha base `fecha_autorizacion + 15 días` y genera las cuotas en el día 15 y el último día de cada mes, a partir del primero que sea igual o posterior a esa fecha base. La clave deja registrada la decisión de Bienestar; aplicarla a la generación de cuotas es un cambio de negocio aparte, que se hará cuando respondan.
 
 ## Cómo se comporta
 
@@ -104,7 +105,9 @@ Si cualquier paso falla, no queda nada: ni el proceso, ni pagos, ni auditoría.
 
 ## Advertencia: cuotas actuales y la regla «calendario»
 
-Con las cuotas tal como se generan hoy (autorización + 15 días, y luego cada 15 días), **la regla `calendario` puede dejar quincenas con 0 o con 2 cuotas del mismo préstamo**. Los ciclos de 15 días no coinciden con las quincenas calendario, que tienen 15 o 16 días (13 o 14 en febrero), así que de vez en cuando dos vencimientos caen en la misma quincena y otra queda vacía.
+> **Histórico:** esta advertencia describe las cuotas generadas antes de la rama de vencimientos por calendario. Con las cuotas nuevas (día 15 y último día del mes) hay una cuota por quincena y la regla `calendario` ya no produce dobles cuotas; solo las generadas con el método anterior podían hacerlo.
+
+Con las cuotas tal como se generaban antes (autorización + 15 días, y luego cada 15 días), **la regla `calendario` podía dejar quincenas con 0 o con 2 cuotas del mismo préstamo**. Los ciclos de 15 días no coinciden con las quincenas calendario, que tienen 15 o 16 días (13 o 14 en febrero), así que de vez en cuando dos vencimientos caen en la misma quincena y otra queda vacía.
 
 Por eso el resumen de `QuincenaService` y de `quincena:procesar` **advierte, sin suprimir nada**, cuando un préstamo tiene más de una cuota que vence en la misma quincena: ambas siguen incluidas y, en modo automático, ambas se pagan.
 
@@ -116,7 +119,7 @@ La regla `cada_15_dias` asigna cada cuota al ciclo de 15 días, contado desde la
 
 | # | Decisión | Opciones | Qué cambia al responder |
 |---|---|---|---|
-| 1 | **Fechas de vencimiento** | Calendario (15 y fin de mes) o cada 15 días desde la autorización. | `regla_vencimiento`. Si es calendario, probablemente haya que regenerar las fechas de las cuotas para que haya una por quincena. |
+| 1 | **Fechas de vencimiento** | **Decidido:** calendario (día 15 y último día del mes). | `regla_vencimiento` queda en `calendario` y las cuotas nuevas se generan con esas fechas. El cierre de novedades de nómina (`cierre_novedades_dias_antes`, 2 por defecto) sigue provisional y solo informativo. |
 | 2 | **Marcado de pagos** | Automático o con confirmación previa. | `modo_marcado`. El paso de confirmación ya está construido (ver arriba); la decisión solo define cuál de los dos caminos se usa. |
 | 3 | **Inicio de la primera cuota** | Desde la aprobación o desde el desembolso. | `inicio_primera_cuota`, y el cambio correspondiente en la generación de cuotas (`PrestamoService`). |
 | 4 | **Formato del informe** | Por definir: contenido, columnas y formato del informe de la quincena. | Hoy el resumen se imprime en consola y se guarda en `procesos_quincena.resumen`. Falta definir el informe oficial. |

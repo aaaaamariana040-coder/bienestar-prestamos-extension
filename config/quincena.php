@@ -35,6 +35,14 @@ return [
     'inicio_primera_cuota' => env('QUINCENA_INICIO_PRIMERA_CUOTA', 'desde_desembolso'),
 
     /*
+     * Cierre de novedades de nómina — PROVISIONAL, a la espera de la respuesta de
+     * Bienestar: días calendario antes de cada vencimiento (día 15 y último día
+     * del mes). Es solo informativo, se muestra en la vista previa de la quincena
+     * y no bloquea ni cambia ninguna operación.
+     */
+    'cierre_novedades_dias_antes' => (int) env('QUINCENA_CIERRE_NOVEDADES_DIAS_ANTES', 2),
+
+    /*
      * Si el programador (schedule) ejecuta el proceso real el 15 y el último
      * día de cada mes. Apagado por defecto.
      */
