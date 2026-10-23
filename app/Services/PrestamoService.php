@@ -19,6 +19,7 @@ class PrestamoService
     public function __construct(
         private readonly TasaVehiculoService $tasaVehiculoService,
         private readonly CalculoFinancieroService $calculoFinanciero,
+        private readonly CalendarioQuincenalService $calendario,
     ) {
         //
     }
@@ -103,7 +104,10 @@ class PrestamoService
     }
 
     /**
-     * La primera cuota vence 15 días después de la autorización.
+     * Fecha base desde la que se cuenta la primera cuota: 15 días después de la
+     * autorización. La primera cuota vence en el primer vencimiento de
+     * calendario (día 15 o último día del mes) desde esa fecha; ver
+     * fechasDeVencimiento().
      */
     public function fechaPrimeraCuota(DateTimeInterface|string $fechaAutorizacion): string
     {
@@ -111,22 +115,17 @@ class PrestamoService
     }
 
     /**
-     * Fechas de vencimiento de las cuotas: la primera dada y cada una de las
-     * siguientes 15 días después. Es el generador de fechas de las cuotas
-     * reales, y el simulador lo usa para rotular sus fechas estimadas.
+     * Fechas de vencimiento de las cuotas, por calendario: el día 15 y el último
+     * día real de cada mes. La primera es el primer vencimiento igual o posterior
+     * a la fecha base dada y las demás siguen la secuencia sin saltos. Es el
+     * generador de fechas de las cuotas reales, y el simulador lo usa para
+     * rotular sus fechas estimadas.
      *
      * @return list<string>
      */
-    public function fechasDeVencimiento(string $fechaPrimeraCuota, int $numCuotas): array
+    public function fechasDeVencimiento(string $fechaBase, int $numCuotas): array
     {
-        $primera = Carbon::parse($fechaPrimeraCuota);
-        $fechas = [];
-
-        for ($i = 0; $i < $numCuotas; $i++) {
-            $fechas[] = $primera->copy()->addDays(15 * $i)->toDateString();
-        }
-
-        return $fechas;
+        return $this->calendario->vencimientosDesde($fechaBase, $numCuotas);
     }
 
     private function generarTablaAmortizacion(Prestamo $prestamo, float $tasaPeriodica): void

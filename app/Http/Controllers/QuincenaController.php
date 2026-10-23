@@ -50,6 +50,7 @@ class QuincenaController extends Controller
         return view('quincenas.vista-previa', [
             'vista' => $quincenaService->procesar($anio, $quincena),
             'fechaPago' => $periodo['corte']->min($calendario->hoy()),
+            'cierreNovedades' => $calendario->cierreDeNovedades($periodo['corte']),
         ]);
     }
 

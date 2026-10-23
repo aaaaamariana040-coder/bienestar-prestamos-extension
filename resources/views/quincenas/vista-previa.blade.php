@@ -11,6 +11,11 @@
             <p class="text-muted mb-0">
                 Periodo {{ $vista['inicio'] }} al {{ $vista['corte'] }} · Fecha de los pagos: {{ $fechaPago->toDateString() }}
             </p>
+            <p class="text-muted small mb-0" id="cierre-novedades">
+                Cierre de novedades de nómina: {{ $cierreNovedades->toDateString() }}
+                <span class="badge text-bg-warning">provisional</span>
+                <span>({{ config('quincena.cierre_novedades_dias_antes') }} días antes del vencimiento; solo informativo, no bloquea nada)</span>
+            </p>
         </div>
         <a href="{{ route('quincenas.index') }}" class="btn btn-outline-secondary btn-sm">Volver a Quincenas</a>
     </div>

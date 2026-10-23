@@ -118,6 +118,11 @@ Puede reliquidarse semestralmente si al momento de la solicitud el empleado tien
 
 ## 8. Aplicación de pagos y mora
 - Desde la primera cuota se amortiza a capital; cuotas fijas salvo abonos extraordinarios (Art. 12, parágrafo 2).
+- **Fechas de vencimiento (decidido, Bienestar):** por calendario, el **día 15 y el último día real de cada mes** (30 o 31 según el mes; 28 o 29 en febrero según sea bisiesto). Cada fecha se calcula por su número de vencimiento, no sumando meses, para que el fin de mes no se corra (`CalendarioQuincenalService::vencimientosDesde()`).
+- **Primera cuota:** la fecha base sigue siendo la autorización + 15 días y la primera cuota vence en el primer vencimiento (15 o fin de mes) **igual o posterior** a esa fecha base; las demás siguen la secuencia sin saltos. Cambiar la fecha base al desembolso es un cambio aparte (pendiente).
+- Las cuotas reales y la tabla del simulador usan el mismo generador (`PrestamoService::fechasDeVencimiento()`), así que sus fechas coinciden. No se reajustaron préstamos existentes: no hay datos reales cargados y los de prueba se recrean con el seeder.
+- Una reliquidación no mueve fechas: las cuotas pendientes que se conservan mantienen la suya (ver §9), así que la secuencia 15 / fin de mes se conserva.
+- **Cierre de novedades de nómina (provisional):** `QUINCENA_CIERRE_NOVEDADES_DIAS_ANTES` (por defecto 2) días calendario antes de cada vencimiento. Es solo informativo —se muestra, marcado «provisional», en la vista previa de la quincena— y no bloquea ninguna operación. Pendiente de la respuesta de Bienestar.
 - Intereses de mora: los legalmente establecidos por el Gobierno Nacional, por mes o fracción de mes en mora (Art. 14, parágrafo 1).
 - Desde la 3ª cuota en mora se inician acciones administrativas/judiciales; cobro prejurídico con interés de 1.5 veces el bancario corriente, según el Manual de Cartera institucional (Art. 14, parágrafo 2) — **manual no revisado, pendiente**.
 
