@@ -9,6 +9,7 @@ use App\Models\Empleado;
 use App\Models\SolicitudCredito;
 use App\Models\TipoDocumento;
 use App\Models\TipoPrestamo;
+use App\Services\CapacidadEndeudamientoService;
 use App\Services\DocumentoSolicitudService;
 use App\Services\PrestamoService;
 use App\Services\SolicitudCreditoService;
@@ -58,7 +59,7 @@ class SolicitudCreditoController extends Controller
      * Búsqueda por cédula para el formulario de solicitud. Solo devuelve
      * empleados Activos; un empleado retirado no puede solicitar crédito.
      */
-    public function buscarEmpleado(string $cedula): JsonResponse
+    public function buscarEmpleado(string $cedula, CapacidadEndeudamientoService $capacidadService): JsonResponse
     {
         $this->authorize('create', SolicitudCredito::class);
 
@@ -79,6 +80,8 @@ class SolicitudCreditoController extends Controller
             ], 404);
         }
 
+        $capacidad = $capacidadService->paraEmpleado($empleado);
+
         return response()->json([
             'encontrado' => true,
             'cedula' => $empleado->cedula,
@@ -86,6 +89,8 @@ class SolicitudCreditoController extends Controller
             'dependencia' => $empleado->dependencia,
             'salario' => number_format((float) $empleado->salario, 2),
             'capacidad_endeudamiento' => number_format((float) $empleado->capacidad_endeudamiento, 2),
+            'capacidad_fuente' => $capacidad['fuente'],
+            'capacidad_aplicada' => $capacidad['calculable'] ? number_format($capacidad['total'], 2) : null,
         ]);
     }
 

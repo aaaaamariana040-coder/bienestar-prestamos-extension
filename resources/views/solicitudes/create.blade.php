@@ -99,7 +99,7 @@
                     + '<dt class="col-sm-5">Cédula</dt><dd class="col-sm-7">' + escapar(e.cedula) + '</dd>'
                     + '<dt class="col-sm-5">Dependencia</dt><dd class="col-sm-7">' + escapar(e.dependencia) + '</dd>'
                     + '<dt class="col-sm-5">Salario</dt><dd class="col-sm-7">$' + escapar(e.salario) + '</dd>'
-                    + '<dt class="col-sm-5">Capacidad de endeudamiento</dt><dd class="col-sm-7">$' + escapar(e.capacidad_endeudamiento) + '</dd>'
+                    + '<dt class="col-sm-5">Capacidad de endeudamiento</dt><dd class="col-sm-7">' + (e.capacidad_aplicada === null ? 'No se puede calcular' : '$' + escapar(e.capacidad_aplicada)) + (e.capacidad_fuente === 'calculada' ? '<div class="text-muted">Guardada (referencia): $' + escapar(e.capacidad_endeudamiento) + '</div>' : '') + '</dd>'
                     + '</dl></div></div>';
                 boton.disabled = false;
             }

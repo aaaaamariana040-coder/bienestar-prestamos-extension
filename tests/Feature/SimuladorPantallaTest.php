@@ -188,6 +188,8 @@ class SimuladorPantallaTest extends TestCase
 
     public function test_un_empleado_sin_prestamos_ve_toda_su_capacidad_y_las_modalidades_habilitadas(): void
     {
+        config(['prestamos.capacidad.fuente' => 'guardada']);
+
         $empleado = $this->empleado(4_000_000);
         $this->modalidad('Educación', 72, 17.5);
         $this->modalidad('Calamidad doméstica y necesidades especiales', 72, 5);
@@ -197,7 +199,7 @@ class SimuladorPantallaTest extends TestCase
 
         $this->assertTrue($datos['elegible']);
         $this->assertSame([], $datos['prestamos']);
-        $this->assertSame(['total' => 2_000_000, 'comprometida' => 0, 'disponible' => 2_000_000], $datos['capacidad']);
+        $this->assertEquals(['total' => 2_000_000, 'comprometida' => 0, 'disponible' => 2_000_000], array_intersect_key($datos['capacidad'], array_flip(['total', 'comprometida', 'disponible'])));
         $this->assertSame(
             ['Calamidad doméstica y necesidades especiales', 'Educación'],
             array_column($datos['modalidades'], 'nombre'),
@@ -206,6 +208,8 @@ class SimuladorPantallaTest extends TestCase
 
     public function test_un_empleado_con_prestamos_muestra_la_tabla_y_la_capacidad_disponible(): void
     {
+        config(['prestamos.capacidad.fuente' => 'guardada']);
+
         $empleado = $this->empleado(3_000_000);
         $educacion = $this->modalidad('Educación', 72, 17.5);
         $calamidad = $this->modalidad('Calamidad doméstica y necesidades especiales', 72, 5);
@@ -230,7 +234,7 @@ class SimuladorPantallaTest extends TestCase
         $this->assertSame($calamidadVigente->id_prestamo > 0, true);
 
         // Capacidad total 1.500.000; comprometida (100.000 + 50.000) × 2 = 300.000.
-        $this->assertSame(['total' => 1_500_000, 'comprometida' => 300_000, 'disponible' => 1_200_000], $datos['capacidad']);
+        $this->assertEquals(['total' => 1_500_000, 'comprometida' => 300_000, 'disponible' => 1_200_000], array_intersect_key($datos['capacidad'], array_flip(['total', 'comprometida', 'disponible'])));
     }
 
     public function test_modalidad_deshabilitada(): void
@@ -307,6 +311,8 @@ class SimuladorPantallaTest extends TestCase
 
     public function test_capacidad_de_endeudamiento_insuficiente_para_el_monto_minimo(): void
     {
+        config(['prestamos.capacidad.fuente' => 'guardada']);
+
         $empleado = $this->empleado(3_000_000, 20);
         $modalidad = $this->modalidad('Educación', 72, 17.5);
 
@@ -338,6 +344,8 @@ class SimuladorPantallaTest extends TestCase
 
     public function test_calamidad_limitada_por_la_capacidad_disponible(): void
     {
+        config(['prestamos.capacidad.fuente' => 'guardada']);
+
         $empleado = $this->empleado(3_000_000);
         $calamidad = $this->modalidad('Calamidad doméstica y necesidades especiales', 72, 5);
         $educacion = $this->modalidad('Educación', 72, 17.5);
@@ -551,7 +559,7 @@ class SimuladorPantallaTest extends TestCase
 
     public function test_calcular_con_el_interruptor_apagado_usa_la_capacidad_guardada(): void
     {
-        config(['prestamos.simulador.restar_descuentos_ley' => false]);
+        config(['prestamos.capacidad.fuente' => 'guardada']);
         $empleado = $this->empleado();
         $educacion = $this->modalidad('Educación', 72, 17.5);
 

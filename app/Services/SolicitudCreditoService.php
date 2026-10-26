@@ -25,7 +25,7 @@ class SolicitudCreditoService
     public function __construct(
         private readonly PrestamoService $prestamoService,
         private readonly CalculoFinancieroService $calculoFinanciero,
-        private readonly EmpleadoService $empleadoService,
+        private readonly CapacidadEndeudamientoService $capacidadService,
         private readonly AuditoriaService $auditoriaService,
     ) {
         //
@@ -152,18 +152,23 @@ class SolicitudCreditoService
 
         if ($tasaAnual === null) {
             $problemas[] = ['codigo' => 'sin_tasa', 'mensaje' => 'No hay una tasa de interés registrada para esta modalidad y año.'];
-        } else {
+        }
+
+        $capacidad = $this->capacidadService->paraEmpleado($empleado, $anio);
+
+        if (! $capacidad['calculable']) {
+            // Sin SMMLV del año ya consta «sin_smmlv»; aquí queda el caso de no tener salario.
+            if ($smmlv !== null) {
+                $problemas[] = ['codigo' => 'capacidad_no_calculable', 'mensaje' => $capacidad['motivo']];
+            }
+        } elseif ($tasaAnual !== null) {
             $tasaPeriodica = $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaAnual);
-            $cuotaTentativa = $this->calculoFinanciero->cuotaFija(
-                (float) $solicitud->monto_solicitado,
-                $tasaPeriodica,
-                $solicitud->plazo_solicitado,
-            );
+            $monto = (float) $solicitud->monto_solicitado;
+            $cuotaTentativa = $this->calculoFinanciero->cuotaFija($monto, $tasaPeriodica, $solicitud->plazo_solicitado);
+            $cuota = $this->capacidadService->cuotaAComparar($monto, $cuotaTentativa, $anio, $tipoPrestamo->esVivienda());
 
-            $capacidad = $this->empleadoService->capacidadEndeudamiento($empleado);
-
-            if ($cuotaTentativa * 2 > $capacidad['disponible']) {
-                $problemas[] = ['codigo' => 'capacidad_excedida', 'mensaje' => $this->mensajeCapacidadExcedida($cuotaTentativa, $capacidad)];
+            if (! $this->capacidadService->cabe($capacidad, $cuota)) {
+                $problemas[] = ['codigo' => 'capacidad_excedida', 'mensaje' => $this->mensajeCapacidadExcedida($cuotaTentativa, $cuota, $capacidad)];
             }
         }
 
@@ -197,14 +202,21 @@ class SolicitudCreditoService
     }
 
     /**
+     * @param  array{cuota_mensual: float, cuota_sin_seguro_mensual: float, seguro_mensual: float, seguros: array<string, mixed>}  $cuota
      * @param  array{total: float, comprometida: float, disponible: float}  $capacidad
      */
-    private function mensajeCapacidadExcedida(float $cuotaQuincenal, array $capacidad): string
+    private function mensajeCapacidadExcedida(float $cuotaQuincenal, array $cuota, array $capacidad): string
     {
         $pesos = fn (float $valor): string => '$'.number_format($valor, 0, ',', '.');
 
-        return 'La cuota solicitada ('.$pesos($cuotaQuincenal).' por quincena, '.$pesos($cuotaQuincenal * 2).' al mes) supera la capacidad de endeudamiento disponible del empleado. '
-            .'Capacidad total: '.$pesos($capacidad['total']).'; comprometida con préstamos vigentes: '.$pesos($capacidad['comprometida']).'; disponible: '.$pesos($capacidad['disponible']).'.';
+        $detalleCapacidad = 'Capacidad total: '.$pesos($capacidad['total']).'; comprometida con préstamos vigentes: '.$pesos($capacidad['comprometida']).'; disponible: '.$pesos($capacidad['disponible']).'.';
+
+        if ($cuota['seguro_mensual'] <= 0) {
+            return 'La cuota solicitada ('.$pesos($cuotaQuincenal).' por quincena, '.$pesos($cuota['cuota_sin_seguro_mensual']).' al mes) supera la capacidad de endeudamiento disponible del empleado. '.$detalleCapacidad;
+        }
+
+        return 'La cuota solicitada más los seguros ('.$pesos($cuota['cuota_mensual']).' al mes) supera la capacidad de endeudamiento disponible del empleado. '
+            .'Cuota: '.$pesos($cuota['cuota_sin_seguro_mensual']).' al mes ('.$pesos($cuotaQuincenal).' por quincena); seguros estimados: '.$pesos($cuota['seguro_mensual']).' al mes. '.$detalleCapacidad;
     }
 
     public function aprobar(SolicitudCredito $solicitud, Usuario $actor): Prestamo

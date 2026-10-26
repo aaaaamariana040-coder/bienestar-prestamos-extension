@@ -152,7 +152,7 @@ class SimuladorCreditoServiceTest extends TestCase
 
     public function test_el_seguro_no_entra_en_la_comparacion_con_la_capacidad(): void
     {
-        config(['prestamos.simulador.restar_descuentos_ley' => false]);
+        config(['prestamos.capacidad.fuente' => 'guardada']);
         $educacion = $this->modalidad('Educación', 72, 17.5);
         $empleado = $this->empleado();
 
@@ -343,7 +343,7 @@ class SimuladorCreditoServiceTest extends TestCase
         $this->assertTrue($encendido['guardada']['cabe']);
         $this->assertTrue($encendido['veredictos_distintos']);
 
-        config(['prestamos.simulador.restar_descuentos_ley' => false]);
+        config(['prestamos.capacidad.fuente' => 'guardada']);
         $apagado = $this->simulador()->simular($empleado, $calamidad, $monto, 72)['capacidad'];
 
         $this->assertFalse($apagado['restar_descuentos_ley']);
@@ -380,7 +380,7 @@ class SimuladorCreditoServiceTest extends TestCase
 
     public function test_compara_la_cuota_por_dos_con_la_capacidad_disponible(): void
     {
-        config(['prestamos.simulador.restar_descuentos_ley' => false]);
+        config(['prestamos.capacidad.fuente' => 'guardada']);
         $calamidad = $this->modalidad('Calamidad doméstica y necesidades especiales', 72, 5, 5.1);
         $empleado = $this->empleado(self::SALARIO, 100_000);
 
@@ -395,7 +395,7 @@ class SimuladorCreditoServiceTest extends TestCase
 
     public function test_sugiere_el_plazo_minimo_para_que_quepa_el_monto_pedido(): void
     {
-        config(['prestamos.simulador.restar_descuentos_ley' => false]);
+        config(['prestamos.capacidad.fuente' => 'guardada']);
         $vivienda = $this->modalidad('Vivienda — compra de inmueble', 480, 130, 4.85);
         $calculo = app(CalculoFinancieroService::class);
         $tasa = $this->tasaPeriodica(4.85);
@@ -414,7 +414,7 @@ class SimuladorCreditoServiceTest extends TestCase
 
     public function test_el_plazo_minimo_respeta_el_plazo_maximo_de_la_modalidad(): void
     {
-        config(['prestamos.simulador.restar_descuentos_ley' => false]);
+        config(['prestamos.capacidad.fuente' => 'guardada']);
         $vivienda = $this->modalidad('Vivienda — compra de inmueble', 100, 130);
 
         $plazoMinimo = $this->simulador()->simular($this->empleado(self::SALARIO, 1_500_000), $vivienda, 100_000_000, 72)['sugerencias']['plazo_minimo'];
@@ -426,7 +426,7 @@ class SimuladorCreditoServiceTest extends TestCase
 
     public function test_si_la_cuota_no_cubre_ni_el_interes_ningun_plazo_sirve(): void
     {
-        config(['prestamos.simulador.restar_descuentos_ley' => false]);
+        config(['prestamos.capacidad.fuente' => 'guardada']);
         $vivienda = $this->modalidad('Vivienda — compra de inmueble', 480, 130);
 
         // Cuota máxima de 10.000 por quincena frente a un interés de unos 197.000.
@@ -440,7 +440,7 @@ class SimuladorCreditoServiceTest extends TestCase
 
     public function test_sugiere_el_monto_maximo_que_cabe_con_el_plazo_elegido(): void
     {
-        config(['prestamos.simulador.restar_descuentos_ley' => false]);
+        config(['prestamos.capacidad.fuente' => 'guardada']);
         $vivienda = $this->modalidad('Vivienda — compra de inmueble', 480, 130);
         $calculo = app(CalculoFinancieroService::class);
         $tasa = $this->tasaPeriodica(4.85);
@@ -457,7 +457,7 @@ class SimuladorCreditoServiceTest extends TestCase
 
     public function test_sin_capacidad_disponible_no_hay_sugerencias(): void
     {
-        config(['prestamos.simulador.restar_descuentos_ley' => false]);
+        config(['prestamos.capacidad.fuente' => 'guardada']);
         $vivienda = $this->modalidad('Vivienda — compra de inmueble', 480, 130);
         $empleado = $this->empleado(self::SALARIO, 100_000);
         Prestamo::factory()->create(['cedula_empleado' => $empleado->cedula, 'id_tipo' => $vivienda->id_tipo, 'cuota_periodica' => 100_000, 'estado' => EstadoPrestamo::Vigente]);

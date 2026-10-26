@@ -74,6 +74,8 @@ class ReglasAprobacionTest extends TestCase
 
     public function test_una_cuota_que_cabe_en_el_total_pero_no_en_el_disponible_se_rechaza_con_los_valores(): void
     {
+        config(['prestamos.capacidad.fuente' => 'guardada']);
+
         $modalidad = $this->modalidad();
         $empleado = $this->empleado();
         $this->prestamo($empleado, $modalidad, 500_000, EstadoPrestamo::Vigente);
@@ -98,6 +100,8 @@ class ReglasAprobacionTest extends TestCase
 
     public function test_el_prestamo_aprobado_entra_a_la_cuenta_de_la_capacidad_en_las_siguientes_consultas(): void
     {
+        config(['prestamos.capacidad.fuente' => 'guardada']);
+
         $administrador = Usuario::factory()->administrador()->create();
         $modalidad = $this->modalidad();
         $empleado = $this->empleado();
