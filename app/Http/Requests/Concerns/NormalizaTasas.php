@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Http\Requests\Concerns;
+
+/**
+ * Acepta la coma decimal en las tasas («6,5») y la convierte a punto antes de
+ * validar. No usa la normalización de montos: allí un punto con tres dígitos se
+ * lee como separador de miles, y en una tasa («5.250») es un decimal.
+ */
+trait NormalizaTasas
+{
+    /**
+     * @param  array<int, string>  $campos
+     */
+    protected function normalizarTasas(array $campos): void
+    {
+        $normalizados = [];
+
+        foreach ($campos as $campo) {
+            $valor = $this->input($campo);
+
+            if (is_string($valor)) {
+                $normalizados[$campo] = str_replace(',', '.', trim($valor));
+            }
+        }
+
+        $this->merge($normalizados);
+    }
+}
