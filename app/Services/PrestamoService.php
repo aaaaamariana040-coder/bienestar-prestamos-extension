@@ -58,36 +58,176 @@ class PrestamoService
     /**
      * Resuelve la tasa aplicable a la solicitud: una fila de tasa_int para las
      * modalidades normales, o la tasa efectiva calculada (IPC base + puntos del
-     * plazo/tipo de solicitud) para vehículo, que no tiene id_tasa asociado.
+     * plazo/tipo de solicitud) para vehículo, que no tiene id_tasa asociado. En
+     * vivienda la tasa se limita al tope del Acuerdo 11 de 2023; ver tasaDetallada().
      *
      * @return array{0: ?int, 1: ?float} [id_tasa, tasa_anual_porcentaje]
      */
     public function resolverTasa(SolicitudCredito $solicitud, TipoPrestamo $tipoPrestamo, int $anio): array
     {
+        $detalle = $this->resolverTasaDetallada($solicitud, $tipoPrestamo, $anio);
+
+        return [$detalle['id_tasa'], $detalle['tasa']];
+    }
+
+    /**
+     * Igual que resolverTasa(), con el detalle del tope: la tasa registrada (IPC
+     * tal cual está en tasas_int) y si se limitó.
+     *
+     * @return array{id_tasa: ?int, tasa: ?float, registrada: ?float, limitada: bool, tope: ?float}
+     */
+    public function resolverTasaDetallada(SolicitudCredito $solicitud, TipoPrestamo $tipoPrestamo, int $anio): array
+    {
         $esPrimeraSolicitud = ! Prestamo::where('cedula_empleado', $solicitud->cedula_empleado)
             ->where('id_tipo', $solicitud->id_tipo)
             ->exists();
 
-        return $this->resolverTasaPara($tipoPrestamo, $anio, $solicitud->plazo_solicitado, $esPrimeraSolicitud);
+        return $this->tasaDetallada($tipoPrestamo, $anio, $solicitud->plazo_solicitado, $esPrimeraSolicitud, $solicitud->fecha_solicitud);
     }
 
     /**
      * Misma resolución de tasa que resolverTasa(), sin necesitar una solicitud
-     * guardada: la usa también el simulador.
+     * guardada: la usa también el simulador. $fechaSolicitud decide si rige el
+     * tope de vivienda; sin ella se toma hoy.
      *
      * @return array{0: ?int, 1: ?float} [id_tasa, tasa_anual_porcentaje]
      */
-    public function resolverTasaPara(TipoPrestamo $tipoPrestamo, int $anio, int $plazoQuincenas, bool $esPrimeraSolicitud): array
+    public function resolverTasaPara(TipoPrestamo $tipoPrestamo, int $anio, int $plazoQuincenas, bool $esPrimeraSolicitud, DateTimeInterface|string|null $fechaSolicitud = null): array
+    {
+        $detalle = $this->tasaDetallada($tipoPrestamo, $anio, $plazoQuincenas, $esPrimeraSolicitud, $fechaSolicitud);
+
+        return [$detalle['id_tasa'], $detalle['tasa']];
+    }
+
+    /**
+     * Tasa aplicable con el tope de vivienda. La tasa registrada en tasas_int
+     * (el IPC) nunca se modifica: el tope se aplica al leerla, tasa = min(IPC,
+     * tope). Vehículo no tiene tope: su tasa es el IPC más los puntos del plazo.
+     *
+     * @return array{id_tasa: ?int, tasa: ?float, registrada: ?float, limitada: bool, tope: ?float}
+     */
+    public function tasaDetallada(TipoPrestamo $tipoPrestamo, int $anio, int $plazoQuincenas, bool $esPrimeraSolicitud, DateTimeInterface|string|null $fechaSolicitud = null): array
     {
         if ($tipoPrestamo->esVehiculo()) {
             $plazoAnios = intdiv($plazoQuincenas, self::QUINCENAS_POR_ANIO);
+            $tasa = $this->tasaVehiculoService->tasaEfectiva($anio, $plazoAnios, $esPrimeraSolicitud);
 
-            return [null, $this->tasaVehiculoService->tasaEfectiva($anio, $plazoAnios, $esPrimeraSolicitud)];
+            return ['id_tasa' => null, 'tasa' => $tasa, 'registrada' => $tasa, 'limitada' => false, 'tope' => null];
         }
 
         $tasaInt = TasaInt::where('id_tipo', $tipoPrestamo->id_tipo)->where('anio', $anio)->first();
 
-        return [$tasaInt?->id_tasa, $tasaInt !== null ? (float) $tasaInt->tasa_anual : null];
+        if ($tasaInt === null) {
+            return ['id_tasa' => null, 'tasa' => null, 'registrada' => null, 'limitada' => false, 'tope' => null];
+        }
+
+        $registrada = (float) $tasaInt->tasa_anual;
+        $tope = $this->topeTasaVivienda($tipoPrestamo, $fechaSolicitud);
+        $limitada = $tope !== null && $registrada > $tope;
+
+        return [
+            'id_tasa' => $tasaInt->id_tasa,
+            'tasa' => $limitada ? $tope : $registrada,
+            'registrada' => $registrada,
+            'limitada' => $limitada,
+            'tope' => $tope,
+        ];
+    }
+
+    /**
+     * Tope de la tasa de vivienda en puntos porcentuales (5,0), o null si no
+     * rige: la modalidad no es de vivienda o la solicitud es anterior a la
+     * vigencia del Acuerdo Directivo 11 de 2023 (15 de noviembre de 2023). El
+     * tope y la fecha salen de config('prestamos.tasa_vivienda').
+     */
+    public function topeTasaVivienda(TipoPrestamo $tipoPrestamo, DateTimeInterface|string|null $fechaSolicitud = null): ?float
+    {
+        if (! $tipoPrestamo->esVivienda()) {
+            return null;
+        }
+
+        $fecha = Carbon::parse($fechaSolicitud ?? now())->startOfDay();
+        $vigenteDesde = Carbon::parse((string) config('prestamos.tasa_vivienda.vigente_desde'))->startOfDay();
+
+        if ($fecha->lt($vigenteDesde)) {
+            return null;
+        }
+
+        return round((float) config('prestamos.tasa_vivienda.tope') * 100, 4);
+    }
+
+    /**
+     * Nota que acompaña una tasa limitada, para el simulador, el detalle de la
+     * solicitud y del préstamo y la hoja impresa.
+     */
+    public function notaTopeVivienda(float $tope, float $registrada): string
+    {
+        return 'Tasa limitada al '.$this->porcentajeLegible($tope).' % según el Acuerdo 11 de 2023; IPC registrado: '.$this->porcentajeLegible($registrada).' %.';
+    }
+
+    /**
+     * La tasa de una solicitud tal como la aplicaría hoy: la de su aprobación si
+     * ya es préstamo, o la resuelta con el tope si sigue radicada.
+     *
+     * @return array{tasa: ?float, registrada: ?float, limitada: bool, nota: ?string}
+     */
+    public function tasaDeSolicitud(SolicitudCredito $solicitud): array
+    {
+        if ($solicitud->prestamo !== null) {
+            return $this->tasaDePrestamo($solicitud->prestamo);
+        }
+
+        $detalle = $this->resolverTasaDetallada($solicitud, $solicitud->tipoPrestamo, $solicitud->fecha_solicitud->year);
+
+        return $this->conNota($detalle['tasa'], $detalle['registrada'], $detalle['limitada'], $detalle['tope']);
+    }
+
+    /**
+     * La tasa guardada en el préstamo y, si en su aprobación se limitó, el IPC
+     * que estaba registrado.
+     *
+     * @return array{tasa: ?float, registrada: ?float, limitada: bool, nota: ?string}
+     */
+    public function tasaDePrestamo(Prestamo $prestamo): array
+    {
+        if ($prestamo->tasa_efectiva_anual === null) {
+            return ['tasa' => null, 'registrada' => null, 'limitada' => false, 'nota' => null];
+        }
+
+        $tasa = (float) $prestamo->tasa_efectiva_anual;
+        $registrada = $prestamo->tasaInt !== null ? (float) $prestamo->tasaInt->tasa_anual : null;
+        $limitada = $registrada !== null && $registrada > $tasa + 1e-9 && $prestamo->tipoPrestamo->esVivienda();
+
+        return $this->conNota($tasa, $registrada, $limitada, $tasa);
+    }
+
+    /**
+     * @return array{tasa: ?float, registrada: ?float, limitada: bool, nota: ?string}
+     */
+    private function conNota(?float $tasa, ?float $registrada, bool $limitada, ?float $tope): array
+    {
+        return [
+            'tasa' => $tasa,
+            'registrada' => $registrada,
+            'limitada' => $limitada,
+            'nota' => $limitada && $tope !== null && $registrada !== null ? $this->notaTopeVivienda($tope, $registrada) : null,
+        ];
+    }
+
+    /**
+     * 5 → «5»; 5,2 → «5,20»; 4,85 → «4,85»; 4,8512 → «4,8512». Siempre al menos
+     * dos decimales cuando los hay.
+     */
+    private function porcentajeLegible(float $valor): string
+    {
+        $texto = rtrim(number_format($valor, 4, ',', '.'), '0');
+        $texto = rtrim($texto, ',');
+
+        if (str_contains($texto, ',') && strlen(explode(',', $texto)[1]) < 2) {
+            $texto .= '0';
+        }
+
+        return $texto;
     }
 
     /**

@@ -38,7 +38,7 @@ Este plan cubre las funcionalidades construidas hasta el Sprint 4 (según `plan-
 | ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
 |---|---|---|---|---|---|
 | PP-019 | Crear modalidad de crédito | Autenticado | Registrar modalidad con monto máximo, plazo y tasa | Modalidad creada; plazo almacenado en quincenas (el formulario no pide unidad) | ⬜ |
-| PP-020 | Validar tope de tasa (≤5% EA vivienda) | Modalidad vivienda | Intentar registrar tasa superior a 5% | Rechazado con mensaje de validación (Acuerdo 11/2023) | ⬜ |
+| PP-020 | Tope de tasa (≤5% EA vivienda) | Modalidad vivienda con IPC registrado de 5,20 % | Registrar el IPC y consultar la tasa en una solicitud nueva | El IPC se registra tal cual (5,20 %) y la tasa aplicada es 5 % con la nota del Acuerdo 11/2023; ver PP-120 a PP-129 | ⬜ |
 | PP-021 | Visualización del plazo en quincenas | Modalidad vivienda con 480 quincenas | Ver el plazo en la interfaz | Se muestra "480 quincenas (≈ 20 años)"; educación muestra "72 quincenas (≈ 36 meses)" (meses hasta 120 quincenas, años desde ahí) | ⬜ |
 | PP-022 | Tasa especial de vehículo | Modalidad vehículo | Registrar solicitante con primera vs. segunda solicitud, distintos plazos | Tasa calculada según tabla `tasa_vehiculo` (IPC+0 a IPC+5 según corresponda) | ⬜ |
 | PP-023 | Deshabilitar modalidad | Modalidad con presupuesto agotado | Deshabilitar | Modalidad ya no aparece disponible para nuevas solicitudes | ⬜ |
@@ -206,6 +206,28 @@ Automatizados en `tests/Feature/VencimientosCalendarioTest.php` (y `PlanPruebasS
 | PP-118 | El cierre no bloquea nada | Cualquier valor del cierre (0, 2, 30…) | Aprobar, desembolsar, pagar una cuota y confirmar la quincena | Mismo resultado en cuotas, pagos, desembolso y proceso; ninguna operación se rechaza por el cierre | ⬜ |
 | PP-119 | Datos de prueba por calendario | Base vacía | Correr `PlanPruebasSeeder` | El préstamo de estado de cuenta tiene sus 3 primeras cuotas en los 3 últimos vencimientos ya pasados y ninguna en mora; el de cuota vencida tiene las 2 últimas sin pagar | ⬜ |
 
+## 16. Tope de la tasa de vivienda (RF-004, Acuerdo 11 de 2023)
+
+Automatizados en `tests/Feature/TopeTasaViviendaTest.php`. El tope (5 %) y la fecha de vigencia (15 de noviembre de 2023) están en `config/prestamos.php`; el IPC de `tasas_int` no se modifica.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-120 | IPC por encima del tope | Vivienda con IPC registrado de 5,20 % | Simular y radicar una solicitud | Tasa 5 %; el IPC sigue en 5,20 % en la pantalla de la modalidad | ⬜ |
+| PP-121 | IPC por debajo o igual al tope | IPC de 4,80 % y de 5,00 % | Simular | Quedan en 4,80 % y 5,00 %; no aparece la nota | ⬜ |
+| PP-122 | Fecha de la solicitud | IPC de 5,20 % para 2023 | Solicitud del 14 y del 15 de noviembre de 2023 | La del 14 conserva 5,20 %; la del 15 queda en 5 % | ⬜ |
+| PP-123 | Las cinco modalidades de vivienda | IPC de 6,30 % | Simular compra, construcción, deshipoteca, reparaciones o mejoras y cambio de vivienda | Las cinco quedan en 5 % | ⬜ |
+| PP-124 | Modalidades sin tope | IPC de 6,30 % en educación, calamidad; vehículo con IPC 6 % y puntos | Simular | Educación y calamidad en 6,30 %; vehículo en IPC más puntos, sin límite | ⬜ |
+| PP-125 | Préstamo aprobado | Solicitud de vivienda con IPC de 5,20 % | Aprobar y abrir el préstamo | Guarda la tasa de 5 %; la cuota corresponde a 5 %; la reliquidación usa esa tasa | ⬜ |
+| PP-126 | Tasa escrita a mano en el simulador | Vivienda | Escribir 5,2 % (o 4,5 % más 1 punto) | Rechazado con «En vivienda la tasa no puede superar el 5 % (Acuerdo 11 de 2023)…»; 5 % o menos se permite | ⬜ |
+| PP-127 | Tasa escrita a mano fuera de vivienda | Educación o vehículo | Escribir 8,2 % | Se permite, sin tope | ⬜ |
+| PP-128 | Nota visible | Tasa limitada | Ver el simulador, el detalle de la solicitud, el del préstamo y la hoja impresa | «Tasa limitada al 5 % según el Acuerdo 11 de 2023; IPC registrado: 5,20 %.» en los cuatro lugares | ⬜ |
+| PP-129 | Cambiar el tope | `TASA_VIVIENDA_TOPE=0.045` | Simular | La tasa queda en 4,5 % y la nota lo dice | ⬜ |
+| PP-130 | Elegir la modalidad muestra la tasa limitada | Vivienda — compra con IPC de 6,50 % | En el simulador, elegir el empleado y la modalidad, sin calcular | Los campos se llenan con 5 y 0 (nunca 6,5); aparece la nota «Tasa limitada al 5 % … IPC registrado: 6,50 %.» y la ruta de modalidad trae la tasa limitada y la nota | ⬜ |
+| PP-131 | Calcular con lo prellenado | Lo anterior | Escribir monto y plazo, y calcular sin tocar la tasa | Calcula al 5 %, no se marca como editada y el resultado muestra la nota | ⬜ |
+| PP-132 | Restablecer tasa oficial | Lo anterior, con la tasa escrita a mano en 4,2 | Pulsar «Restablecer tasa oficial» | Vuelve a 5 y 0 (la limitada) y la nota sigue visible | ⬜ |
+| PP-133 | Corrección manual por encima del tope | IPC de 6,50 % | Escribir 6,5 (o 5 más 1,5 de puntos) y calcular | Rechazado con el mensaje en español; 4,2 se permite y se marca como editada | ⬜ |
+| PP-134 | Educación con 6,5 % | Educación con IPC de 6,50 % | Elegir la modalidad y calcular | Se prellena 6,5, calcula al 6,5 % y no aparece la nota | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -230,3 +252,4 @@ Automatizados en `tests/Feature/VencimientosCalendarioTest.php` (y `PlanPruebasS
 | Permisos por cuenta (posterior) | Automatizada — PP-092 a PP-102; falta la prueba manual en el navegador |
 | Formato de montos y mensajes en español (posterior) | Automatizada — PP-103 a PP-110; falta la prueba manual en el navegador |
 | Vencimientos por calendario y cierre provisional (posterior) | Automatizada — PP-111 a PP-119; falta la prueba manual en el navegador |
+| Tope de la tasa de vivienda (posterior) | Automatizada — PP-120 a PP-129; falta la prueba manual en el navegador |

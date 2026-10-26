@@ -246,7 +246,7 @@ class EnvioComiteService
         $monto = (float) $solicitud->monto_solicitado;
         $plazo = (int) $solicitud->plazo_solicitado;
 
-        $oficial = $this->simuladorCreditoService->tasaOficial($solicitud->empleado, $solicitud->tipoPrestamo, $solicitud->fecha_solicitud->year, $plazo);
+        $oficial = $this->simuladorCreditoService->tasaOficial($solicitud->empleado, $solicitud->tipoPrestamo, $solicitud->fecha_solicitud->year, $plazo, $solicitud->fecha_solicitud);
         $tasaTotal = $oficial['base'] === null ? null : round($oficial['base'] + $oficial['puntos'], 4);
         $cuota = $tasaTotal === null
             ? null
