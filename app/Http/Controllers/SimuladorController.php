@@ -108,6 +108,7 @@ class SimuladorController extends Controller
             isset($datos['tasa_efectiva']) ? (float) $datos['tasa_efectiva'] : null,
             isset($datos['puntos']) ? (float) $datos['puntos'] : null,
             (float) ($datos['retencion'] ?? 0),
+            fechaDesembolso: $datos['fecha_desembolso'] ?? null,
         );
 
         if ($resultado['errores'] !== []) {

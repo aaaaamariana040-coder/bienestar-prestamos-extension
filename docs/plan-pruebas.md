@@ -318,6 +318,12 @@ Automatizados en `tests/Feature/PrimeraCuotaDesembolsoTest.php`. Pantallas: Pré
 | PP-188 | Pantalla del préstamo | Préstamo antes y después del desembolso | Abrir el préstamo | Antes: «Las cuotas empiezan a descontarse a partir del desembolso.»; después: «Primera cuota: <fecha>»; un préstamo anterior muestra la fecha de su cuota 1 | ⬜ |
 | PP-189 | Simulador | Cualquier empleado y modalidad | Simular | La tabla conserva sus fechas estimadas y trae «La fecha real de la primera cuota se define al desembolsar» (también en la hoja impresa) | ⬜ |
 | PP-190 | Interruptor | `QUINCENA_INICIO_PRIMERA_CUOTA=desde_aprobacion` | Aprobar y desembolsar | Se conserva la regla anterior: el desembolso no mueve las cuotas | ⬜ |
+| PP-191 | Simulador sin fecha de desembolso | Cualquier empleado y modalidad | Simular dejando «Fecha estimada de desembolso» vacía | Igual que antes: fechas estimadas desde hoy y la nota «La fecha real de la primera cuota se define al desembolsar»; sin línea de primera cuota estimada | ⬜ |
+| PP-192 | Simulador con fecha de desembolso | Ídem | Escribir el 3, el 15 exacto, el 20 y el último día exacto de un mes | Primera cuota estimada: el 15; el último día; el último día; el 15 del mes siguiente. Con la nota «Estimación según la fecha de desembolso indicada…» | ⬜ |
+| PP-193 | Febrero, fin de año y fechas pasadas | Ídem | Escribir 15 y 28 de febrero (y bisiesto), 20 y 31 de diciembre, y una fecha pasada | Febrero 28/29; diciembre → 31 de diciembre o 15 de enero; la fecha pasada se acepta; las demás cuotas siguen el calendario | ⬜ |
+| PP-194 | Fecha inválida | Ídem | Enviar una fecha inexistente (30 de febrero) o con otro formato | Mensaje en español «La fecha estimada de desembolso no es una fecha válida…»; el campo conserva lo digitado | ⬜ |
+| PP-195 | Los valores no cambian | Ídem | Simular el mismo crédito con y sin fecha | Cuota, intereses, capital, saldo, seguro, totales y capacidad idénticos; solo cambian las fechas de la tabla | ⬜ |
+| PP-196 | Hoja impresa | Ídem | Imprimir con y sin fecha | La línea «Primera cuota estimada: <fecha>» y su nota salen solo si se diligenció la fecha | ⬜ |
 
 ## Pruebas no funcionales (verificación transversal)
 
@@ -348,4 +354,4 @@ Automatizados en `tests/Feature/PrimeraCuotaDesembolsoTest.php`. Pantallas: Pré
 | Registro y edición de tasas (posterior) | Automatizada — PP-143 a PP-152; falta la prueba manual en el navegador |
 | Primas de seguros (posterior) | Automatizada — PP-153 a PP-166; falta la prueba manual en el navegador |
 | Capacidad de endeudamiento unificada (posterior) | Automatizada — PP-167 a PP-177; falta la prueba manual en el navegador |
-| Primera cuota desde el desembolso (posterior) | Automatizada — PP-178 a PP-190; falta la prueba manual en el navegador |
+| Primera cuota desde el desembolso (posterior) | Automatizada — PP-178 a PP-196; falta la prueba manual en el navegador |

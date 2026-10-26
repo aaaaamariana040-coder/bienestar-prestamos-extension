@@ -39,6 +39,13 @@
                 @include('simulador.partials.seguro-detalle', ['detalle' => $seguro_detalle, 'pesos' => $pesos])
             </dd>
             <dt class="col-sm-4">{{ $seguro_detalle['es_vivienda'] ? 'Cuota estimada con seguros' : 'Cuota + seguro' }}</dt><dd class="col-sm-8 fw-semibold">{{ $pesos($cuota_mas_seguro, 2) }}</dd>
+            @if ($primera_cuota['fecha_desembolso'] !== null)
+                <dt class="col-sm-4">Primera cuota</dt>
+                <dd class="col-sm-8" id="primera-cuota-estimada">
+                    Primera cuota estimada: {{ \Carbon\Carbon::parse($primera_cuota['fecha'])->format('d/m/Y') }}
+                    <div class="small text-muted">Estimación según la fecha de desembolso indicada; la fecha real se define al desembolsar.</div>
+                </dd>
+            @endif
             <dt class="col-sm-4">Total de intereses</dt><dd class="col-sm-8">{{ $pesos($total_intereses, 2) }}</dd>
             <dt class="col-sm-4">Total a pagar (sin seguro)</dt><dd class="col-sm-8">{{ $pesos($total_a_pagar, 2) }}</dd>
         </dl>
