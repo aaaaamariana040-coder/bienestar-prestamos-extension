@@ -551,6 +551,8 @@ class EnvioComiteTest extends TestCase
 
     public function test_el_cuerpo_trae_empleado_cedula_modalidad_monto_plazo_tasa_cuota_y_capacidad_pero_no_el_salario(): void
     {
+        config(['prestamos.capacidad.fuente' => 'guardada']);
+
         Mail::fake();
         $solicitud = $this->solicitud();
         $calculo = app(CalculoFinancieroService::class);
@@ -583,6 +585,8 @@ class EnvioComiteTest extends TestCase
 
     public function test_la_capacidad_del_cuerpo_resta_los_prestamos_vigentes(): void
     {
+        config(['prestamos.capacidad.fuente' => 'guardada']);
+
         Mail::fake();
         Prestamo::factory()->create(['cedula_empleado' => $this->empleado->cedula, 'cuota_periodica' => 100_000]);
         $solicitud = $this->solicitud();

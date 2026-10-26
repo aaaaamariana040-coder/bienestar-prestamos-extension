@@ -178,6 +178,8 @@ class SolicitudCreditoTest extends TestCase
                 'dependencia' => 'Bienestar Social',
                 'salario' => '4,500,000.00',
                 'capacidad_endeudamiento' => '2,250,000.00',
+                'capacidad_fuente' => 'calculada',
+                'capacidad_aplicada' => null,
             ]);
     }
 

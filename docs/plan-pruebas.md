@@ -281,6 +281,24 @@ Automatizados en `tests/Feature/PrimaSeguroTest.php` y `tests/Feature/SimuladorS
 | PP-165 | Rótulo en vivienda | Modalidad de vivienda y otra | Simular en cada una | Vivienda: «Cuota estimada con seguros»; las demás: «Cuota + seguro»; la hoja impresa igual | ⬜ |
 | PP-166 | La cuota no cambia | Cambiar las primas | Simular y aprobar un préstamo | La cuota, la tabla de amortización y el total a pagar son los mismos; el préstamo guarda la cuota sin seguro y las cuotas no llevan seguro | ⬜ |
 
+## 20. Capacidad de endeudamiento unificada (RF-005, Bienestar)
+
+Automatizados en `tests/Feature/CapacidadUnificadaTest.php`; los de la aprobación y el simulador que suponían la capacidad guardada ahora fijan `capacidad.fuente = guardada`. Pantallas: Empleados (ficha), Simulador y Solicitudes (aprobar).
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-167 | Mismo cálculo en simulador y aprobación | Empleados con salario de 3, 6, 22 y 30 millones (tramos 0 %, 1 %, 1,2 % y 2 % del fondo) y un préstamo vigente | Simular varios montos y validar solicitudes por los mismos montos | Misma capacidad disponible y mismo veredicto en ambos; la capacidad es 50 % de (salario − 4 % − 4 % − fondo) menos lo comprometido | ⬜ |
+| PP-168 | Retención manual | Empleado de 6 millones | Simular con retención 0 y con 400.000 | Con retención 0 coincide con la aprobación; con retención la capacidad baja en la mitad de la retención | ⬜ |
+| PP-169 | Fuente calculada manda | Salario 8.000.000, capacidad guardada 1.000.000, fuente `calculada` | Aprobar una solicitud cuya cuota mensual supera 1.000.000 pero cabe en la calculada | La solicitud no tiene `capacidad_excedida`; el simulador dice que la cuota cabe | ⬜ |
+| PP-170 | Fuente guardada manda | Mismo empleado, `CAPACIDAD_FUENTE=guardada` | Validar la misma solicitud y simular | `capacidad_excedida`; el simulador avisa que los veredictos son distintos | ⬜ |
+| PP-171 | Guardada nula | Fuente `guardada`, capacidad guardada vacía | Validar una solicitud | Cuenta como 0: `capacidad_excedida` (comportamiento actual) | ⬜ |
+| PP-172 | Salario 0 | Fuente `calculada`, salario 0 | Validar y aprobar una solicitud; abrir el simulador | `capacidad_no_calculable` con «No se puede calcular la capacidad de endeudamiento…»; la aprobación se bloquea; el simulador no evalúa la modalidad. Con fuente `guardada` no aparece | ⬜ |
+| PP-173 | Vivienda con seguros, justo en el límite | Empleado de 8.000.000, prima de incendio 0,0002 | Pedir el monto máximo que ofrece el simulador y 2.000 más | El máximo se aprueba; 2.000 más da `capacidad_excedida` | ⬜ |
+| PP-174 | Mismo monto en otra modalidad | El monto que no cabe en vivienda | Pedirlo en educación | No hay `capacidad_excedida`: fuera de vivienda solo se compara la cuota | ⬜ |
+| PP-175 | Incendio en 0 | Prima de incendio 0 y luego mayor que 0 | Comparar la cuota mensual en vivienda | En 0 solo suma vida; mayor que 0 suma también incendio | ⬜ |
+| PP-176 | Mensaje con desglose | Solicitud de vivienda que no cabe | Validar | El mensaje trae la cuota, los seguros estimados y la capacidad total, comprometida y disponible; fuera de vivienda no menciona seguros | ⬜ |
+| PP-177 | Ficha del empleado | Capacidad guardada distinta de la calculada | Abrir la ficha | «Capacidad calculada (referencia: la guardada es X)»; si coinciden, solo «Capacidad calculada»; sin salario, «No se puede calcular»; la columna guardada no cambia | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -309,3 +327,4 @@ Automatizados en `tests/Feature/PrimaSeguroTest.php` y `tests/Feature/SimuladorS
 | Bloqueo por salario mínimo (posterior) | Automatizada — PP-135 a PP-142; falta la prueba manual en el navegador |
 | Registro y edición de tasas (posterior) | Automatizada — PP-143 a PP-152; falta la prueba manual en el navegador |
 | Primas de seguros (posterior) | Automatizada — PP-153 a PP-166; falta la prueba manual en el navegador |
+| Capacidad de endeudamiento unificada (posterior) | Automatizada — PP-167 a PP-177; falta la prueba manual en el navegador |

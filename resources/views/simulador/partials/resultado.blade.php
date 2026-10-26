@@ -57,14 +57,19 @@
         @if ($cap['veredictos_distintos'])
             <div class="alert alert-warning py-2">
                 <strong>Atención: las dos capacidades dan un veredicto distinto.</strong>
-                Con descuentos de ley (estimada) la cuota {{ $est['cabe'] ? 'cabe' : 'no cabe' }}; con la capacidad guardada del empleado (la que usa la aprobación) {{ $cap['guardada']['cabe'] ? 'cabe' : 'no cabe' }}.
-                La aprobación de la solicitud decide con la capacidad guardada.
+                Con descuentos de ley (estimada) la cuota {{ $est['cabe'] ? 'cabe' : 'no cabe' }}; con la capacidad guardada del empleado {{ $cap['guardada']['cabe'] ? 'cabe' : 'no cabe' }}.
+                La aprobación de la solicitud decide con la capacidad {{ $cap['usada'] === 'estimada' ? 'estimada con descuentos de ley' : 'guardada' }} (la misma de este veredicto).
             </div>
         @endif
 
         <p class="mb-2">
-            Cuota mensual = cuota quincenal × 2 = <strong>{{ $pesos($cap['cuota_mensual'], 2) }}</strong>.
-            El seguro no se incluye en esta comparación (pendiente de confirmar con Bienestar).
+            @if ($cap['seguro_mensual'] > 0)
+                Cuota mensual con seguros = (cuota quincenal + seguros) × 2 = <strong>{{ $pesos($cap['cuota_mensual'], 2) }}</strong>
+                (cuota {{ $pesos($cap['cuota_sin_seguro_mensual'], 2) }} + seguros estimados {{ $pesos($cap['seguro_mensual'], 2) }}).
+            @else
+                Cuota mensual = cuota quincenal × 2 = <strong>{{ $pesos($cap['cuota_mensual'], 2) }}</strong>.
+                El seguro solo se incluye en esta comparación en vivienda.
+            @endif
         </p>
 
         <div class="row g-3">

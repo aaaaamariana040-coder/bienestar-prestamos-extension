@@ -95,14 +95,19 @@
             @endif
         </p>
         <p>
-            Cuota mensual = cuota quincenal × 2 = <strong>{{ $pesos($cap['cuota_mensual'], 2) }}</strong>.
-            El seguro no se incluye en esta comparación.
+            @if ($cap['seguro_mensual'] > 0)
+                Cuota mensual con seguros = (cuota quincenal + seguros) × 2 = <strong>{{ $pesos($cap['cuota_mensual'], 2) }}</strong>
+                (cuota {{ $pesos($cap['cuota_sin_seguro_mensual'], 2) }} + seguros estimados {{ $pesos($cap['seguro_mensual'], 2) }}).
+            @else
+                Cuota mensual = cuota quincenal × 2 = <strong>{{ $pesos($cap['cuota_mensual'], 2) }}</strong>.
+                El seguro solo se incluye en esta comparación en vivienda.
+            @endif
             Decide el veredicto la capacidad {{ $cap['usada'] === 'estimada' ? 'estimada con descuentos de ley' : 'guardada del empleado' }}.
         </p>
         @if ($cap['veredictos_distintos'])
             <p class="hoja-alerta">
                 <strong>Las dos capacidades dan un veredicto distinto.</strong>
-                Con descuentos de ley (estimada) la cuota {{ $est['cabe'] ? 'cabe' : 'no cabe' }}; con la capacidad guardada (la que usa la aprobación) {{ $cap['guardada']['cabe'] ? 'cabe' : 'no cabe' }}.
+                Con descuentos de ley (estimada) la cuota {{ $est['cabe'] ? 'cabe' : 'no cabe' }}; con la capacidad guardada {{ $cap['guardada']['cabe'] ? 'cabe' : 'no cabe' }}.
             </p>
         @endif
 

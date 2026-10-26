@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreEmpleadoRequest;
 use App\Http\Requests\UpdateEmpleadoRequest;
 use App\Models\Empleado;
+use App\Services\CapacidadEndeudamientoService;
 use App\Services\EmpleadoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,9 +58,11 @@ class EmpleadoController extends Controller
         return redirect()->route('empleados.index')->with('status', 'Empleado creado correctamente.');
     }
 
-    public function show(Empleado $empleado): View
+    public function show(Empleado $empleado, CapacidadEndeudamientoService $capacidadService): View
     {
-        return view('empleados.show', compact('empleado'));
+        $capacidadCalculada = $capacidadService->paraEmpleado($empleado)['calculada']['capacidad'] ?? null;
+
+        return view('empleados.show', compact('empleado', 'capacidadCalculada'));
     }
 
     public function edit(Empleado $empleado): View

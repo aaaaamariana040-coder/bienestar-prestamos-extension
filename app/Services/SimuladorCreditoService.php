@@ -27,11 +27,10 @@ class SimuladorCreditoService
     public function __construct(
         private readonly PrestamoService $prestamoService,
         private readonly CalculoFinancieroService $calculoFinanciero,
-        private readonly EmpleadoService $empleadoService,
         private readonly SolicitudCreditoService $solicitudCreditoService,
-        private readonly DescuentosLeyService $descuentosLey,
         private readonly TasaVehiculoService $tasaVehiculoService,
         private readonly PrimaSeguroService $primaSeguroService,
+        private readonly CapacidadEndeudamientoService $capacidadService,
     ) {
         //
     }
@@ -71,7 +70,7 @@ class SimuladorCreditoService
         return $datos + [
             'mensaje' => null,
             'prestamos' => $this->prestamosVigentes($empleado),
-            'capacidad' => $this->empleadoService->capacidadEndeudamiento($empleado),
+            'capacidad' => $this->capacidadService->paraEmpleado($empleado),
             'modalidades' => TipoPrestamo::where('habilitada', true)->orderBy('nombre')->get(['id_tipo', 'nombre'])->all(),
         ];
     }
@@ -106,18 +105,14 @@ class SimuladorCreditoService
         $detalleTasa = $this->prestamoService->resolverTasaDetallada($solicitud, $modalidad, $anio);
         $tasaAnual = $detalleTasa['tasa'];
         $tasaPeriodica = $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaAnual);
-        $capacidad = $this->empleadoService->capacidadEndeudamiento($empleado);
+        $capacidad = $this->capacidadService->paraEmpleado($empleado, $anio);
+        $esVivienda = $modalidad->esVivienda();
 
         if ($capacidad['disponible'] <= 0) {
             return $this->noPuede('capacidad_agotada', 'La capacidad de endeudamiento está agotada: las cuotas vigentes ya la comprometen por completo.');
         }
 
-        $montoPorCapacidad = floor($this->calculoFinanciero->montoMaximoParaCuota($capacidad['disponible'] / 2, $tasaPeriodica, $plazo));
-
-        // La cuota se redondea a centavos: se baja el monto hasta que quepa en la capacidad disponible.
-        while ($montoPorCapacidad > 0 && $this->calculoFinanciero->cuotaFija($montoPorCapacidad, $tasaPeriodica, $plazo) * 2 > $capacidad['disponible']) {
-            $montoPorCapacidad--;
-        }
+        $montoPorCapacidad = $this->montoMaximoPorCapacidad($capacidad['disponible'], $tasaPeriodica, $plazo, $anio, $esVivienda);
 
         if ($montoPorCapacidad < self::MONTO_MINIMO_SOLICITUD) {
             return $this->noPuede('capacidad_insuficiente', 'La capacidad de endeudamiento disponible ($'.number_format($capacidad['disponible'], 0, ',', '.').') no alcanza para el monto mínimo de una solicitud ($'.number_format(self::MONTO_MINIMO_SOLICITUD, 0, ',', '.').').');
@@ -153,6 +148,27 @@ class SimuladorCreditoService
         ];
     }
 
+    /**
+     * Monto más alto cuya cuota (más los seguros, en vivienda) cabe en la
+     * capacidad disponible, con la misma comparación de la aprobación.
+     */
+    private function montoMaximoPorCapacidad(float $disponible, float $tasaPeriodica, int $plazo, int $anio, bool $esVivienda): float
+    {
+        $estimacion = $this->primaSeguroService->estimar(1.0, $anio, $esVivienda);
+        $tasaSeguro = $esVivienda ? $estimacion['tasa_vida'] + $estimacion['tasa_incendio'] : 0.0;
+        $montoPorUnidadDeCuota = $this->calculoFinanciero->montoMaximoParaCuota(1.0, $tasaPeriodica, $plazo);
+        $cuotaDisponible = ($disponible / 2) / (1 + $tasaSeguro * $montoPorUnidadDeCuota);
+
+        $monto = floor($this->calculoFinanciero->montoMaximoParaCuota($cuotaDisponible, $tasaPeriodica, $plazo));
+
+        // La cuota y los seguros se redondean a centavos: se baja el monto hasta que quepa.
+        while ($monto > 0 && $this->capacidadService->cuotaAComparar($monto, $this->calculoFinanciero->cuotaFija($monto, $tasaPeriodica, $plazo), $anio, $esVivienda)['cuota_mensual'] > $disponible) {
+            $monto--;
+        }
+
+        return $monto;
+    }
+
     private function solicitudHipotetica(Empleado $empleado, TipoPrestamo $modalidad, float $monto, int $plazo): SolicitudCredito
     {
         $solicitud = new SolicitudCredito([
@@ -174,7 +190,7 @@ class SimuladorCreditoService
      */
     private function noPuedeDesde(array $incumplimientos): array
     {
-        $prioridad = ['empleado_inactivo', 'antiguedad_insuficiente', 'sin_smmlv', 'salario_minimo', 'sin_tasa', 'sin_cuantia', 'plazo_excedido', 'sin_presupuesto', 'cuantia_excedida', 'capacidad_excedida'];
+        $prioridad = ['empleado_inactivo', 'antiguedad_insuficiente', 'sin_smmlv', 'salario_minimo', 'sin_tasa', 'sin_cuantia', 'plazo_excedido', 'sin_presupuesto', 'cuantia_excedida', 'capacidad_no_calculable', 'capacidad_excedida'];
 
         usort($incumplimientos, fn (array $a, array $b): int => array_search($a['codigo'], $prioridad, true) <=> array_search($b['codigo'], $prioridad, true));
 
@@ -354,7 +370,7 @@ class SimuladorCreditoService
         $estimacionSeguro = $this->primaSeguroService->estimar($monto, $anio, $modalidad->esVivienda());
         $seguro = $estimacionSeguro['total'];
 
-        $capacidad = $this->capacidad($empleado, $salario, $smmlv, $retencion, $cuota);
+        $capacidad = $this->capacidad($empleado, $monto, $cuota, $anio, $modalidad->esVivienda(), $retencion);
         $tramo = $modalidad->tramoCuantiaPara($salario / $smmlv);
         $cuantiaMaxima = $tramo !== null ? floor((float) $tramo->cuantia_maxima_smmlv * $smmlv) : null;
 
@@ -395,43 +411,41 @@ class SimuladorCreditoService
     }
 
     /**
-     * Las dos capacidades —la estimada con descuentos de ley y la guardada del
-     * empleado, que usa la aprobación— y el veredicto de la cuota mensual
-     * (cuota quincenal × 2) contra cada una. A la que elige el interruptor se le
-     * resta lo comprometido en préstamos vigentes. El seguro no se incluye.
+     * Las dos capacidades —la calculada con descuentos de ley (clave `estimada`) y
+     * la guardada del empleado— y el veredicto de la cuota mensual contra cada una.
+     * Decide la que fija capacidad.fuente, igual que la aprobación; a las dos se
+     * les resta lo comprometido en préstamos vigentes. En vivienda la cuota
+     * incluye los seguros estimados.
      *
      * @return array<string, mixed>
      */
-    private function capacidad(Empleado $empleado, float $salario, float $smmlv, float $retencion, float $cuotaQuincenal): array
+    private function capacidad(Empleado $empleado, float $monto, float $cuotaQuincenal, int $anio, bool $esVivienda, float $retencion): array
     {
-        $comprometida = $this->empleadoService->capacidadEndeudamiento($empleado)['comprometida'];
-        $cuotaMensual = round($cuotaQuincenal * 2, 2);
-        $estimada = $this->descuentosLey->calcular($salario, $smmlv, $retencion);
-        $guardada = round((float) $empleado->capacidad_endeudamiento, 2);
+        $base = $this->capacidadService->paraEmpleado($empleado, $anio, $retencion);
+        $cuota = $this->capacidadService->cuotaAComparar($monto, $cuotaQuincenal, $anio, $esVivienda);
+        $cuotaMensual = $cuota['cuota_mensual'];
 
-        $estimada['disponible'] = round($estimada['capacidad'] - $comprometida, 2);
+        $estimada = $base['calculada'];
         $estimada['cabe'] = $cuotaMensual <= $estimada['disponible'];
 
-        $usaEstimada = (bool) config('prestamos.simulador.restar_descuentos_ley');
-        $guardadaDisponible = round($guardada - $comprometida, 2);
-        $guardadaCabe = $cuotaMensual <= $guardadaDisponible;
-        $disponible = $usaEstimada ? $estimada['disponible'] : $guardadaDisponible;
+        $guardada = $base['guardada'];
+        $guardada['cabe'] = $cuotaMensual <= $guardada['disponible'];
+
+        $usaEstimada = $base['fuente'] === CapacidadEndeudamientoService::FUENTE_CALCULADA;
 
         return [
             'restar_descuentos_ley' => $usaEstimada,
             'usada' => $usaEstimada ? 'estimada' : 'guardada',
-            'comprometida' => $comprometida,
+            'comprometida' => $base['comprometida'],
             'estimada' => $estimada,
-            'guardada' => [
-                'capacidad' => $guardada,
-                'disponible' => $guardadaDisponible,
-                'cabe' => $guardadaCabe,
-            ],
+            'guardada' => $guardada,
             'cuota_mensual' => $cuotaMensual,
-            'disponible' => $disponible,
-            'cabe' => $usaEstimada ? $estimada['cabe'] : $guardadaCabe,
-            'margen' => round($disponible - $cuotaMensual, 2),
-            'veredictos_distintos' => $estimada['cabe'] !== $guardadaCabe,
+            'cuota_sin_seguro_mensual' => $cuota['cuota_sin_seguro_mensual'],
+            'seguro_mensual' => $cuota['seguro_mensual'],
+            'disponible' => $base['disponible'],
+            'cabe' => $usaEstimada ? $estimada['cabe'] : $guardada['cabe'],
+            'margen' => round($base['disponible'] - $cuotaMensual, 2),
+            'veredictos_distintos' => $estimada['cabe'] !== $guardada['cabe'],
         ];
     }
 

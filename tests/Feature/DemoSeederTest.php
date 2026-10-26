@@ -111,6 +111,8 @@ class DemoSeederTest extends TestCase
 
     public function test_escenario_c_capacidad_agotada(): void
     {
+        config(['prestamos.capacidad.fuente' => 'guardada']);
+
         $empleado = $this->getJson(route('simulador.empleado', DemoSeeder::CEDULA_CAPACIDAD_AGOTADA))->assertOk()->json();
 
         $this->assertCount(2, $empleado['prestamos']);

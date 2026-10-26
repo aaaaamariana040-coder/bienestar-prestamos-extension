@@ -232,8 +232,8 @@
                 </div>
             </div>
 
-            <h2 class="h5">Capacidad de endeudamiento guardada</h2>
-            <p class="small text-muted">Es la que usa la aprobación de solicitudes. Al simular verás además la estimada con descuentos de ley.</p>
+            <h2 class="h5">Capacidad de endeudamiento</h2>
+            <p class="small text-muted" id="capacidad-nota"></p>
             <div class="row g-3 mb-4">
                 <div class="col-md-4"><div class="card"><div class="card-body py-2">
                     <div class="small text-muted">Total</div><div class="fs-5" id="capacidad-total"></div>
@@ -420,6 +420,9 @@
 
                 cedulaActual = e.cedula;
                 pintarPrestamos(e.prestamos);
+                texto('capacidad-nota', e.capacidad.fuente === 'guardada'
+                    ? 'Es la capacidad guardada del empleado, la misma que usa la aprobación de solicitudes.'
+                    : 'Es el 50 % del salario menos los descuentos de ley, la misma que usa la aprobación de solicitudes.');
                 texto('capacidad-total', dinero(e.capacidad.total));
                 texto('capacidad-comprometida', dinero(e.capacidad.comprometida));
                 texto('capacidad-disponible', dinero(e.capacidad.disponible));
@@ -461,7 +464,7 @@
 
                 resultadoModalidad.innerHTML = '<div class="alert alert-light border py-2 mb-0"><strong>Referencia de la modalidad:</strong> '
                     + 'monto máximo ' + dinero(r.monto_maximo) + ' con ' + escapar(r.plazo_legible)
-                    + ' (limitado por ' + (r.limitado_por === 'capacidad' ? 'la capacidad guardada disponible' : 'la cuantía máxima de su tramo salarial') + ').</div>';
+                    + ' (limitado por ' + (r.limitado_por === 'capacidad' ? 'la capacidad disponible' : 'la cuantía máxima de su tramo salarial') + ').</div>';
             }
 
             function cargarReferenciaModalidad() {

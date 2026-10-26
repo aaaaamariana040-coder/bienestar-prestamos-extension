@@ -32,6 +32,21 @@
                 <dt class="col-sm-4">Capacidad de endeudamiento</dt>
                 <dd class="col-sm-8">{{ number_format($empleado->capacidad_endeudamiento ?? 0, 2) }}</dd>
 
+                @if ($capacidadCalculada === null)
+                    <dt class="col-sm-4">Capacidad calculada</dt>
+                    <dd class="col-sm-8" id="capacidad-calculada">No se puede calcular (el empleado no tiene salario o falta el SMMLV del año).</dd>
+                @else
+                    @php
+                        $guardada = round((float) ($empleado->capacidad_endeudamiento ?? 0), 2);
+                        $etiqueta = abs($capacidadCalculada - $guardada) >= 0.01
+                            ? 'Capacidad calculada (referencia: la guardada es '.number_format($guardada, 2).')'
+                            : 'Capacidad calculada';
+                    @endphp
+                    <dt class="col-sm-4">{{ $etiqueta }}</dt>
+                    <dd class="col-sm-8" id="capacidad-calculada">{{ number_format($capacidadCalculada, 2) }}
+                        <span class="text-muted small">50 % del salario menos salud, pensión y fondo de solidaridad.</span></dd>
+                @endif
+
                 <dt class="col-sm-4">Fecha de vinculación</dt>
                 <dd class="col-sm-8">{{ optional($empleado->fecha_vinculacion)->format('Y-m-d') ?? '—' }}</dd>
 

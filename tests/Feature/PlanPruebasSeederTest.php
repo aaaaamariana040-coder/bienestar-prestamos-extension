@@ -78,6 +78,8 @@ class PlanPruebasSeederTest extends TestCase
 
     public function test_el_empleado_de_capacidad_baja_tiene_una_solicitud_que_no_es_viable(): void
     {
+        config(['prestamos.capacidad.fuente' => 'guardada']);
+
         $this->assertSame('100000.00', Empleado::findOrFail(PlanPruebasSeeder::CEDULA_CAPACIDAD_BAJA)->capacidad_endeudamiento);
 
         $solicitud = SolicitudCredito::where('cedula_empleado', PlanPruebasSeeder::CEDULA_CAPACIDAD_BAJA)->firstOrFail();

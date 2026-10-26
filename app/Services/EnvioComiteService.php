@@ -32,7 +32,7 @@ class EnvioComiteService
         private readonly AuditoriaService $auditoriaService,
         private readonly SimuladorCreditoService $simuladorCreditoService,
         private readonly CalculoFinancieroService $calculoFinanciero,
-        private readonly EmpleadoService $empleadoService,
+        private readonly CapacidadEndeudamientoService $capacidadService,
         private readonly SolicitudCreditoService $solicitudCreditoService,
         private readonly DocumentoSolicitudService $documentoSolicitudService,
     ) {
@@ -236,7 +236,7 @@ class EnvioComiteService
     /**
      * Cifras que van en el cuerpo. No incluye el salario. La tasa y la cuota se
      * calculan como en la aprobación (tasa oficial del año de la solicitud) y la
-     * capacidad es la guardada del empleado, que es la que usa la aprobación.
+     * capacidad es la misma que usa la aprobación (CapacidadEndeudamientoService).
      *
      * @return array<string, mixed>
      */
@@ -251,7 +251,7 @@ class EnvioComiteService
         $cuota = $tasaTotal === null
             ? null
             : $this->calculoFinanciero->cuotaFija($monto, $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaTotal), $plazo);
-        $capacidad = $this->empleadoService->capacidadEndeudamiento($solicitud->empleado);
+        $capacidad = $this->capacidadService->paraEmpleado($solicitud->empleado, $solicitud->fecha_solicitud->year);
 
         return [
             'id_solicitud' => $solicitud->id_solicitud,
