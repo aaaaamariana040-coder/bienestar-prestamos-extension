@@ -381,6 +381,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_la_migracion_rellena_las_cuentas_existentes_segun_su_rol(): void
     {
+        $this->artisan('migrate:rollback', ['--path' => 'database/migrations/2026_10_26_100100_agrega_permisos_de_seguros_a_usuarios.php'])->assertSuccessful();
         $this->artisan('migrate:rollback', ['--path' => 'database/migrations/2026_10_22_100000_agrega_permisos_a_usuarios_table.php'])->assertSuccessful();
 
         $fila = fn (string $cedula, string $rol, bool $habilitado = true): array => [
@@ -400,7 +401,7 @@ class PermisosPorCuentaTest extends TestCase
         $todos = array_keys(config('permisos.catalogo'));
 
         $this->assertEqualsCanonicalizing($todos, $administrador->permisosAsignados());
-        $this->assertEqualsCanonicalizing(array_values(array_diff($todos, ['usuarios.gestionar', 'auditoria.ver'])), $funcionario->permisosAsignados());
+        $this->assertEqualsCanonicalizing(array_values(array_diff($todos, ['usuarios.gestionar', 'auditoria.ver', 'seguros.gestionar'])), $funcionario->permisosAsignados());
         $this->assertSame([], Usuario::findOrFail('0000000000')->permisos);
     }
 

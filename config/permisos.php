@@ -42,6 +42,8 @@ return [
         'presupuesto.gestionar' => ['grupo' => 'Modalidades y presupuesto', 'nombre' => 'Gestionar el presupuesto', 'descripcion' => 'Crear y editar presupuestos anuales.'],
         'smmlv.ver' => ['grupo' => 'Modalidades y presupuesto', 'nombre' => 'Ver el salario mínimo (SMMLV)', 'descripcion' => 'Consultar el SMMLV de cada año.'],
         'smmlv.gestionar' => ['grupo' => 'Modalidades y presupuesto', 'nombre' => 'Registrar el salario mínimo (SMMLV)', 'descripcion' => 'Registrar el SMMLV de un año.'],
+        'seguros.ver' => ['grupo' => 'Modalidades y presupuesto', 'nombre' => 'Ver las primas de seguros', 'descripcion' => 'Consultar la prima de cada seguro por año.'],
+        'seguros.gestionar' => ['grupo' => 'Modalidades y presupuesto', 'nombre' => 'Gestionar las primas de seguros', 'descripcion' => 'Registrar la prima de un año y editar las ya registradas.'],
 
         // Solicitudes
         'solicitudes.ver' => ['grupo' => 'Solicitudes', 'nombre' => 'Ver solicitudes', 'descripcion' => 'Listar y consultar solicitudes y sus documentos.'],
@@ -79,6 +81,7 @@ return [
         'modalidades.gestionar' => ['modalidades.ver'],
         'presupuesto.gestionar' => ['presupuesto.ver'],
         'smmlv.gestionar' => ['smmlv.ver'],
+        'seguros.gestionar' => ['seguros.ver'],
         'solicitudes.registrar' => ['solicitudes.ver'],
         'solicitudes.eliminar-documentos' => ['solicitudes.ver'],
         'solicitudes.aprobar' => ['solicitudes.ver'],
@@ -115,12 +118,13 @@ return [
      * botón «Restablecer a los permisos del perfil». No cambian las cuentas que ya
      * existen: cada una conserva su propia lista.
      *
-     * Hoy el Funcionario puede hacer todo menos Usuarios y Auditoría: así nada
-     * cambia respecto al sistema sin permisos por cuenta.
+     * Hoy el Funcionario puede hacer todo menos Usuarios, Auditoría y gestionar las
+     * primas de seguros (solo las ve): fuera de esos tres, nada cambia respecto al
+     * sistema sin permisos por cuenta.
      */
     'defaults' => [
         'ADMINISTRADOR' => ['*'],
-        'FUNCIONARIO_BIENESTAR' => ['*', '!usuarios.gestionar', '!auditoria.ver'],
+        'FUNCIONARIO_BIENESTAR' => ['*', '!usuarios.gestionar', '!auditoria.ver', '!seguros.gestionar'],
     ],
 
 ];

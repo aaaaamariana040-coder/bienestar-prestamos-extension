@@ -260,6 +260,27 @@ Automatizados en `tests/Feature/TasaIntEdicionTest.php` y `tests/Feature/TasaInt
 | PP-151 | Nota del tope en vivienda | Modalidad de vivienda y otra que no lo sea | Abrir cada una | Solo en vivienda aparece la nota del tope del 5 % y la fecha 15/11/2023 | ⬜ |
 | PP-152 | El tope sigue aplicándose | Vivienda con IPC de 4,8 % | Editarlo a 6,5 y simular | La pantalla guarda y muestra 6,5 (IPC real); el simulador usa 5 % y muestra la nota del tope | ⬜ |
 
+## 19. Primas de seguros y estimación en el simulador (RF-004, Art. 15)
+
+Automatizados en `tests/Feature/PrimaSeguroTest.php` y `tests/Feature/SimuladorSegurosTest.php`; la ruta nueva entra en la prueba de cobertura de rutas con `can:`. Pantalla: Modalidades y presupuesto, «Seguros».
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-153 | Primas iniciales | Base recién migrada | Abrir «Seguros» | Vida de deudores 0,0003231 e incendio y terremoto 0,0000000 para el año en curso y el anterior | ⬜ |
+| PP-154 | Registrar una prima | Administrador | Elegir seguro, año y prima (con coma, «0,00045») y registrar | Mensaje de éxito; la prima aparece; Auditoría: «Registro de prima de seguro … tasa anterior sin registro → nueva 0,0004500» | ⬜ |
+| PP-155 | Duplicado concepto-año | Prima de vida de deudores del año X | Registrar otra del mismo seguro y año | Alerta «Ya hay una prima registrada para ese concepto y año…», campo en rojo y lo digitado conservado; el mismo año con otro seguro sí se permite | ⬜ |
+| PP-156 | Tasa inválida | — | Registrar «abc», -0,0001, 1,5 o más de 8 decimales | Alerta en español con el motivo; no se crea nada | ⬜ |
+| PP-157 | Editar una prima | Prima de 0,0003231 | Cambiarla a 0,0004 en su fila y pulsar «Guardar» | Mensaje de éxito; Auditoría: «Edición de prima de seguro … tasa anterior 0,0003231 → nueva 0,0004000»; el seguro y el año no cambian; guardar el mismo valor no audita | ⬜ |
+| PP-158 | Sin borrado | Administrador | Intentar borrar una prima | No hay botón ni ruta de borrado (405) | ⬜ |
+| PP-159 | Permisos | Funcionario, cuenta con solo `empleados.ver`, y Administrador | Abrir «Seguros»; intentar registrar y editar | El Administrador ve y gestiona; el Funcionario ve la tabla sin campos de edición y recibe 403 al registrar o editar; sin `seguros.ver` recibe 403 y el menú no muestra «Seguros» | ⬜ |
+| PP-160 | Cuentas existentes | Cuentas anteriores a la migración | Correr las migraciones | Administradores con `seguros.ver` y `seguros.gestionar`; Funcionarios solo con `seguros.ver` | ⬜ |
+| PP-161 | Prima del año en el simulador | Prima de vida de deudores del año = 0,001 | Simular 50.000.000 en educación | Seguro estimado de 50.000 aparte de la cuota; el texto «Estimación; el valor real lo calcula el área de seguros» | ⬜ |
+| PP-162 | Falta la prima del año | Solo hay primas de años anteriores | Simular | Usa la del año anterior más reciente y avisa «No hay prima de {año}: se usó la de {año anterior}.» | ⬜ |
+| PP-163 | Sin ninguna prima | Tabla de primas vacía | Simular | Usa el respaldo (0,0003231) y muestra un aviso discreto de respaldo | ⬜ |
+| PP-164 | Incendio y terremoto | Vivienda con prima de incendio en 0 y luego mayor que 0 | Simular | En 0 no suma y el desglose dice «sin prima definida»; mayor que 0 suma monto × prima y el desglose muestra vida e incendio; fuera de vivienda no se suma | ⬜ |
+| PP-165 | Rótulo en vivienda | Modalidad de vivienda y otra | Simular en cada una | Vivienda: «Cuota estimada con seguros»; las demás: «Cuota + seguro»; la hoja impresa igual | ⬜ |
+| PP-166 | La cuota no cambia | Cambiar las primas | Simular y aprobar un préstamo | La cuota, la tabla de amortización y el total a pagar son los mismos; el préstamo guarda la cuota sin seguro y las cuotas no llevan seguro | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -287,3 +308,4 @@ Automatizados en `tests/Feature/TasaIntEdicionTest.php` y `tests/Feature/TasaInt
 | Tope de la tasa de vivienda (posterior) | Automatizada — PP-120 a PP-134; falta la prueba manual en el navegador |
 | Bloqueo por salario mínimo (posterior) | Automatizada — PP-135 a PP-142; falta la prueba manual en el navegador |
 | Registro y edición de tasas (posterior) | Automatizada — PP-143 a PP-152; falta la prueba manual en el navegador |
+| Primas de seguros (posterior) | Automatizada — PP-153 a PP-166; falta la prueba manual en el navegador |

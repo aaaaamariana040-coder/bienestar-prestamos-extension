@@ -23,12 +23,16 @@ class PermisosCaracterizacionTest extends TestCase
     use RecorreLasRutas;
     use RefreshDatabase;
 
+    /**
+     * Rutas que el Funcionario no usa por defecto: Usuarios, Auditoría y gestionar las
+     * primas de seguros (solo las ve).
+     */
     private function esDeUsuariosOAuditoria(string $nombre): bool
     {
-        return str_starts_with($nombre, 'usuarios.') || str_starts_with($nombre, 'auditoria.');
+        return str_starts_with($nombre, 'usuarios.') || str_starts_with($nombre, 'auditoria.') || in_array($nombre, ['seguros.store', 'seguros.update'], true);
     }
 
-    public function test_el_funcionario_solo_es_rechazado_en_usuarios_y_auditoria(): void
+    public function test_el_funcionario_solo_es_rechazado_en_usuarios_auditoria_y_gestion_de_seguros(): void
     {
         $funcionario = Usuario::factory()->create();
         $rechazadas = [];
@@ -46,7 +50,7 @@ class PermisosCaracterizacionTest extends TestCase
         }
 
         $this->assertGreaterThan(70, $total, 'La prueba debe recorrer todas las rutas con nombre de la aplicación.');
-        $this->assertSame([], $rechazadas, 'El Funcionario no debe recibir 403 fuera de usuarios y auditoría.');
+        $this->assertSame([], $rechazadas, 'El Funcionario no debe recibir 403 fuera de usuarios, auditoría y gestión de seguros.');
     }
 
     public function test_el_administrador_pasa_la_autorizacion_en_todas_las_rutas(): void

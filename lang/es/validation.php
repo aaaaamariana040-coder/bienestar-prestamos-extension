@@ -210,6 +210,8 @@ return [
         'num_cuotas' => 'número de cuotas',
         'fuente_normativa' => 'fuente normativa',
         'tasa_anual' => 'tasa anual',
+        'tasa' => 'tasa',
+        'concepto' => 'concepto',
         'salario' => 'salario',
         'retencion' => 'valor de la retención en la fuente',
     ],
