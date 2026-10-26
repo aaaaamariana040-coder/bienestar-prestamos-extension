@@ -11,10 +11,17 @@ use App\Models\SolicitudCredito;
 use App\Models\Usuario;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 class SolicitudCreditoService
 {
+    /**
+     * Quien devenga el SMMLV o menos no puede tener descuentos por nómina; lo
+     * rechaza el sistema, no se deja a criterio del operador.
+     */
+    public const MENSAJE_SALARIO_MINIMO = 'El salario del empleado es igual o menor al salario mínimo (SMMLV). A quien devenga el mínimo no se le puede descontar por nómina.';
+
     public function __construct(
         private readonly PrestamoService $prestamoService,
         private readonly CalculoFinancieroService $calculoFinanciero,
@@ -29,6 +36,8 @@ class SolicitudCreditoService
      */
     public function crear(array $datos, Usuario $actor): SolicitudCredito
     {
+        $this->bloquearSiDevengaElMinimo($datos);
+
         $solicitud = SolicitudCredito::create($datos);
 
         $this->auditoriaService->registrar(
@@ -38,6 +47,37 @@ class SolicitudCreditoService
         );
 
         return $solicitud;
+    }
+
+    /**
+     * ¿Devenga el salario mínimo o menos? Compara empleados.salario (salario
+     * devengado total) con el SMMLV del año. Sin salario registrado (cero o nulo)
+     * o sin SMMLV del año no se puede evaluar y devuelve false: de eso se ocupan
+     * las otras verificaciones.
+     */
+    public function devengaElMinimo(Empleado $empleado, ?float $smmlv): bool
+    {
+        $salario = (float) $empleado->salario;
+
+        return $smmlv !== null && $salario > 0 && round($salario, 2) <= round($smmlv, 2);
+    }
+
+    /**
+     * @param  array<string, mixed>  $datos
+     */
+    private function bloquearSiDevengaElMinimo(array $datos): void
+    {
+        $empleado = Empleado::find($datos['cedula_empleado'] ?? null);
+
+        if ($empleado === null || ! isset($datos['fecha_solicitud'])) {
+            return;
+        }
+
+        $smmlv = SmmlvAnual::valorParaAnio(Carbon::parse($datos['fecha_solicitud'])->year);
+
+        if ($this->devengaElMinimo($empleado, $smmlv)) {
+            throw ValidationException::withMessages(['cedula_empleado' => 'No se puede registrar: '.lcfirst(self::MENSAJE_SALARIO_MINIMO)]);
+        }
     }
 
     /**
@@ -86,7 +126,11 @@ class SolicitudCreditoService
 
         if ($smmlv === null) {
             $problemas[] = ['codigo' => 'sin_smmlv', 'mensaje' => "No se ha registrado el valor del SMMLV para el año {$anio}."];
-        } else {
+        } elseif ($this->devengaElMinimo($empleado, $smmlv)) {
+            $problemas[] = ['codigo' => 'salario_minimo', 'mensaje' => self::MENSAJE_SALARIO_MINIMO];
+        }
+
+        if ($smmlv !== null) {
             $salarioEnSmmlv = (float) $empleado->salario / $smmlv;
 
             $tramo = $tipoPrestamo->tramoCuantiaPara($salarioEnSmmlv);

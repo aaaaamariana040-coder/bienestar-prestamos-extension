@@ -228,6 +228,21 @@ Automatizados en `tests/Feature/TopeTasaViviendaTest.php`. El tope (5 %) y la fe
 | PP-133 | Corrección manual por encima del tope | IPC de 6,50 % | Escribir 6,5 (o 5 más 1,5 de puntos) y calcular | Rechazado con el mensaje en español; 4,2 se permite y se marca como editada | ⬜ |
 | PP-134 | Educación con 6,5 % | Educación con IPC de 6,50 % | Elegir la modalidad y calcular | Se prellena 6,5, calcula al 6,5 % y no aparece la nota | ⬜ |
 
+## 17. Bloqueo por salario mínimo (RF-005, Bienestar)
+
+Automatizados en `tests/Feature/BloqueoSalarioMinimoTest.php`. La regla compara `empleados.salario` con el SMMLV del año de la solicitud; ver `docs/reglas-negocio.md`, sección 2.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-135 | Salario menor al mínimo | SMMLV 2026 registrado; empleado con salario menor | Registrar una solicitud | Se rechaza con «No se puede registrar: el salario del empleado es igual o menor al salario mínimo (SMMLV)…»; no se crea la solicitud | ⬜ |
+| PP-136 | Salario igual al mínimo (borde) | Salario exactamente igual al SMMLV del año | Registrar una solicitud | Se rechaza con el mismo mensaje | ⬜ |
+| PP-137 | Salario apenas por encima | Salario = SMMLV + 1 peso (y + 1 centavo) | Registrar, aprobar y simular | Todo funciona; no aparece el bloqueo | ⬜ |
+| PP-138 | SMMLV del año de la solicitud | SMMLV 2025 de 1.423.500 y 2026 de 1.750.905; salario de 1.600.000 | Registrar con fecha de 2025 y con fecha de 2026 | La de 2025 se registra; la de 2026 se rechaza | ⬜ |
+| PP-139 | Solicitud preexistente | Solicitud ya radicada de un empleado con salario igual al mínimo | Intentar aprobarla | Se rechaza por el incumplimiento `salario_minimo`; no se crea el préstamo | ⬜ |
+| PP-140 | Simulador: no apto | Empleado con salario igual o menor al mínimo | Elegir la modalidad y calcular | La referencia dice que no puede y calcular se rechaza con el mismo mensaje, sin resultado ni botón «Crear solicitud» | ⬜ |
+| PP-141 | Empleado sin salario | Salario en cero | Registrar y simular | Se registra (esta regla no bloquea); el simulador conserva «El salario del empleado debe ser mayor que cero.» | ⬜ |
+| PP-142 | Año sin SMMLV | Solicitud de un año sin SMMLV | Registrar, validar y simular | Se registra; la validación y el simulador conservan el aviso `sin_smmlv`; no aparece `salario_minimo` | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -252,4 +267,5 @@ Automatizados en `tests/Feature/TopeTasaViviendaTest.php`. El tope (5 %) y la fe
 | Permisos por cuenta (posterior) | Automatizada — PP-092 a PP-102; falta la prueba manual en el navegador |
 | Formato de montos y mensajes en español (posterior) | Automatizada — PP-103 a PP-110; falta la prueba manual en el navegador |
 | Vencimientos por calendario y cierre provisional (posterior) | Automatizada — PP-111 a PP-119; falta la prueba manual en el navegador |
-| Tope de la tasa de vivienda (posterior) | Automatizada — PP-120 a PP-129; falta la prueba manual en el navegador |
+| Tope de la tasa de vivienda (posterior) | Automatizada — PP-120 a PP-134; falta la prueba manual en el navegador |
+| Bloqueo por salario mínimo (posterior) | Automatizada — PP-135 a PP-142; falta la prueba manual en el navegador |
