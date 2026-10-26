@@ -149,6 +149,17 @@ class CalendarioQuincenalService
     }
 
     /**
+     * Primer vencimiento (día 15 o último día del mes) estrictamente posterior a la
+     * fecha dada: si la fecha cae justo en un vencimiento, es el siguiente.
+     */
+    public function primerVencimientoPosterior(string|DateTimeInterface $fecha): string
+    {
+        $base = CarbonImmutable::parse($fecha instanceof DateTimeInterface ? $fecha->format('Y-m-d') : $fecha, self::ZONA)->startOfDay()->addDay();
+
+        return $this->vencimientosDesde($base, 1)[0];
+    }
+
+    /**
      * Fecha provisional de cierre de las novedades de nómina para un
      * vencimiento: los días calendario de config('quincena.cierre_novedades_dias_antes')
      * antes de la fecha. Es solo informativa: ninguna operación la consulta

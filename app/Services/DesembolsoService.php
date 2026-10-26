@@ -10,8 +10,10 @@ use RuntimeException;
 
 class DesembolsoService
 {
-    public function __construct(private readonly AuditoriaService $auditoriaService)
-    {
+    public function __construct(
+        private readonly AuditoriaService $auditoriaService,
+        private readonly CalendarioQuincenalService $calendario,
+    ) {
         //
     }
 
@@ -74,12 +76,42 @@ class DesembolsoService
             'estado' => EstadoDesembolso::Realizado,
         ]);
 
-        $this->auditoriaService->registrar(
-            $actor,
-            'Registro de desembolso',
-            "Préstamo #{$prestamo->id_prestamo} — tramo {$numeroTramo} por {$desembolso->valor}",
-        );
+        $detalle = "Préstamo #{$prestamo->id_prestamo} — tramo {$numeroTramo} por {$desembolso->valor}";
+        $primeraCuota = $this->fijarPrimeraCuota($prestamo, $desembolso);
+
+        if ($primeraCuota !== null) {
+            $detalle .= " — primera cuota: {$primeraCuota}";
+        }
+
+        $this->auditoriaService->registrar($actor, 'Registro de desembolso', $detalle);
 
         return $desembolso;
+    }
+
+    /**
+     * Con el primer desembolso de un préstamo aprobado con la regla nueva, las cuotas
+     * empiezan a descontarse: la primera vence en el primer 15 o último día de mes
+     * estrictamente posterior a la fecha del desembolso y las demás siguen el calendario.
+     * Los préstamos anteriores (sin la marca) y los desembolsos posteriores no cambian nada.
+     *
+     * @return ?string fecha de la primera cuota, o null si este desembolso no la fija
+     */
+    private function fijarPrimeraCuota(Prestamo $prestamo, Desembolso $desembolso): ?string
+    {
+        if (! $prestamo->pendiente_desembolso) {
+            return null;
+        }
+
+        $cuotas = $prestamo->cuotas()->get();
+        $primera = $this->calendario->primerVencimientoPosterior($desembolso->fecha);
+        $fechas = $this->calendario->vencimientosDesde($primera, $cuotas->count());
+
+        foreach ($cuotas->values() as $i => $cuota) {
+            $cuota->update(['fecha_vencimiento' => $fechas[$i]]);
+        }
+
+        $prestamo->update(['pendiente_desembolso' => false, 'inicio_primera_cuota' => $primera]);
+
+        return $primera;
     }
 }

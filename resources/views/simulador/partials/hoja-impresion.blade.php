@@ -152,6 +152,7 @@
 
     <section class="hoja-bloque hoja-amortizacion">
         <h2>Tabla de amortización ({{ count($tabla_amortizacion) }} cuotas) — fechas estimadas</h2>
+        <p>La fecha real de la primera cuota se define al desembolsar.</p>
         <table class="hoja-tabla">
             <thead>
                 <tr>

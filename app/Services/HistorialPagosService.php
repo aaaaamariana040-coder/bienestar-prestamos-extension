@@ -112,7 +112,7 @@ class HistorialPagosService
 
         return $empleados->mapWithKeys(fn (Empleado $empleado): array => [
             $empleado->cedula => $empleado->prestamos
-                ->reject(fn (Prestamo $prestamo): bool => $this->canceladoAl($prestamo, $ultimosPagos, $cierre))
+                ->reject(fn (Prestamo $prestamo): bool => $prestamo->pendiente_desembolso || $this->canceladoAl($prestamo, $ultimosPagos, $cierre))
                 ->sortBy('id_prestamo')
                 ->map(fn (Prestamo $prestamo): object => $this->linea($prestamo, $pagadas))
                 ->values()
