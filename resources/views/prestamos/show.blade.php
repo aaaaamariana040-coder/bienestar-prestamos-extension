@@ -56,6 +56,16 @@
                 <td>{{ $prestamo->fecha_autorizacion->format('Y-m-d') }}</td>
             </tr>
             <tr>
+                <th>Primera cuota</th>
+                <td id="primera-cuota">
+                    @if ($prestamo->pendiente_desembolso)
+                        Las cuotas empiezan a descontarse a partir del desembolso.
+                    @else
+                        Primera cuota: {{ ($prestamo->inicio_primera_cuota ?? $prestamo->cuotas->first()?->fecha_vencimiento)?->format('Y-m-d') ?? '—' }}
+                    @endif
+                </td>
+            </tr>
+            <tr>
                 <th>Estado</th>
                 <td>{{ $prestamo->estado->value }}</td>
             </tr>

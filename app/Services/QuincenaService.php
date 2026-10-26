@@ -166,7 +166,7 @@ class QuincenaService
             ->with('prestamo')
             ->where('estado', EstadoCuota::Pendiente)
             ->whereDate('fecha_vencimiento', '<=', $actual['corte']->addDays(15)->toDateString())
-            ->whereHas('prestamo', fn ($q) => $q->whereIn('estado', self::ESTADOS_ELEGIBLES))
+            ->whereHas('prestamo', fn ($q) => $q->whereIn('estado', self::ESTADOS_ELEGIBLES)->enCobro())
             ->get();
 
         if ($cuotas->isEmpty()) {
@@ -349,7 +349,9 @@ class QuincenaService
      */
     private function candidatas(array $periodo, ReglaVencimiento $regla, bool $bloquear = false): Collection
     {
-        $consulta = Cuota::query()->with('prestamo.empleado')->orderBy('id_prestamo')->orderBy('numero_cuota');
+        // Las cuotas de un préstamo que aún no se desembolsa no se cobran.
+        $consulta = Cuota::query()->with('prestamo.empleado')->orderBy('id_prestamo')->orderBy('numero_cuota')
+            ->whereHas('prestamo', fn ($q) => $q->enCobro());
 
         if ($bloquear) {
             $consulta->lockForUpdate();
@@ -603,7 +605,7 @@ class QuincenaService
         $consulta = Cuota::query()
             ->where('estado', EstadoCuota::Pendiente)
             ->whereDate('fecha_vencimiento', '<', $periodo['inicio']->toDateString())
-            ->whereHas('prestamo', fn ($q) => $q->whereIn('estado', self::ESTADOS_ELEGIBLES));
+            ->whereHas('prestamo', fn ($q) => $q->whereIn('estado', self::ESTADOS_ELEGIBLES)->enCobro());
 
         return [
             'cuotas' => (clone $consulta)->count(),

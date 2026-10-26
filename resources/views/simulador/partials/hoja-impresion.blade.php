@@ -80,6 +80,9 @@
                 </dd>
             </div>
             <div><dt>{{ $seguro_detalle['es_vivienda'] ? 'Cuota estimada con seguros' : 'Cuota + seguro' }}</dt><dd><strong>{{ $pesos($cuota_mas_seguro, 2) }}</strong></dd></div>
+            @if ($primera_cuota['fecha_desembolso'] !== null)
+                <div><dt>Primera cuota</dt><dd>Primera cuota estimada: {{ \Carbon\Carbon::parse($primera_cuota['fecha'])->format('d/m/Y') }} <span class="hoja-nota">Estimación según la fecha de desembolso indicada; la fecha real se define al desembolsar.</span></dd></div>
+            @endif
             <div><dt>Total de intereses</dt><dd>{{ $pesos($total_intereses, 2) }}</dd></div>
             <div><dt>Total a pagar (sin seguro)</dt><dd>{{ $pesos($total_a_pagar, 2) }}</dd></div>
         </dl>
@@ -152,6 +155,7 @@
 
     <section class="hoja-bloque hoja-amortizacion">
         <h2>Tabla de amortización ({{ count($tabla_amortizacion) }} cuotas) — fechas estimadas</h2>
+        <p>{{ $primera_cuota['fecha_desembolso'] !== null ? 'Estimación según la fecha de desembolso indicada; la fecha real se define al desembolsar.' : 'La fecha real de la primera cuota se define al desembolsar.' }}</p>
         <table class="hoja-tabla">
             <thead>
                 <tr>

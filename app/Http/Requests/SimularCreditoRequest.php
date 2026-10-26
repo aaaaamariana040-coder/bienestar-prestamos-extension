@@ -49,6 +49,17 @@ class SimularCreditoRequest extends FormRequest
             'tasa_efectiva' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'puntos' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'retencion' => ['bail', 'nullable', new MontoColombiano, 'numeric', 'min:0'],
+            'fecha_desembolso' => ['nullable', 'date_format:Y-m-d'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'fecha_desembolso.date_format' => 'La fecha estimada de desembolso no es una fecha válida: usa el formato AAAA-MM-DD (por ejemplo 2026-03-03).',
         ];
     }
 
@@ -63,6 +74,7 @@ class SimularCreditoRequest extends FormRequest
             'tasa_efectiva' => 'tasa efectiva anual',
             'puntos' => 'puntos adicionales',
             'retencion' => 'valor de la retención en la fuente',
+            'fecha_desembolso' => 'fecha estimada de desembolso',
         ];
     }
 }

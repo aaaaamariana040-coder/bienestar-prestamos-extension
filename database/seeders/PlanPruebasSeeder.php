@@ -373,7 +373,12 @@ class PlanPruebasSeeder extends Seeder
         $solicitud = $this->radicarSolicitud($empleado, $modalidad, $monto, $plazoQuincenas, $fechaAutorizacion);
 
         try {
-            return $this->solicitudCreditoService->aprobar($solicitud, $this->administrador);
+            $prestamo = $this->solicitudCreditoService->aprobar($solicitud, $this->administrador);
+
+            // Los escenarios simulan préstamos antiguos, con cuotas ya en cobro (regla anterior al desembolso).
+            $prestamo->update(['pendiente_desembolso' => false]);
+
+            return $prestamo;
         } catch (RuntimeException $excepcion) {
             throw new RuntimeException("PlanPruebasSeeder: no se pudo aprobar la solicitud de {$empleado->nombre_completo}. {$excepcion->getMessage()}", previous: $excepcion);
         } finally {

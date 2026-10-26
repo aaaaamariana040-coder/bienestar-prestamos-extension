@@ -282,6 +282,11 @@
                         <input type="text" inputmode="decimal" id="retencion" class="form-control" autocomplete="off" placeholder="Opcional">
                         <div class="form-text">Dato manual; se resta solo en la capacidad estimada.</div>
                     </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="fecha_desembolso" class="form-label">Fecha estimada de desembolso</label>
+                        <input type="date" id="fecha_desembolso" class="form-control" autocomplete="off">
+                        <div class="form-text">Opcional; define la primera cuota estimada.</div>
+                    </div>
                     <div class="col-md-3 mb-3 d-flex align-items-start pt-4">
                         <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="restablecer-tasa">Restablecer tasa oficial</button>
                     </div>
@@ -319,6 +324,7 @@
             const campoTasa = document.getElementById('tasa_efectiva');
             const campoPuntos = document.getElementById('puntos');
             const campoRetencion = document.getElementById('retencion');
+            const campoFechaDesembolso = document.getElementById('fecha_desembolso');
             const ayudaPlazo = document.getElementById('ayuda-plazo');
             const urlEmpleado = @json(url('simulador/empleado'));
             const urlTasa = @json(route('simulador.tasa'));
@@ -599,7 +605,7 @@
                     plazo: campoPlazo.value,
                 });
 
-                [['tasa_efectiva', campoTasa], ['puntos', campoPuntos], ['retencion', campoRetencion]].forEach(function (par) {
+                [['tasa_efectiva', campoTasa], ['puntos', campoPuntos], ['retencion', campoRetencion], ['fecha_desembolso', campoFechaDesembolso]].forEach(function (par) {
                     if (par[1].value.trim() !== '') {
                         parametros.set(par[0], par[1].value.trim());
                     }

@@ -37,7 +37,7 @@ Todas las claves se pueden fijar en `.env` o en `config/quincena.php`.
 
 Un valor inválido en `regla_vencimiento` o `modo_marcado` hace fallar el proceso con un mensaje claro: nunca se adivina ni se cae en el modo automático.
 
-> **`inicio_primera_cuota` todavía no cambia nada.** Hoy `PrestamoService` toma como fecha base `fecha_autorizacion + 15 días` y genera las cuotas en el día 15 y el último día de cada mes, a partir del primero que sea igual o posterior a esa fecha base. La clave deja registrada la decisión de Bienestar; aplicarla a la generación de cuotas es un cambio de negocio aparte, que se hará cuando respondan.
+> **`inicio_primera_cuota`:** con `desde_desembolso` (por defecto) las cuotas de un préstamo nuevo no se cobran hasta su desembolso: al registrarlo, la primera cuota vence en el primer 15 o último día de mes posterior a la fecha del desembolso (ver `docs/reglas-negocio.md`, §8). Con `desde_aprobacion` se conserva la regla anterior: fecha base `fecha_autorizacion + 15 días`.
 
 ## Cómo se comporta
 

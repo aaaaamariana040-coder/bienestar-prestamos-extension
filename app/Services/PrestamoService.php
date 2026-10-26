@@ -47,6 +47,7 @@ class PrestamoService
                 'cuota_periodica' => $cuotaPeriodica,
                 'fecha_autorizacion' => now()->toDateString(),
                 'estado' => EstadoPrestamo::Vigente,
+                'pendiente_desembolso' => $this->primeraCuotaDesdeElDesembolso(),
             ]);
 
             $this->generarTablaAmortizacion($prestamo, $tasaPeriodica);
@@ -244,10 +245,20 @@ class PrestamoService
     }
 
     /**
-     * Fecha base desde la que se cuenta la primera cuota: 15 días después de la
-     * autorización. La primera cuota vence en el primer vencimiento de
-     * calendario (día 15 o último día del mes) desde esa fecha; ver
-     * fechasDeVencimiento().
+     * ¿La primera cuota corre desde el desembolso? Es la decisión de Bienestar y el
+     * valor por defecto de config('quincena.inicio_primera_cuota'); con «desde_aprobacion»
+     * se conserva la regla anterior (cuotas cobrables desde la aprobación).
+     */
+    public function primeraCuotaDesdeElDesembolso(): bool
+    {
+        return config('quincena.inicio_primera_cuota') !== 'desde_aprobacion';
+    }
+
+    /**
+     * Fecha base PROVISIONAL de la primera cuota: 15 días después de la
+     * autorización. Es la estimación con la que se arma la tabla al aprobar; la
+     * fecha real se fija al desembolsar (DesembolsoService). Con «desde_aprobacion»
+     * es la fecha definitiva. Ver fechasDeVencimiento().
      */
     public function fechaPrimeraCuota(DateTimeInterface|string $fechaAutorizacion): string
     {

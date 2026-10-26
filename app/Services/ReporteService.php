@@ -57,6 +57,7 @@ class ReporteService
 
         return Cuota::with(['prestamo.empleado', 'prestamo.tipoPrestamo'])
             ->where('estado', EstadoCuota::Pendiente)
+            ->whereHas('prestamo', fn ($q) => $q->enCobro())
             ->where('fecha_vencimiento', '<', $hoy->toDateString())
             ->orderBy('fecha_vencimiento')
             ->get()

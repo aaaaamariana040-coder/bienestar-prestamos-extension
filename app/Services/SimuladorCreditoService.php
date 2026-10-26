@@ -31,6 +31,7 @@ class SimuladorCreditoService
         private readonly TasaVehiculoService $tasaVehiculoService,
         private readonly PrimaSeguroService $primaSeguroService,
         private readonly CapacidadEndeudamientoService $capacidadService,
+        private readonly CalendarioQuincenalService $calendario,
     ) {
         //
     }
@@ -331,6 +332,7 @@ class SimuladorCreditoService
         ?float $puntos = null,
         float $retencion = 0.0,
         ?int $anio = null,
+        ?string $fechaDesembolso = null,
     ): array {
         $anio ??= now()->year;
         $salario = (float) $empleado->salario;
@@ -370,6 +372,7 @@ class SimuladorCreditoService
         $estimacionSeguro = $this->primaSeguroService->estimar($monto, $anio, $modalidad->esVivienda());
         $seguro = $estimacionSeguro['total'];
 
+        $tablaConFechas = $this->conFechasEstimadas($tabla, $plazoQuincenas, $fechaDesembolso);
         $capacidad = $this->capacidad($empleado, $monto, $cuota, $anio, $modalidad->esVivienda(), $retencion);
         $tramo = $modalidad->tramoCuantiaPara($salario / $smmlv);
         $cuantiaMaxima = $tramo !== null ? floor((float) $tramo->cuantia_maxima_smmlv * $smmlv) : null;
@@ -404,7 +407,11 @@ class SimuladorCreditoService
             'cuota_mas_seguro' => round($cuota + $seguro, 2),
             'total_intereses' => round(array_sum(array_column($tabla, 'interes')), 2),
             'total_a_pagar' => round(array_sum(array_column($tabla, 'cuota')), 2),
-            'tabla_amortizacion' => $this->conFechasEstimadas($tabla, $plazoQuincenas),
+            'tabla_amortizacion' => $tablaConFechas,
+            'primera_cuota' => [
+                'fecha_desembolso' => $fechaDesembolso,
+                'fecha' => $tablaConFechas[0]['fecha'] ?? null,
+            ],
             'capacidad' => $capacidad,
             'sugerencias' => $this->sugerencias($capacidad['disponible'], $monto, $tasaPeriodica, $plazoQuincenas, $plazoMaximo, $cuantiaMaxima),
         ];
@@ -566,12 +573,14 @@ class SimuladorCreditoService
      * @param  list<array{numero: int, interes: float, capital: float, cuota: float, saldo: float}>  $tabla
      * @return list<array{numero: int, fecha: string, interes: float, capital: float, cuota: float, saldo: float}>
      */
-    private function conFechasEstimadas(array $tabla, int $plazoQuincenas): array
+    private function conFechasEstimadas(array $tabla, int $plazoQuincenas, ?string $fechaDesembolso = null): array
     {
-        $fechas = $this->prestamoService->fechasDeVencimiento(
-            $this->prestamoService->fechaPrimeraCuota(now()->toDateString()),
-            $plazoQuincenas,
-        );
+        // Con fecha de desembolso: la misma regla del desembolso real (primer vencimiento posterior).
+        $primera = $fechaDesembolso !== null
+            ? $this->calendario->primerVencimientoPosterior($fechaDesembolso)
+            : $this->prestamoService->fechaPrimeraCuota(now()->toDateString());
+
+        $fechas = $this->prestamoService->fechasDeVencimiento($primera, $plazoQuincenas);
 
         return array_map(fn (array $fila, string $fecha): array => ['numero' => $fila['numero'], 'fecha' => $fecha] + $fila, $tabla, $fechas);
     }

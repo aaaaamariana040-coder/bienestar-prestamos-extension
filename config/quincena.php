@@ -29,8 +29,9 @@ return [
 
     /*
      * Desde cuándo corre la primera cuota: desde_aprobacion o desde_desembolso.
-     * Hoy las cuotas se generan desde la autorización; esta clave deja
-     * registrada la decisión de Bienestar y aún no cambia la generación.
+     * desde_desembolso (decisión de Bienestar): las cuotas de un préstamo nuevo no
+     * se cobran hasta su desembolso, y la primera vence en el primer 15 o último
+     * día de mes posterior al desembolso. desde_aprobacion: regla anterior.
      */
     'inicio_primera_cuota' => env('QUINCENA_INICIO_PRIMERA_CUOTA', 'desde_desembolso'),
 

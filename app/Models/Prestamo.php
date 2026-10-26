@@ -6,6 +6,7 @@ use App\Enums\EstadoCuota;
 use App\Enums\EstadoPrestamo;
 use Database\Factories\PrestamoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'cuota_periodica',
     'fecha_autorizacion',
     'estado',
+    'pendiente_desembolso',
+    'inicio_primera_cuota',
 ])]
 class Prestamo extends Model
 {
@@ -43,7 +46,20 @@ class Prestamo extends Model
             'cuota_periodica' => 'decimal:2',
             'fecha_autorizacion' => 'date',
             'estado' => EstadoPrestamo::class,
+            'pendiente_desembolso' => 'boolean',
+            'inicio_primera_cuota' => 'date',
         ];
+    }
+
+    /**
+     * Préstamos cuyas cuotas ya se cobran: se excluyen los aprobados que aún esperan su
+     * desembolso (las cuotas empiezan a descontarse a partir de él).
+     *
+     * @param  Builder<Prestamo>  $consulta
+     */
+    public function scopeEnCobro(Builder $consulta): void
+    {
+        $consulta->where('pendiente_desembolso', false);
     }
 
     /**

@@ -299,6 +299,32 @@ Automatizados en `tests/Feature/CapacidadUnificadaTest.php`; los de la aprobaci�
 | PP-176 | Mensaje con desglose | Solicitud de vivienda que no cabe | Validar | El mensaje trae la cuota, los seguros estimados y la capacidad total, comprometida y disponible; fuera de vivienda no menciona seguros | ⬜ |
 | PP-177 | Ficha del empleado | Capacidad guardada distinta de la calculada | Abrir la ficha | «Capacidad calculada (referencia: la guardada es X)»; si coinciden, solo «Capacidad calculada»; sin salario, «No se puede calcular»; la columna guardada no cambia | ⬜ |
 
+## 21. Primera cuota desde el desembolso (RF-006, Bienestar)
+
+Automatizados en `tests/Feature/PrimeraCuotaDesembolsoTest.php`. Pantallas: Préstamos (ver préstamo, registrar desembolso), Simulador y Quincena.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-178 | Desembolso a mitad de quincena | Préstamo aprobado sin desembolsar | Desembolsar el 3 de un mes y luego otro el 20 | El 3 → primera cuota el 15; el 20 → último día del mes | ⬜ |
+| PP-179 | Desembolso justo en un vencimiento | Ídem | Desembolsar el 15 exacto y el último día exacto | El 15 → último día del mes; el último día → 15 del mes siguiente | ⬜ |
+| PP-180 | Febrero y meses de 30/31 días | Ídem | Desembolsar el 15 y el 28 de febrero (y en bisiesto el 15 y el 29); el 15 y el 30 de abril; el 16 de mayo | Febrero cierra el 28 (29 en bisiesto); abril el 30; mayo el 31; el último día de febrero → 15 de marzo | ⬜ |
+| PP-181 | Fin de año | Ídem | Desembolsar el 15, el 20 y el 31 de diciembre | 31 de diciembre las dos primeras; el 31 → 15 de enero del año siguiente | ⬜ |
+| PP-182 | Cuotas siguientes | Préstamo de 24 cuotas desembolsado el 3 de marzo | Ver la tabla del préstamo | 15-mar, 31-mar, 15-abr, 30-abr… sin saltos hasta el 28 de febrero del año siguiente; los valores no cambian | ⬜ |
+| PP-183 | Sin desembolsar no se cobra | Préstamo aprobado sin desembolso | Abrir el proceso/informe de la quincena de su fecha provisional y la cartera vencida | No aparece en la vista previa, en pendientes, en vencidas anteriores, en el informe de créditos ni en la cartera vencida; al desembolsarlo sí | ⬜ |
+| PP-184 | Capacidad | Préstamo aprobado sin desembolsar | Consultar la capacidad del empleado | Su cuota sigue restando de la capacidad disponible | ⬜ |
+| PP-185 | Préstamos anteriores | Préstamo aprobado con la regla vieja | Registrarle un desembolso | Sus cuotas y fechas no cambian; la auditoría no menciona primera cuota | ⬜ |
+| PP-186 | Segundo tramo | Vivienda — construcción con el primer tramo desembolsado | Desembolsar el segundo tramo | La primera cuota no se mueve; la auditoría del segundo tramo no trae fecha | ⬜ |
+| PP-187 | Auditoría | Préstamo sin desembolsar | Desembolsar | «Registro de desembolso» con «primera cuota: AAAA-MM-DD» | ⬜ |
+| PP-188 | Pantalla del préstamo | Préstamo antes y después del desembolso | Abrir el préstamo | Antes: «Las cuotas empiezan a descontarse a partir del desembolso.»; después: «Primera cuota: <fecha>»; un préstamo anterior muestra la fecha de su cuota 1 | ⬜ |
+| PP-189 | Simulador | Cualquier empleado y modalidad | Simular | La tabla conserva sus fechas estimadas y trae «La fecha real de la primera cuota se define al desembolsar» (también en la hoja impresa) | ⬜ |
+| PP-190 | Interruptor | `QUINCENA_INICIO_PRIMERA_CUOTA=desde_aprobacion` | Aprobar y desembolsar | Se conserva la regla anterior: el desembolso no mueve las cuotas | ⬜ |
+| PP-191 | Simulador sin fecha de desembolso | Cualquier empleado y modalidad | Simular dejando «Fecha estimada de desembolso» vacía | Igual que antes: fechas estimadas desde hoy y la nota «La fecha real de la primera cuota se define al desembolsar»; sin línea de primera cuota estimada | ⬜ |
+| PP-192 | Simulador con fecha de desembolso | Ídem | Escribir el 3, el 15 exacto, el 20 y el último día exacto de un mes | Primera cuota estimada: el 15; el último día; el último día; el 15 del mes siguiente. Con la nota «Estimación según la fecha de desembolso indicada…» | ⬜ |
+| PP-193 | Febrero, fin de año y fechas pasadas | Ídem | Escribir 15 y 28 de febrero (y bisiesto), 20 y 31 de diciembre, y una fecha pasada | Febrero 28/29; diciembre → 31 de diciembre o 15 de enero; la fecha pasada se acepta; las demás cuotas siguen el calendario | ⬜ |
+| PP-194 | Fecha inválida | Ídem | Enviar una fecha inexistente (30 de febrero) o con otro formato | Mensaje en español «La fecha estimada de desembolso no es una fecha válida…»; el campo conserva lo digitado | ⬜ |
+| PP-195 | Los valores no cambian | Ídem | Simular el mismo crédito con y sin fecha | Cuota, intereses, capital, saldo, seguro, totales y capacidad idénticos; solo cambian las fechas de la tabla | ⬜ |
+| PP-196 | Hoja impresa | Ídem | Imprimir con y sin fecha | La línea «Primera cuota estimada: <fecha>» y su nota salen solo si se diligenció la fecha | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -328,3 +354,4 @@ Automatizados en `tests/Feature/CapacidadUnificadaTest.php`; los de la aprobaci�
 | Registro y edición de tasas (posterior) | Automatizada — PP-143 a PP-152; falta la prueba manual en el navegador |
 | Primas de seguros (posterior) | Automatizada — PP-153 a PP-166; falta la prueba manual en el navegador |
 | Capacidad de endeudamiento unificada (posterior) | Automatizada — PP-167 a PP-177; falta la prueba manual en el navegador |
+| Primera cuota desde el desembolso (posterior) | Automatizada — PP-178 a PP-196; falta la prueba manual en el navegador |
