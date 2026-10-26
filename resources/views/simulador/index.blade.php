@@ -286,6 +286,7 @@
                         <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="restablecer-tasa">Restablecer tasa oficial</button>
                     </div>
                 </div>
+                <div id="nota-tope-tasa-previa" aria-live="polite"></div>
                 <div id="avisos-tasa" aria-live="polite"></div>
 
                 <button type="submit" class="btn btn-primary mb-3" id="calcular">Calcular</button>
@@ -311,6 +312,7 @@
             const resultadoSimulacion = document.getElementById('resultado-simulacion');
             const hojaImpresion = document.getElementById('hoja-impresion');
             const avisosTasa = document.getElementById('avisos-tasa');
+            const notaTope = document.getElementById('nota-tope-tasa-previa');
             const formulario = document.getElementById('form-simulador');
             const campoMonto = document.getElementById('monto');
             const campoPlazo = document.getElementById('plazo');
@@ -441,7 +443,12 @@
                 campoTasa.value = '';
                 campoPuntos.value = '';
                 avisosTasa.innerHTML = '';
+                pintarNotaTope(null);
                 ayudaPlazo.textContent = '';
+            }
+
+            function pintarNotaTope(nota) {
+                notaTope.innerHTML = nota ? '<div class="alert alert-info py-2">' + escapar(nota) + '</div>' : '';
             }
 
             function pintarReferenciaModalidad(r) {
@@ -479,6 +486,11 @@
                     .then(function (r) {
                         if (r.ok) {
                             pintarReferenciaModalidad(r.datos);
+
+                            // La nota del tope sale al elegir la modalidad, sin esperar a calcular.
+                            if (r.datos.nota_tasa) {
+                                pintarNotaTope(r.datos.nota_tasa);
+                            }
                         }
                     })
                     .catch(function () {
@@ -522,9 +534,7 @@
                             avisosTasa.innerHTML = '<div class="alert alert-warning py-2">No hay tasa oficial registrada para esta modalidad en el año actual: digita la tasa para simular.</div>';
                         }
 
-                        if (r.datos.nota) {
-                            avisosTasa.insertAdjacentHTML('beforeend', '<div class="alert alert-info py-2" id="nota-tope-tasa-previa">' + escapar(r.datos.nota) + '</div>');
-                        }
+                        pintarNotaTope(r.datos.nota);
 
                         r.datos.avisos.forEach(function (aviso) {
                             avisosTasa.insertAdjacentHTML('beforeend', '<div class="alert alert-warning py-2">' + escapar(aviso) + '</div>');

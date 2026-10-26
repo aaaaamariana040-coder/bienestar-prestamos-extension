@@ -425,4 +425,112 @@ class TopeTasaViviendaTest extends TestCase
         $this->assertEquals(5.2, TasaInt::where('id_tipo', $modalidad->id_tipo)->value('tasa_anual'));
         $this->assertSame(1, TasaInt::where('id_tipo', $modalidad->id_tipo)->count());
     }
+
+    // ───────── Flujo de la pantalla del simulador con el IPC por encima del tope ─────────
+
+    private const NOTA_6_50 = 'Tasa limitada al 5 % según el Acuerdo 11 de 2023; IPC registrado: 6,50 %.';
+
+    public function test_la_pantalla_trae_el_espacio_de_la_nota_del_tope(): void
+    {
+        $this->actingAs(Usuario::factory()->create())
+            ->get(route('simulador.index'))
+            ->assertOk()
+            ->assertSee('id="nota-tope-tasa-previa"', false);
+    }
+
+    public function test_la_ruta_de_modalidad_trae_la_tasa_limitada_y_la_nota(): void
+    {
+        $modalidad = $this->modalidad('Vivienda — compra de inmueble', 6.50);
+        $this->entornoDelAnio($modalidad);
+        $empleado = $this->empleado();
+
+        $this->actingAs(Usuario::factory()->create())
+            ->getJson(route('simulador.modalidad', [$empleado->cedula, $modalidad->id_tipo]))
+            ->assertOk()
+            ->assertJsonPath('puede', true)
+            ->assertJsonPath('tasa_efectiva_anual', 5)
+            ->assertJsonPath('tasa_registrada', 6.5)
+            ->assertJsonPath('tasa_limitada', true)
+            ->assertJsonPath('nota_tasa', self::NOTA_6_50);
+    }
+
+    public function test_la_ruta_de_modalidad_de_educacion_con_6_5_no_limita_ni_trae_nota(): void
+    {
+        $modalidad = $this->modalidad('Educación', 6.50, null, 72);
+        $this->entornoDelAnio($modalidad);
+        $empleado = $this->empleado();
+
+        $this->actingAs(Usuario::factory()->create())
+            ->getJson(route('simulador.modalidad', [$empleado->cedula, $modalidad->id_tipo]))
+            ->assertOk()
+            ->assertJsonPath('tasa_efectiva_anual', 6.5)
+            ->assertJsonPath('tasa_limitada', false)
+            ->assertJsonPath('nota_tasa', null);
+    }
+
+    public function test_calcular_con_el_valor_prellenado_por_la_pantalla_funciona_y_muestra_la_nota(): void
+    {
+        $modalidad = $this->modalidad('Vivienda — compra de inmueble', 6.50);
+        $this->entornoDelAnio($modalidad);
+        $empleado = $this->empleado();
+        $usuario = Usuario::factory()->create();
+
+        $oficial = $this->actingAs($usuario)
+            ->getJson(route('simulador.tasa', ['cedula' => $empleado->cedula, 'id_tipo' => $modalidad->id_tipo, 'plazo' => 240]))
+            ->assertOk()
+            ->assertJsonPath('base', 5)
+            ->assertJsonPath('nota', self::NOTA_6_50);
+
+        // La pantalla escribe estos valores en los campos (coma decimal) y los envía tal cual al calcular.
+        $respuesta = $this->actingAs($usuario)->getJson(route('simulador.calcular', [
+            'cedula' => $empleado->cedula,
+            'id_tipo' => $modalidad->id_tipo,
+            'monto' => '50.000.000',
+            'plazo' => 240,
+            'tasa_efectiva' => str_replace('.', ',', (string) $oficial->json('base')),
+            'puntos' => str_replace('.', ',', (string) $oficial->json('puntos')),
+        ]))->assertOk()
+            ->assertJsonPath('encabezado.tasa_total', 5)
+            ->assertJsonPath('tasa.editada', false)
+            ->assertJsonPath('tasa.limitada', true)
+            ->assertJsonPath('tasa.nota', self::NOTA_6_50);
+
+        $this->assertStringContainsString(self::NOTA_6_50, $respuesta->json('html'));
+    }
+
+    public function test_una_correccion_manual_por_encima_del_tope_se_rechaza_aunque_el_ipc_sea_6_5(): void
+    {
+        $modalidad = $this->modalidad('Vivienda — compra de inmueble', 6.50);
+
+        $this->simular($modalidad, ['tasa_efectiva' => '6,5'])
+            ->assertStatus(422)
+            ->assertJsonPath('errores.0', 'En vivienda la tasa no puede superar el 5 % (Acuerdo 11 de 2023): escribiste 6,5 % entre la tasa y los puntos. Corrígela o usa la tasa oficial.');
+
+        $this->simular($modalidad, ['tasa_efectiva' => '5', 'puntos' => '1,5'])->assertStatus(422);
+    }
+
+    public function test_una_correccion_manual_por_debajo_del_tope_funciona_con_el_ipc_en_6_5(): void
+    {
+        $modalidad = $this->modalidad('Vivienda — compra de inmueble', 6.50);
+
+        $this->simular($modalidad, ['tasa_efectiva' => '4,2'])
+            ->assertOk()
+            ->assertJsonPath('tasa.editada', true)
+            ->assertJsonPath('encabezado.tasa_total', 4.2);
+    }
+
+    public function test_educacion_con_6_5_no_se_limita_en_el_simulador(): void
+    {
+        $modalidad = $this->modalidad('Educación', 6.50, null, 72);
+
+        $this->simular($modalidad, ['plazo' => 60])
+            ->assertOk()
+            ->assertJsonPath('encabezado.tasa_total', 6.5)
+            ->assertJsonPath('tasa.limitada', false)
+            ->assertJsonPath('tasa.nota', null);
+
+        $this->simular($modalidad, ['plazo' => 60, 'tasa_efectiva' => '6,5'])
+            ->assertOk()
+            ->assertJsonPath('tasa.editada', false);
+    }
 }

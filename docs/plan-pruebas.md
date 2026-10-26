@@ -222,6 +222,11 @@ Automatizados en `tests/Feature/TopeTasaViviendaTest.php`. El tope (5 %) y la fe
 | PP-127 | Tasa escrita a mano fuera de vivienda | Educación o vehículo | Escribir 8,2 % | Se permite, sin tope | ⬜ |
 | PP-128 | Nota visible | Tasa limitada | Ver el simulador, el detalle de la solicitud, el del préstamo y la hoja impresa | «Tasa limitada al 5 % según el Acuerdo 11 de 2023; IPC registrado: 5,20 %.» en los cuatro lugares | ⬜ |
 | PP-129 | Cambiar el tope | `TASA_VIVIENDA_TOPE=0.045` | Simular | La tasa queda en 4,5 % y la nota lo dice | ⬜ |
+| PP-130 | Elegir la modalidad muestra la tasa limitada | Vivienda — compra con IPC de 6,50 % | En el simulador, elegir el empleado y la modalidad, sin calcular | Los campos se llenan con 5 y 0 (nunca 6,5); aparece la nota «Tasa limitada al 5 % … IPC registrado: 6,50 %.» y la ruta de modalidad trae la tasa limitada y la nota | ⬜ |
+| PP-131 | Calcular con lo prellenado | Lo anterior | Escribir monto y plazo, y calcular sin tocar la tasa | Calcula al 5 %, no se marca como editada y el resultado muestra la nota | ⬜ |
+| PP-132 | Restablecer tasa oficial | Lo anterior, con la tasa escrita a mano en 4,2 | Pulsar «Restablecer tasa oficial» | Vuelve a 5 y 0 (la limitada) y la nota sigue visible | ⬜ |
+| PP-133 | Corrección manual por encima del tope | IPC de 6,50 % | Escribir 6,5 (o 5 más 1,5 de puntos) y calcular | Rechazado con el mensaje en español; 4,2 se permite y se marca como editada | ⬜ |
+| PP-134 | Educación con 6,5 % | Educación con IPC de 6,50 % | Elegir la modalidad y calcular | Se prellena 6,5, calcula al 6,5 % y no aparece la nota | ⬜ |
 
 ## Pruebas no funcionales (verificación transversal)
 

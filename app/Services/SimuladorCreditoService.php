@@ -102,7 +102,8 @@ class SimuladorCreditoService
             return $this->noPuedeDesde($estructurales);
         }
 
-        [, $tasaAnual] = $this->prestamoService->resolverTasa($solicitud, $modalidad, $anio);
+        $detalleTasa = $this->prestamoService->resolverTasaDetallada($solicitud, $modalidad, $anio);
+        $tasaAnual = $detalleTasa['tasa'];
         $tasaPeriodica = $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaAnual);
         $capacidad = $this->empleadoService->capacidadEndeudamiento($empleado);
 
@@ -144,6 +145,9 @@ class SimuladorCreditoService
             'plazo_quincenas' => $plazo,
             'plazo_legible' => $modalidad->plazo_maximo_legible,
             'tasa_efectiva_anual' => $tasaAnual,
+            'tasa_registrada' => $detalleTasa['registrada'],
+            'tasa_limitada' => $detalleTasa['limitada'],
+            'nota_tasa' => $detalleTasa['limitada'] ? $this->prestamoService->notaTopeVivienda($detalleTasa['tope'], $detalleTasa['registrada']) : null,
             'cuota_quincenal' => $this->calculoFinanciero->cuotaFija($montoMaximo, $tasaPeriodica, $plazo),
         ];
     }
@@ -198,8 +202,19 @@ class SimuladorCreditoService
             'plazo_quincenas' => null,
             'plazo_legible' => null,
             'tasa_efectiva_anual' => null,
+            'tasa_registrada' => null,
+            'tasa_limitada' => false,
+            'nota_tasa' => null,
             'cuota_quincenal' => null,
         ];
+    }
+
+    /**
+     * 5 → «5»; 6,5 → «6,5»; 4,8512 → «4,8512», sin ceros de más.
+     */
+    private function porcentajeSinCeros(float $valor): string
+    {
+        return str_replace('.', ',', rtrim(rtrim(number_format($valor, 4, '.', ''), '0'), '.'));
     }
 
     /**
@@ -314,21 +329,23 @@ class SimuladorCreditoService
             $errores[] = "No hay una tasa de interés registrada para {$modalidad->nombre} en {$anio}. Digita la tasa para simular.";
         }
 
+        $puntosUsados = $puntos ?? $oficial['puntos'];
+        $editada = $base !== null && ($oficial['base'] === null
+            || abs($base - $oficial['base']) > 1e-9
+            || abs($puntosUsados - $oficial['puntos']) > 1e-9);
+
+        // La tasa oficial ya viene limitada: solo una corrección manual puede pasar el tope.
         $tope = $this->prestamoService->topeTasaVivienda($modalidad, now());
 
-        if ($tope !== null && $base !== null && round($base + ($puntos ?? $oficial['puntos']), 4) > $tope + 1e-9) {
-            $errores[] = 'En vivienda la tasa no puede superar el '.str_replace('.', ',', rtrim(rtrim(number_format($tope, 4, '.', ''), '0'), '.')).' % (Acuerdo 11 de 2023): escribiste '.str_replace('.', ',', rtrim(rtrim(number_format($base + ($puntos ?? $oficial['puntos']), 4, '.', ''), '0'), '.')).' % entre la tasa y los puntos. Corrígela o usa la tasa oficial.';
+        if ($editada && $tope !== null && round($base + $puntosUsados, 4) > $tope + 1e-9) {
+            $errores[] = 'En vivienda la tasa no puede superar el '.$this->porcentajeSinCeros($tope).' % (Acuerdo 11 de 2023): escribiste '.$this->porcentajeSinCeros($base + $puntosUsados).' % entre la tasa y los puntos. Corrígela o usa la tasa oficial.';
         }
 
         if ($errores !== []) {
             return ['errores' => $errores, 'avisos' => []];
         }
 
-        $puntosUsados = $puntos ?? $oficial['puntos'];
         $tasaTotal = round($base + $puntosUsados, 4);
-        $editada = $oficial['base'] === null
-            || abs($base - $oficial['base']) > 1e-9
-            || abs($puntosUsados - $oficial['puntos']) > 1e-9;
 
         $tasaPeriodica = $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaTotal);
         $tabla = $this->calculoFinanciero->tablaAmortizacion($monto, $tasaPeriodica, $plazoQuincenas);
