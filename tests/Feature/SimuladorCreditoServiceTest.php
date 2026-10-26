@@ -8,6 +8,7 @@ use App\Models\CuantiaSmmlv;
 use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\PresupuestoAnual;
+use App\Models\PrimaSeguro;
 use App\Models\SmmlvAnual;
 use App\Models\SolicitudCredito;
 use App\Models\TasaInt;
@@ -135,7 +136,7 @@ class SimuladorCreditoServiceTest extends TestCase
         $this->assertFalse($resultado['tasa']['editada']);
     }
 
-    public function test_el_seguro_es_el_monto_por_la_tasa_configurada_y_se_suma_a_la_cuota(): void
+    public function test_el_seguro_es_el_monto_por_la_prima_registrada_y_se_suma_a_la_cuota(): void
     {
         $educacion = $this->modalidad('Educación', 72, 17.5);
 
@@ -144,7 +145,7 @@ class SimuladorCreditoServiceTest extends TestCase
         $this->assertSame(1_292.4, $resultado['seguro']);
         $this->assertEqualsWithDelta($resultado['cuota_quincenal'] + 1_292.4, $resultado['cuota_mas_seguro'], 0.001);
 
-        config(['prestamos.seguro.tasa_sobre_monto' => 0.001]);
+        PrimaSeguro::where('concepto', 'vida_deudores')->where('anio', $this->anio)->update(['tasa' => 0.001]);
 
         $this->assertSame(4_000.0, $this->simulador()->simular($this->empleado(), $educacion, 4_000_000, 72)['seguro']);
     }
@@ -156,7 +157,7 @@ class SimuladorCreditoServiceTest extends TestCase
         $empleado = $this->empleado();
 
         $resultado = $this->simulador()->simular($empleado, $educacion, 4_000_000, 72);
-        config(['prestamos.seguro.tasa_sobre_monto' => 0.5]);
+        PrimaSeguro::where('concepto', 'vida_deudores')->where('anio', $this->anio)->update(['tasa' => 0.5]);
         $conSeguroEnorme = $this->simulador()->simular($empleado, $educacion, 4_000_000, 72);
 
         $this->assertSame($resultado['capacidad']['cuota_mensual'], $conSeguroEnorme['capacidad']['cuota_mensual']);

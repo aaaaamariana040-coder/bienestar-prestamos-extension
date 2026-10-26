@@ -32,8 +32,13 @@
         <hr>
         <dl class="row mb-0">
             <dt class="col-sm-4">Cuota fija quincenal</dt><dd class="col-sm-8 fs-5">{{ $pesos($cuota_quincenal, 2) }}</dd>
-            <dt class="col-sm-4">Seguro (aparte)</dt><dd class="col-sm-8">{{ $pesos($seguro, 2) }}</dd>
-            <dt class="col-sm-4">Cuota + seguro</dt><dd class="col-sm-8 fw-semibold">{{ $pesos($cuota_mas_seguro, 2) }}</dd>
+            <dt class="col-sm-4">Seguro (aparte)</dt>
+            <dd class="col-sm-8">
+                {{ $pesos($seguro, 2) }}
+                <div class="small text-muted" id="nota-seguro-estimado">Estimación; el valor real lo calcula el área de seguros.</div>
+                @include('simulador.partials.seguro-detalle', ['detalle' => $seguro_detalle, 'pesos' => $pesos])
+            </dd>
+            <dt class="col-sm-4">{{ $seguro_detalle['es_vivienda'] ? 'Cuota estimada con seguros' : 'Cuota + seguro' }}</dt><dd class="col-sm-8 fw-semibold">{{ $pesos($cuota_mas_seguro, 2) }}</dd>
             <dt class="col-sm-4">Total de intereses</dt><dd class="col-sm-8">{{ $pesos($total_intereses, 2) }}</dd>
             <dt class="col-sm-4">Total a pagar (sin seguro)</dt><dd class="col-sm-8">{{ $pesos($total_a_pagar, 2) }}</dd>
         </dl>

@@ -31,6 +31,7 @@ class SimuladorCreditoService
         private readonly SolicitudCreditoService $solicitudCreditoService,
         private readonly DescuentosLeyService $descuentosLey,
         private readonly TasaVehiculoService $tasaVehiculoService,
+        private readonly PrimaSeguroService $primaSeguroService,
     ) {
         //
     }
@@ -350,7 +351,8 @@ class SimuladorCreditoService
         $tasaPeriodica = $this->calculoFinanciero->tasaPeriodicaQuincenal($tasaTotal);
         $tabla = $this->calculoFinanciero->tablaAmortizacion($monto, $tasaPeriodica, $plazoQuincenas);
         $cuota = $this->calculoFinanciero->cuotaFija($monto, $tasaPeriodica, $plazoQuincenas);
-        $seguro = round($monto * (float) config('prestamos.seguro.tasa_sobre_monto'), 2);
+        $estimacionSeguro = $this->primaSeguroService->estimar($monto, $anio, $modalidad->esVivienda());
+        $seguro = $estimacionSeguro['total'];
 
         $capacidad = $this->capacidad($empleado, $salario, $smmlv, $retencion, $cuota);
         $tramo = $modalidad->tramoCuantiaPara($salario / $smmlv);
@@ -382,6 +384,7 @@ class SimuladorCreditoService
             ],
             'cuota_quincenal' => $cuota,
             'seguro' => $seguro,
+            'seguro_detalle' => [...$estimacionSeguro, 'es_vivienda' => $modalidad->esVivienda()],
             'cuota_mas_seguro' => round($cuota + $seguro, 2),
             'total_intereses' => round(array_sum(array_column($tabla, 'interes')), 2),
             'total_a_pagar' => round(array_sum(array_column($tabla, 'cuota')), 2),

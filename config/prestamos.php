@@ -43,12 +43,15 @@ return [
     ],
 
     /*
-     * Seguro de vida deudor que el simulador muestra aparte de la cuota:
-     * monto × tasa_sobre_monto, sumado a la cuota quincenal. NO entra en la
-     * comparación con la capacidad de endeudamiento (igual que en la
-     * aprobación de solicitudes). Pendiente de confirmar con Bienestar: la
-     * tarifa (docs/reglas-negocio.md §12 menciona 0,00034516 mensual sobre el
-     * saldo), su periodicidad y si la cuota comparada debe incluirlo.
+     * Seguros que el simulador muestra aparte de la cuota (monto × prima, sumado a
+     * la cuota quincenal; NO entran en la comparación con la capacidad de
+     * endeudamiento, igual que en la aprobación de solicitudes).
+     *
+     * La prima de cada seguro y año se administra en la pantalla «Seguros»
+     * (tabla primas_seguro) y cambia sin tocar código. Este valor es solo el
+     * RESPALDO de vida de deudores cuando no hay prima registrada para ningún año.
+     * Pendiente de confirmar con Bienestar: la periodicidad y si la cuota comparada
+     * debe incluirlo.
      */
     'seguro' => [
         'tasa_sobre_monto' => (float) env('SEGURO_TASA_SOBRE_MONTO', 0.0003231),

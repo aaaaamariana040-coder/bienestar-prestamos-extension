@@ -10,6 +10,7 @@ use App\Models\Empleado;
 use App\Models\InformeGuardado;
 use App\Models\Prestamo;
 use App\Models\PresupuestoAnual;
+use App\Models\PrimaSeguro;
 use App\Models\ProcesoQuincena;
 use App\Models\SolicitudCredito;
 use App\Models\TasaInt;
@@ -75,6 +76,7 @@ trait RecorreLasRutas
                 'tipo_prestamo' => TipoPrestamo::factory()->create(),
                 'cuantia' => CuantiaSmmlv::factory()->create(),
                 'tasa' => TasaInt::factory()->create(),
+                'prima' => PrimaSeguro::factory()->create(),
                 'tasa_vehiculo' => TasaVehiculo::factory()->create(),
                 'solicitud' => SolicitudCredito::factory()->create(),
                 'documento' => DocumentoSolicitud::factory()->create(),
@@ -108,6 +110,8 @@ trait RecorreLasRutas
         return match ($ruta->getName()) {
             'usuarios.store' => ['cedula' => '5550001', 'nombre' => 'Persona', 'apellido' => 'Ficticia', 'password' => 'Clave12345', 'password_confirmation' => 'Clave12345', 'rol' => 'FUNCIONARIO_BIENESTAR'],
             'tasas-int.update' => ['tasa_anual' => '4,5'],
+            'seguros.store' => ['concepto' => 'vida_deudores', 'anio' => '2150', 'tasa' => '0,0003231'],
+            'seguros.update' => ['tasa' => '0,0004'],
             'usuarios.update' => ['nombre' => 'Persona', 'apellido' => 'Ficticia', 'rol' => 'FUNCIONARIO_BIENESTAR'],
             default => [],
         };

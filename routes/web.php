@@ -13,6 +13,7 @@ use App\Http\Controllers\InformeGuardadoController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\PresupuestoAnualController;
+use App\Http\Controllers\PrimaSeguroController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\QuincenaController;
 use App\Http\Controllers\ReporteController;
@@ -89,6 +90,10 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
             ->parameters(['tipos-prestamo' => 'tipo_prestamo']);
         Route::get('tasa-vehiculo', [TasaVehiculoController::class, 'index'])->name('tasa-vehiculo.index');
     });
+
+    Route::get('seguros', [PrimaSeguroController::class, 'index'])->middleware('can:seguros.ver')->name('seguros.index');
+    Route::post('seguros', [PrimaSeguroController::class, 'store'])->middleware('can:seguros.gestionar')->name('seguros.store');
+    Route::put('seguros/{prima}', [PrimaSeguroController::class, 'update'])->middleware('can:seguros.gestionar')->name('seguros.update');
 
     Route::get('smmlv', [SmmlvAnualController::class, 'index'])->middleware('can:smmlv.ver')->name('smmlv.index');
     Route::post('smmlv', [SmmlvAnualController::class, 'store'])->middleware('can:smmlv.gestionar')->name('smmlv.store');
