@@ -243,6 +243,23 @@ Automatizados en `tests/Feature/BloqueoSalarioMinimoTest.php`. La regla compara 
 | PP-141 | Empleado sin salario | Salario en cero | Registrar y simular | Se registra (esta regla no bloquea); el simulador conserva «El salario del empleado debe ser mayor que cero.» | ⬜ |
 | PP-142 | Año sin SMMLV | Solicitud de un año sin SMMLV | Registrar, validar y simular | Se registra; la validación y el simulador conservan el aviso `sin_smmlv`; no aparece `salario_minimo` | ⬜ |
 
+## 18. Registro y edición de tasas en la modalidad (RF-004)
+
+Automatizados en `tests/Feature/TasaIntEdicionTest.php` y `tests/Feature/TasaIntTest.php`. Pantalla: Modalidades, abrir una modalidad, tarjeta «Tasas de interés por año».
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-143 | Año duplicado | La modalidad ya tiene tasa de 2026 | Registrar otra de 2026 | Alerta roja con «Ya hay una tasa registrada para ese año en esta modalidad…»; el año queda marcado en rojo y lo digitado se conserva; no se crea nada | ⬜ |
+| PP-144 | Tasa fuera de rango o no numérica | Cualquier modalidad | Registrar 101, -1 o «abc» | Alerta con el mensaje en español, campo en rojo y valor conservado | ⬜ |
+| PP-145 | Editar la tasa de un año | Tasa de 2026 en 5 % | Cambiar a 6,5 en su fila y pulsar «Guardar» | Mensaje «Tasa de 2026 actualizada correctamente.»; la fila muestra 6,5; el año, la modalidad y la fuente no cambian | ⬜ |
+| PP-146 | Auditoría de la edición | Lo anterior | Abrir Auditoría | «Edición de tasa de interés» con la modalidad, el año, «tasa anterior 5,0000 % → nueva 6,5000 %» y el usuario | ⬜ |
+| PP-147 | Coma decimal | — | Registrar y editar con «6,5» y «6,25» | Se guardan 6,5 y 6,25; «5.250» se lee como 5,25 (no como miles) | ⬜ |
+| PP-148 | Error al editar | Tasa de 2026 | Escribir 150 en su fila y guardar | Alerta, esa fila en rojo con el 150 conservado; la tasa no cambia | ⬜ |
+| PP-149 | Sin cambios | Tasa de 2026 en 5 % | Guardar 5,00 | Mensaje «ya tenía ese valor; no hubo cambios»; sin registro en Auditoría | ⬜ |
+| PP-150 | Permisos | Cuenta con solo `modalidades.ver`, o sin permisos | Abrir la modalidad e intentar editar | Con «ver» no aparecen campos ni botones de edición; el PUT directo da 403; la ruta nueva está cubierta por la prueba de rutas con `can:` | ⬜ |
+| PP-151 | Nota del tope en vivienda | Modalidad de vivienda y otra que no lo sea | Abrir cada una | Solo en vivienda aparece la nota del tope del 5 % y la fecha 15/11/2023 | ⬜ |
+| PP-152 | El tope sigue aplicándose | Vivienda con IPC de 4,8 % | Editarlo a 6,5 y simular | La pantalla guarda y muestra 6,5 (IPC real); el simulador usa 5 % y muestra la nota del tope | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -269,3 +286,4 @@ Automatizados en `tests/Feature/BloqueoSalarioMinimoTest.php`. La regla compara 
 | Vencimientos por calendario y cierre provisional (posterior) | Automatizada — PP-111 a PP-119; falta la prueba manual en el navegador |
 | Tope de la tasa de vivienda (posterior) | Automatizada — PP-120 a PP-134; falta la prueba manual en el navegador |
 | Bloqueo por salario mínimo (posterior) | Automatizada — PP-135 a PP-142; falta la prueba manual en el navegador |
+| Registro y edición de tasas (posterior) | Automatizada — PP-143 a PP-152; falta la prueba manual en el navegador |

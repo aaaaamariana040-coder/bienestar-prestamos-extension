@@ -12,6 +12,7 @@ use App\Models\Prestamo;
 use App\Models\PresupuestoAnual;
 use App\Models\ProcesoQuincena;
 use App\Models\SolicitudCredito;
+use App\Models\TasaInt;
 use App\Models\TasaVehiculo;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
@@ -73,6 +74,7 @@ trait RecorreLasRutas
                 'usuario' => Usuario::factory()->create(),
                 'tipo_prestamo' => TipoPrestamo::factory()->create(),
                 'cuantia' => CuantiaSmmlv::factory()->create(),
+                'tasa' => TasaInt::factory()->create(),
                 'tasa_vehiculo' => TasaVehiculo::factory()->create(),
                 'solicitud' => SolicitudCredito::factory()->create(),
                 'documento' => DocumentoSolicitud::factory()->create(),
@@ -105,6 +107,7 @@ trait RecorreLasRutas
     {
         return match ($ruta->getName()) {
             'usuarios.store' => ['cedula' => '5550001', 'nombre' => 'Persona', 'apellido' => 'Ficticia', 'password' => 'Clave12345', 'password_confirmation' => 'Clave12345', 'rol' => 'FUNCIONARIO_BIENESTAR'],
+            'tasas-int.update' => ['tasa_anual' => '4,5'],
             'usuarios.update' => ['nombre' => 'Persona', 'apellido' => 'Ficticia', 'rol' => 'FUNCIONARIO_BIENESTAR'],
             default => [],
         };

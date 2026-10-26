@@ -77,6 +77,7 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
         Route::patch('tipos-prestamo/{tipo_prestamo}/habilitar', [TipoPrestamoController::class, 'habilitar'])->name('tipos-prestamo.habilitar');
         Route::patch('tipos-prestamo/{tipo_prestamo}/deshabilitar', [TipoPrestamoController::class, 'deshabilitar'])->name('tipos-prestamo.deshabilitar');
         Route::post('tipos-prestamo/{tipo_prestamo}/tasas', [TasaIntController::class, 'store'])->name('tasas-int.store');
+        Route::put('tasas/{tasa}', [TasaIntController::class, 'update'])->name('tasas-int.update');
         Route::post('tipos-prestamo/{tipo_prestamo}/cuantias', [CuantiaSmmlvController::class, 'store'])->name('cuantias-smmlv.store');
         Route::put('cuantias/{cuantia}', [CuantiaSmmlvController::class, 'update'])->name('cuantias-smmlv.update');
         Route::delete('cuantias/{cuantia}', [CuantiaSmmlvController::class, 'destroy'])->name('cuantias-smmlv.destroy');
