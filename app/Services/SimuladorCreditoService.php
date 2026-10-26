@@ -173,7 +173,7 @@ class SimuladorCreditoService
      */
     private function noPuedeDesde(array $incumplimientos): array
     {
-        $prioridad = ['empleado_inactivo', 'antiguedad_insuficiente', 'sin_smmlv', 'sin_tasa', 'sin_cuantia', 'plazo_excedido', 'sin_presupuesto', 'cuantia_excedida', 'capacidad_excedida'];
+        $prioridad = ['empleado_inactivo', 'antiguedad_insuficiente', 'sin_smmlv', 'salario_minimo', 'sin_tasa', 'sin_cuantia', 'plazo_excedido', 'sin_presupuesto', 'cuantia_excedida', 'capacidad_excedida'];
 
         usort($incumplimientos, fn (array $a, array $b): int => array_search($a['codigo'], $prioridad, true) <=> array_search($b['codigo'], $prioridad, true));
 
@@ -592,6 +592,8 @@ class SimuladorCreditoService
 
         if ($smmlv === null) {
             $errores[] = "No se ha registrado el valor del SMMLV para el año {$anio}.";
+        } elseif ($this->solicitudCreditoService->devengaElMinimo($empleado, $smmlv)) {
+            $errores[] = SolicitudCreditoService::MENSAJE_SALARIO_MINIMO;
         }
 
         return $errores;
