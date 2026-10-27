@@ -12,7 +12,10 @@
             <h1 class="h3 mb-1">Quincena {{ $proceso->numero_quincena }} de {{ $proceso->anio }}</h1>
             <p class="text-muted mb-0">Periodo {{ $periodo['inicio']->toDateString() }} al {{ $periodo['corte']->toDateString() }}</p>
         </div>
-        <a href="{{ route('quincenas.index') }}" class="btn btn-outline-secondary btn-sm">Volver a Quincenas</a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('quincenas.proceso.excel', $proceso) }}" class="btn btn-outline-secondary btn-sm" id="descargar-excel">Descargar Excel (CSV)</a>
+            <a href="{{ route('quincenas.index') }}" class="btn btn-outline-secondary btn-sm">Volver a Quincenas</a>
+        </div>
     </div>
 
     <div class="card mb-4">

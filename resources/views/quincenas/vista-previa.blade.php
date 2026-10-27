@@ -54,6 +54,10 @@
 
     @if ($vista['cuotas'] === [])
         <div class="alert alert-secondary">Esta quincena no tiene cuotas para confirmar.</div>
+        <form method="POST" action="{{ route('quincenas.excel', [$vista['anio'], $vista['quincena']]) }}">
+            @csrf
+            <button type="submit" class="btn btn-outline-secondary" id="descargar-excel">Descargar Excel (CSV)</button>
+        </form>
     @else
         <form method="POST" action="{{ route('quincenas.confirmar', [$vista['anio'], $vista['quincena']]) }}" id="form-confirmar" data-aviso="{{ $avisoCuotaExcluida }}">
             @csrf
@@ -116,6 +120,7 @@
             </table>
 
             <button type="submit" class="btn btn-primary">Confirmar quincena</button>
+            <button type="submit" class="btn btn-outline-secondary" id="descargar-excel" formaction="{{ route('quincenas.excel', [$vista['anio'], $vista['quincena']]) }}" formnovalidate>Descargar Excel (CSV)</button>
             <p class="text-muted small mt-2 mb-0">
                 Los pagos quedan a tu nombre. Una cuota excluida sigue Pendiente y aparece como vencida anterior en la quincena siguiente.
                 Si algo cambia mientras revisas esta pantalla, no se paga nada y se te muestra la diferencia.
@@ -190,6 +195,10 @@
             });
 
             formulario.addEventListener('submit', function (evento) {
+                if (evento.submitter && evento.submitter.id === 'descargar-excel') {
+                    return;
+                }
+
                 const cuotas = document.getElementById('cuotas-a-pagar').textContent;
 
                 if (! window.confirm('Se van a pagar ' + cuotas + ' cuotas a tu nombre. ¿Confirmar la quincena?')) {
