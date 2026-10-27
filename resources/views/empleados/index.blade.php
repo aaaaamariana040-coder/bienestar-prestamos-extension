@@ -9,9 +9,19 @@
     </div>
 
     <form method="GET" action="{{ route('empleados.index') }}" id="filtros-empleados" class="row g-2 align-items-end mb-3">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <label for="q" class="form-label">Buscar por cédula o nombre</label>
             <input type="search" id="q" name="q" class="form-control" value="{{ $busqueda }}" placeholder="Ej. 1000000009 o Solicitud">
+        </div>
+
+        <div class="col-md-2">
+            <label for="tipo" class="form-label">Tipo de vinculación</label>
+            <select id="tipo" name="tipo" class="form-select">
+                <option value="" @selected($tipo === '')>Todos</option>
+                @foreach (\App\Enums\TipoVinculacion::opciones() as $valor => $etiqueta)
+                    <option value="{{ $valor }}" @selected($tipo === $valor)>{{ $etiqueta }}</option>
+                @endforeach
+            </select>
         </div>
 
         <div class="col-md-3">
@@ -45,7 +55,7 @@
                 <tr>
                     <td>{{ $empleado->cedula }}</td>
                     <td>{{ $empleado->nombre_completo }}</td>
-                    <td>{{ $empleado->tipo_vinculacion }}</td>
+                    <td>{{ $empleado->tipo_vinculacion->etiqueta() }}</td>
                     <td>{{ $empleado->estado }}</td>
                     <td>{{ number_format($empleado->salario, 2) }}</td>
                     <td class="text-end">

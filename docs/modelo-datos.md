@@ -53,7 +53,8 @@ El sistema tiene **20 tablas propias** (verificadas contra las migraciones). Los
 |---|---|---|---|
 | cedula | VARCHAR(20) | No (PK) | |
 | nombre_completo | VARCHAR(150) | No | |
-| tipo_vinculacion | VARCHAR(30) | No | Empleado / Docente |
+| tipo_vinculacion | VARCHAR(30) | No | Enum `App\Enums\TipoVinculacion`, guardado en minúsculas: `vinculado`, `docente`, `docente_ocasional`, `jubilado` (se muestran como Vinculado, Docente, Docente ocasional, Jubilado). Antes era texto libre «Empleado» / «Docente» |
+| de_carrera | BOOLEAN | No | Empleado de carrera administrativa o docente de carrera. Por defecto falso. Solo se guarda y se muestra: aún no interviene en ninguna regla (preferencia pendiente de definir con Bienestar) |
 | cargo | VARCHAR(100) | Sí | |
 | dependencia | VARCHAR(100) | Sí | |
 | salario | DECIMAL(18,2) | No | |

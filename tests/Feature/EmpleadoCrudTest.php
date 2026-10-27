@@ -271,7 +271,7 @@ class EmpleadoCrudTest extends TestCase
     {
         $datos = [
             'nombre_completo' => 'Ana Actualizada',
-            'tipo_vinculacion' => 'Empleado',
+            'tipo_vinculacion' => 'vinculado',
             'cargo' => 'Analista',
             'dependencia' => 'Bienestar',
             'salario' => 2_000_000,

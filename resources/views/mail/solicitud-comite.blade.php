@@ -12,6 +12,7 @@
         <tr><th align="left" style="border: 1px solid #ccc;">Solicitud</th><td style="border: 1px solid #ccc;">#{{ $d['id_solicitud'] }} — {{ $d['fecha_solicitud'] }}</td></tr>
         <tr><th align="left" style="border: 1px solid #ccc;">Empleado</th><td style="border: 1px solid #ccc;">{{ $d['empleado'] }}</td></tr>
         <tr><th align="left" style="border: 1px solid #ccc;">Cédula</th><td style="border: 1px solid #ccc;">{{ $d['cedula'] }}</td></tr>
+        <tr><th align="left" style="border: 1px solid #ccc;">Tipo de vinculación</th><td style="border: 1px solid #ccc;">{{ $d['tipo_vinculacion'] }}</td></tr>
         <tr><th align="left" style="border: 1px solid #ccc;">Modalidad</th><td style="border: 1px solid #ccc;">{{ $d['modalidad'] }}</td></tr>
         <tr><th align="left" style="border: 1px solid #ccc;">Monto solicitado</th><td style="border: 1px solid #ccc;">{{ $pesos($d['monto'], 2) }}</td></tr>
         <tr><th align="left" style="border: 1px solid #ccc;">Plazo</th><td style="border: 1px solid #ccc;">{{ $d['plazo_legible'] }}</td></tr>

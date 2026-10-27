@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\EstadoCuota;
 use App\Enums\EstadoDesembolso;
+use App\Enums\TipoVinculacion;
 use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\SmmlvAnual;
@@ -191,7 +192,7 @@ class SimuladorCreditoService
      */
     private function noPuedeDesde(array $incumplimientos): array
     {
-        $prioridad = ['empleado_inactivo', 'antiguedad_insuficiente', 'sin_smmlv', 'salario_minimo', 'sin_tasa', 'sin_cuantia', 'plazo_excedido', 'sin_presupuesto', 'cuantia_excedida', 'capacidad_no_calculable', 'capacidad_excedida'];
+        $prioridad = ['empleado_inactivo', 'tipo_vinculacion', 'antiguedad_insuficiente', 'sin_smmlv', 'salario_minimo', 'sin_tasa', 'sin_cuantia', 'plazo_excedido', 'sin_presupuesto', 'cuantia_excedida', 'capacidad_no_calculable', 'capacidad_excedida'];
 
         usort($incumplimientos, fn (array $a, array $b): int => array_search($a['codigo'], $prioridad, true) <=> array_search($b['codigo'], $prioridad, true));
 
@@ -594,6 +595,10 @@ class SimuladorCreditoService
 
         if ($empleado->estado !== 'Activo') {
             $errores[] = 'El empleado está retirado y no puede solicitar un crédito.';
+        }
+
+        if ($empleado->tipo_vinculacion === TipoVinculacion::DocenteOcasional) {
+            $errores[] = SolicitudCreditoService::MENSAJE_DOCENTE_OCASIONAL;
         }
 
         if (! $modalidad->habilitada) {

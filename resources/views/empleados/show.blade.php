@@ -18,7 +18,10 @@
                 <dd class="col-sm-8">{{ $empleado->cedula }}</dd>
 
                 <dt class="col-sm-4">Tipo de vinculación</dt>
-                <dd class="col-sm-8">{{ $empleado->tipo_vinculacion }}</dd>
+                <dd class="col-sm-8">{{ $empleado->tipo_vinculacion->etiqueta() }}</dd>
+
+                <dt class="col-sm-4">Empleado de carrera</dt>
+                <dd class="col-sm-8">{{ $empleado->de_carrera ? 'Sí' : 'No' }}</dd>
 
                 <dt class="col-sm-4">Cargo</dt>
                 <dd class="col-sm-8">{{ $empleado->cargo ?? '—' }}</dd>

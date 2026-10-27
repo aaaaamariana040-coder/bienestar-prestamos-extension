@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\TipoVinculacion;
 use App\Models\Empleado;
 use App\Services\EmpleadoService;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,7 +24,7 @@ class EmpleadoFactory extends Factory
         return [
             'cedula' => fake()->unique()->numerify('##########'),
             'nombre_completo' => fake()->name(),
-            'tipo_vinculacion' => fake()->randomElement(['Empleado', 'Docente']),
+            'tipo_vinculacion' => fake()->randomElement([TipoVinculacion::Vinculado, TipoVinculacion::Docente]),
             'cargo' => fake()->jobTitle(),
             'dependencia' => fake()->word(),
             'salario' => $salario,

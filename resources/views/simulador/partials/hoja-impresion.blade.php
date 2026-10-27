@@ -31,7 +31,7 @@
         <dl class="hoja-datos">
             <div><dt>Nombre</dt><dd>{{ $empleado->nombre_completo }}</dd></div>
             <div><dt>Cédula</dt><dd>{{ $empleado->cedula }}</dd></div>
-            <div><dt>Tipo de vinculación</dt><dd>{{ $empleado->tipo_vinculacion }}</dd></div>
+            <div><dt>Tipo de vinculación</dt><dd>{{ $empleado->tipo_vinculacion->etiqueta() }}</dd></div>
         </dl>
     </section>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TipoVinculacion;
 use App\Http\Requests\StoreEmpleadoRequest;
 use App\Http\Requests\UpdateEmpleadoRequest;
 use App\Models\Empleado;
@@ -27,6 +28,12 @@ class EmpleadoController extends Controller
             $estado = '';
         }
 
+        $tipo = (string) $request->query('tipo', '');
+
+        if (TipoVinculacion::tryFrom($tipo) === null) {
+            $tipo = '';
+        }
+
         $empleados = Empleado::query()
             ->when($busqueda !== '', function ($query) use ($busqueda) {
                 $patron = '%'.addcslashes($busqueda, '\\%_').'%';
@@ -37,11 +44,12 @@ class EmpleadoController extends Controller
                 });
             })
             ->when($estado !== '', fn ($query) => $query->where('estado', $estado))
+            ->when($tipo !== '', fn ($query) => $query->where('tipo_vinculacion', $tipo))
             ->orderBy('nombre_completo')
             ->paginate(15)
             ->withQueryString();
 
-        return view('empleados.index', compact('empleados', 'busqueda', 'estado'));
+        return view('empleados.index', compact('empleados', 'busqueda', 'estado', 'tipo'));
     }
 
     public function create(): View

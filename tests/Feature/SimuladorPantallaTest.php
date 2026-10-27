@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\EstadoCuota;
 use App\Enums\EstadoPrestamo;
+use App\Enums\TipoVinculacion;
 use App\Models\Auditoria;
 use App\Models\CuantiaSmmlv;
 use App\Models\Cuota;
@@ -600,7 +601,7 @@ class SimuladorPantallaTest extends TestCase
     {
         Carbon::setTestNow(now()->setTime(15, 30));
         $empleado = $this->empleado();
-        $empleado->update(['nombre_completo' => 'Ana María Pérez', 'tipo_vinculacion' => 'Docente']);
+        $empleado->update(['nombre_completo' => 'Ana María Pérez', 'tipo_vinculacion' => TipoVinculacion::Docente]);
         $educacion = $this->modalidad('Educación', 72, 17.5);
 
         $hoja = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion)))->assertOk()->json('html_impresion');

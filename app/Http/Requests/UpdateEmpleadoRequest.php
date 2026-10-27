@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\TipoVinculacion;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,6 +11,11 @@ class UpdateEmpleadoRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['de_carrera' => $this->boolean('de_carrera')]);
     }
 
     /**
@@ -25,7 +31,8 @@ class UpdateEmpleadoRequest extends FormRequest
 
         return [
             'nombre_completo' => ['required', 'string', 'max:150'],
-            'tipo_vinculacion' => ['required', Rule::in(['Empleado', 'Docente'])],
+            'tipo_vinculacion' => ['required', Rule::enum(TipoVinculacion::class)],
+            'de_carrera' => ['boolean'],
             'cargo' => ['nullable', 'string', 'max:100'],
             'dependencia' => ['nullable', 'string', 'max:100'],
             'salario' => ['required', 'numeric', 'min:0'],

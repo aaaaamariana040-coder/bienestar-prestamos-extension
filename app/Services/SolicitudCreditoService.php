@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\EstadoSolicitud;
+use App\Enums\TipoVinculacion;
 use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\PresupuestoAnual;
@@ -20,6 +21,12 @@ class SolicitudCreditoService
      * Quien devenga el SMMLV o menos no puede tener descuentos por nómina; lo
      * rechaza el sistema, no se deja a criterio del operador.
      */
+    /**
+     * Los docentes ocasionales no son beneficiarios de crédito del Fondo
+     * (confirmado por Bienestar).
+     */
+    public const MENSAJE_DOCENTE_OCASIONAL = 'Los docentes ocasionales no son beneficiarios de crédito del Fondo.';
+
     public const MENSAJE_SALARIO_MINIMO = 'El salario del empleado es igual o menor al salario mínimo (SMMLV). A quien devenga el mínimo no se le puede descontar por nómina.';
 
     public function __construct(
@@ -36,6 +43,7 @@ class SolicitudCreditoService
      */
     public function crear(array $datos, Usuario $actor): SolicitudCredito
     {
+        $this->bloquearSiEsDocenteOcasional($datos);
         $this->bloquearSiDevengaElMinimo($datos);
 
         $solicitud = SolicitudCredito::create($datos);
@@ -60,6 +68,18 @@ class SolicitudCreditoService
         $salario = (float) $empleado->salario;
 
         return $smmlv !== null && $salario > 0 && round($salario, 2) <= round($smmlv, 2);
+    }
+
+    /**
+     * @param  array<string, mixed>  $datos
+     */
+    private function bloquearSiEsDocenteOcasional(array $datos): void
+    {
+        $empleado = Empleado::find($datos['cedula_empleado'] ?? null);
+
+        if ($empleado?->tipo_vinculacion === TipoVinculacion::DocenteOcasional) {
+            throw ValidationException::withMessages(['cedula_empleado' => 'No se puede registrar: '.lcfirst(self::MENSAJE_DOCENTE_OCASIONAL)]);
+        }
     }
 
     /**
@@ -108,6 +128,10 @@ class SolicitudCreditoService
 
         if ($empleado->estado !== 'Activo') {
             $problemas[] = ['codigo' => 'empleado_inactivo', 'mensaje' => 'El empleado no está activo.'];
+        }
+
+        if ($empleado->tipo_vinculacion === TipoVinculacion::DocenteOcasional) {
+            $problemas[] = ['codigo' => 'tipo_vinculacion', 'mensaje' => self::MENSAJE_DOCENTE_OCASIONAL];
         }
 
         if ($tipoPrestamo->exigeAnioDeServicio()) {
