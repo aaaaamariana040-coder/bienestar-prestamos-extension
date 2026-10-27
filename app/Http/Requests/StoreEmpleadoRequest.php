@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\TipoVinculacion;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,6 +18,8 @@ class StoreEmpleadoRequest extends FormRequest
         if (is_string($this->cedula)) {
             $this->merge(['cedula' => preg_replace('/\s+/', '', $this->cedula)]);
         }
+
+        $this->merge(['de_carrera' => $this->boolean('de_carrera')]);
     }
 
     /**
@@ -27,7 +30,8 @@ class StoreEmpleadoRequest extends FormRequest
         return [
             'cedula' => ['required', 'regex:/^\d{1,10}$/', 'unique:empleados,cedula'],
             'nombre_completo' => ['required', 'string', 'max:150'],
-            'tipo_vinculacion' => ['required', Rule::in(['Empleado', 'Docente'])],
+            'tipo_vinculacion' => ['required', Rule::enum(TipoVinculacion::class)],
+            'de_carrera' => ['boolean'],
             'cargo' => ['nullable', 'string', 'max:100'],
             'dependencia' => ['nullable', 'string', 'max:100'],
             'salario' => ['required', 'numeric', 'min:0'],

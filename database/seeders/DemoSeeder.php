@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\RolUsuario;
+use App\Enums\TipoVinculacion;
 use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\PresupuestoAnual;
@@ -238,7 +239,7 @@ class DemoSeeder extends Seeder
         return Empleado::create([
             'cedula' => $cedula,
             'nombre_completo' => $nombreCompleto,
-            'tipo_vinculacion' => 'Empleado',
+            'tipo_vinculacion' => TipoVinculacion::Vinculado,
             'cargo' => 'Cargo de demostración',
             'dependencia' => 'Dependencia de demostración',
             'salario' => $salario,

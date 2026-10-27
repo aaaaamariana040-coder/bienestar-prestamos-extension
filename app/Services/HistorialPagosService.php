@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\EstadoPrestamo;
+use App\Enums\TipoVinculacion;
 use App\Models\Cuota;
 use App\Models\Empleado;
 use App\Models\Pago;
@@ -296,6 +297,7 @@ class HistorialPagosService
 
         return match (true) {
             $valor === null || $valor === '' => '—',
+            $valor instanceof TipoVinculacion => $valor->etiqueta(),
             $campo === 'fecha_vinculacion' => $valor->format('Y-m-d'),
             $campo === 'salario' => number_format((float) $valor, 2),
             default => (string) $valor,

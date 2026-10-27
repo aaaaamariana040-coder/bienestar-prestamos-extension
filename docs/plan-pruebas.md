@@ -340,6 +340,27 @@ Automatizados en `tests/Feature/AvisoCuotaExcluidaTest.php`. Pantallas: Préstam
 | PP-203 | Detalle de la quincena confirmada | Proceso con cuotas excluidas / sin ellas | Abrir «Ver» en Quincenas confirmadas | Con excluidas, el aviso sobre la tabla «Cuotas excluidas»; sin ellas, ninguno | ⬜ |
 | PP-204 | Nada financiero cambia | Préstamo con cuota excluida | Abrir préstamo, detalle y lista de quincenas | Estados, valores, pagos, mora, saldo y resumen del proceso idénticos | ⬜ |
 
+## 23. Tipos de vinculación y docentes ocasionales (Bienestar)
+
+Automatizados en `tests/Feature/TipoVinculacionTest.php`. Pantallas: Empleados (lista, formulario y ficha), Solicitudes, Simulador y correo al comité.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-205 | Enum y etiquetas | — | Consultar los tipos | vinculado, docente, docente_ocasional, jubilado, mostrados como Vinculado, Docente, Docente ocasional, Jubilado | ⬜ |
+| PP-206 | Migración convierte los datos | Empleados con «Empleado», «Docente» y un valor desconocido | Ejecutar la migración | Empleado → vinculado, Docente → docente, desconocido → vinculado (reportado en el log); no se pierde ninguna fila ni otro dato; de_carrera queda en falso | ⬜ |
+| PP-207 | Migración reversible | Empleados ya convertidos | Revertir la migración | Vuelven «Empleado» y «Docente» y desaparece de_carrera | ⬜ |
+| PP-208 | Formulario | — | Abrir Nuevo empleado | Tipo de vinculación con los cuatro nombres y la casilla «Empleado de carrera» | ⬜ |
+| PP-209 | Crear y editar | — | Crear un empleado de cada tipo, con y sin «Empleado de carrera»; editarlo | Se guardan el tipo y de_carrera; sin marcar queda en falso | ⬜ |
+| PP-210 | Valor inválido | — | Enviar «Empleado», «Docente» (texto antiguo), uno inventado o vacío | Se rechaza con error en tipo_vinculacion | ⬜ |
+| PP-211 | Nombre en lista y ficha | Empleado Docente ocasional de carrera | Abrir lista, ficha y edición | Se ve «Docente ocasional» y «Empleado de carrera: Sí»; nunca `docente_ocasional` en la tabla o ficha; el formulario lo trae seleccionado | ⬜ |
+| PP-212 | Filtro por tipo | Un empleado de cada tipo | Filtrar la lista por cada tipo y con un valor inválido | Solo salen los del tipo elegido; el valor inválido se ignora | ⬜ |
+| PP-213 | Registro bloqueado | Docente ocasional | Registrar una solicitud | «No se puede registrar: los docentes ocasionales no son beneficiarios de crédito del Fondo.»; no se crea | ⬜ |
+| PP-214 | Solicitud preexistente | Solicitud de un docente ocasional ya guardada | Validar la solicitud | Incumplimiento `tipo_vinculacion` con el mensaje; vinculado, docente y jubilado no lo tienen | ⬜ |
+| PP-215 | Simulador no apto | Docente ocasional | Evaluar la modalidad y simular | «no apto» con «Los docentes ocasionales no son beneficiarios de crédito del Fondo.»; no se arma resultado ni hoja | ⬜ |
+| PP-216 | Los demás siguen igual | Vinculado, docente y jubilado | Registrar solicitud y simular | Funciona igual que antes | ⬜ |
+| PP-217 | Hoja impresa y correo | Jubilado en el simulador; docente en una solicitud | Imprimir la hoja; ver el correo al comité | Se ve «Jubilado» / «Docente» como nombre | ⬜ |
+| PP-218 | de_carrera no cambia reglas | Dos empleados iguales, uno de carrera | Validar, evaluar y simular | Resultados idénticos | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -371,3 +392,4 @@ Automatizados en `tests/Feature/AvisoCuotaExcluidaTest.php`. Pantallas: Préstam
 | Capacidad de endeudamiento unificada (posterior) | Automatizada — PP-167 a PP-177; falta la prueba manual en el navegador |
 | Primera cuota desde el desembolso (posterior) | Automatizada — PP-178 a PP-196; falta la prueba manual en el navegador |
 | Aviso de cuota excluida del descuento por nómina (posterior) | Automatizada — PP-197 a PP-204; falta la prueba manual en el navegador |
+| Tipos de vinculación y docentes ocasionales (posterior) | Automatizada — PP-205 a PP-218; falta la prueba manual en el navegador |

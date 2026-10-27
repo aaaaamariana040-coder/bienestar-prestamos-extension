@@ -258,6 +258,7 @@ class EnvioComiteService
             'fecha_solicitud' => $solicitud->fecha_solicitud->format('Y-m-d'),
             'empleado' => $solicitud->empleado->nombre_completo,
             'cedula' => $solicitud->cedula_empleado,
+            'tipo_vinculacion' => $solicitud->empleado->tipo_vinculacion->etiqueta(),
             'modalidad' => $solicitud->tipoPrestamo->nombre,
             'monto' => $monto,
             'plazo_quincenas' => $plazo,

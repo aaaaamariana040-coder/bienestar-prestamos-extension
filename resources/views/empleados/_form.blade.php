@@ -31,12 +31,16 @@
     <div class="col-md-6 mb-3">
         <label for="tipo_vinculacion" class="form-label">Tipo de vinculación</label>
         <select id="tipo_vinculacion" name="tipo_vinculacion" class="form-select" required>
-            @foreach (['Empleado', 'Docente'] as $opcion)
-                <option value="{{ $opcion }}" @selected(old('tipo_vinculacion', optional($empleado)->tipo_vinculacion) === $opcion)>
-                    {{ $opcion }}
+            @foreach (\App\Enums\TipoVinculacion::opciones() as $valor => $etiqueta)
+                <option value="{{ $valor }}" @selected(old('tipo_vinculacion', optional($empleado)->tipo_vinculacion?->value) === $valor)>
+                    {{ $etiqueta }}
                 </option>
             @endforeach
         </select>
+        <div class="form-check mt-2">
+            <input type="checkbox" id="de_carrera" name="de_carrera" value="1" class="form-check-input" @checked(old('de_carrera', optional($empleado)->de_carrera))>
+            <label for="de_carrera" class="form-check-label">Empleado de carrera</label>
+        </div>
     </div>
 
     <div class="col-md-6 mb-3">

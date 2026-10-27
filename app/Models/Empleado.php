@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EstadoPrestamo;
+use App\Enums\TipoVinculacion;
 use Database\Factories\EmpleadoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'cedula',
     'nombre_completo',
     'tipo_vinculacion',
+    'de_carrera',
     'cargo',
     'dependencia',
     'salario',
@@ -37,6 +39,8 @@ class Empleado extends Model
     protected function casts(): array
     {
         return [
+            'tipo_vinculacion' => TipoVinculacion::class,
+            'de_carrera' => 'boolean',
             'salario' => 'decimal:2',
             'capacidad_endeudamiento' => 'decimal:2',
             'fecha_vinculacion' => 'date',

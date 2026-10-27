@@ -247,3 +247,18 @@ Bienestar aclaró que el aplicativo no puede controlar el pago de una cuota que 
 - **Dónde se muestra:** en el préstamo, junto al estado de la cuota excluida; en la vista previa de la quincena, al marcar una cuota como excluida; y en el detalle de la quincena confirmada, sobre la tabla «Cuotas excluidas». Nunca en cuotas normales. No hay hoja imprimible de cuotas, por lo que no se agregó allí.
 - **Texto configurable (`config/quincena.php`, por `.env`):** `aviso_cuota_excluida` (`QUINCENA_AVISO_CUOTA_EXCLUIDA`), por defecto «Esta cuota no se descontó por nómina. Debe pagarse directamente en: {lugar}.», y `aviso_cuota_excluida_lugar` (`QUINCENA_AVISO_CUOTA_EXCLUIDA_LUGAR`), por defecto «la dependencia que indique Bienestar Social». `{lugar}` se reemplaza por el segundo valor. No se incluyen cuentas, direcciones ni teléfonos: los define Bienestar.
 - **Alcance:** solo informativo. No cambia cálculos, estados, mora, pagos ni cierres.
+
+## 20. Tipos de vinculación del empleado (Bienestar)
+Bienestar confirmó los tipos que existen en la nómina. Se guardan con un nombre legible en `empleados.tipo_vinculacion` (enum `App\Enums\TipoVinculacion`, única fuente de formularios, filtros, validaciones y etiquetas) y se muestran siempre por su nombre, nunca por el valor interno.
+
+| Valor guardado | Se muestra como |
+|---|---|
+| `vinculado` | Vinculado |
+| `docente` | Docente |
+| `docente_ocasional` | Docente ocasional |
+| `jubilado` | Jubilado |
+
+- **Docente ocasional: sin crédito.** No es beneficiario de crédito del Fondo. Se bloquea el registro de la solicitud («No se puede registrar: los docentes ocasionales no son beneficiarios de crédito del Fondo.»), la validación de una solicitud ya existente la marca con el incumplimiento `tipo_vinculacion` (así no se puede aprobar) y el simulador responde «no apto» con el mensaje «Los docentes ocasionales no son beneficiarios de crédito del Fondo.».
+- **Jubilado: sin cambios por ahora.** No se bloquea ni recibe un trato distinto; la decisión está pendiente con Bienestar. Reglas actuales que podrían afectarlo cuando se defina: (1) la exigencia de empleado en estado Activo y, en las modalidades que piden un año de servicio, la fecha de vinculación; (2) el bloqueo por salario igual o menor al SMMLV, si se registra su mesada como salario; (3) la capacidad de endeudamiento estimada, que descuenta salud y pensión del salario (un jubilado normalmente no aporta pensión); (4) el supuesto de que toda cuota se descuenta por nómina, cuando la mesada la paga otra entidad (en la práctica sería una cuota con el aviso de la sección 19).
+- **Empleado de carrera (`de_carrera`).** Indica si es empleado de carrera administrativa o docente de carrera. Se edita en el formulario de empleados y se muestra en la ficha, pero **no interviene** en puntaje, cuantía ni ninguna regla: la preferencia asociada está pendiente de definir con Bienestar.
+- **Datos anteriores.** La migración convirtió «Empleado» en `vinculado` y «Docente» en `docente`; cualquier otro valor se habría dejado en `vinculado` y registrado en el log. No existe registro de auditoría de los cambios de empleado, por lo que la edición del tipo y de `de_carrera` no se audita (igual que el resto de datos del empleado).
