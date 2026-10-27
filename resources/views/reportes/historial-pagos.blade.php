@@ -8,7 +8,6 @@
 
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <h1 class="h3 mb-0">Historial de pagos</h1>
-        <a href="{{ route('reportes.prestamos') }}" class="btn btn-sm btn-outline-secondary no-imprimir">Resumen de préstamos por modalidad y estado</a>
     </div>
 
     <form method="GET" action="{{ route('reportes.historial-pagos') }}" id="filtros-historial" class="row g-2 align-items-end mb-3 no-imprimir">
@@ -37,17 +36,34 @@
 
         <div class="col-md-4 d-flex flex-wrap gap-2">
             <button type="submit" class="btn btn-primary">Buscar</button>
-            <a href="{{ route('reportes.historial-pagos.imprimir', ['anio' => $anio, 'quincena' => $quincena, 'cedula' => $cedula !== '' ? $cedula : null]) }}"
-               target="_blank" rel="noopener" class="btn btn-outline-secondary" id="imprimir-q">Imprimir o guardar la Q en PDF</a>
-            @if ($procesoQuincena !== null)
-                @can('view', $procesoQuincena)
-                    <a href="{{ route('quincenas.proceso.excel', $procesoQuincena) }}" class="btn btn-outline-secondary" id="descargar-informe-quincena">Descargar informe de la quincena</a>
-                @endcan
-            @else
-                @can('confirmar', \App\Models\ProcesoQuincena::class)
-                    <button type="submit" form="form-informe-quincena" class="btn btn-outline-secondary" id="descargar-informe-quincena">Descargar informe de la quincena</button>
-                @endcan
-            @endif
+
+            <div class="dropdown" id="menu-reportes-descargas">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" id="boton-reportes-descargas"
+                        data-bs-toggle="dropdown" aria-expanded="false">Reportes y descargas</button>
+                <ul class="dropdown-menu dropdown-menu-md-end" aria-labelledby="boton-reportes-descargas"
+                    style="max-width: calc(100vw - 2rem);">
+                    <li>
+                        <a class="dropdown-item text-wrap" id="resumen-prestamos" href="{{ route('reportes.prestamos') }}">Resumen de préstamos por modalidad y estado</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item text-wrap" id="imprimir-q" target="_blank" rel="noopener"
+                           href="{{ route('reportes.historial-pagos.imprimir', ['anio' => $anio, 'quincena' => $quincena, 'cedula' => $cedula !== '' ? $cedula : null]) }}">Imprimir o guardar la Q en PDF</a>
+                    </li>
+                    @if ($procesoQuincena !== null)
+                        @can('view', $procesoQuincena)
+                            <li>
+                                <a class="dropdown-item text-wrap" id="descargar-informe-quincena" href="{{ route('quincenas.proceso.excel', $procesoQuincena) }}">Descargar informe de la quincena (CSV)</a>
+                            </li>
+                        @endcan
+                    @else
+                        @can('confirmar', \App\Models\ProcesoQuincena::class)
+                            <li>
+                                <button type="submit" class="dropdown-item text-wrap" id="descargar-informe-quincena" form="form-informe-quincena">Descargar informe de la quincena (CSV)</button>
+                            </li>
+                        @endcan
+                    @endif
+                </ul>
+            </div>
         </div>
     </form>
 

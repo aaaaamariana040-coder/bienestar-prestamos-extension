@@ -397,8 +397,9 @@ Automatizados en `tests/Feature/InformeQuincenaTest.php`. Pantallas: Quincenas (
 | PP-239 | Confirmada antigua sin motivo | Proceso confirmado sin motivo guardado | Descargar | No falla; el motivo queda vacío | ⬜ |
 | PP-240 | Permisos | Cuentas sin permiso, solo `quincenas.ver` y con `quincenas.confirmar` | Descargar de la vista previa y de la confirmada | Sin permiso 403; solo ver descarga la confirmada pero no la vista previa; invitado va al login | ⬜ |
 | PP-241 | Auditoría | Cualquier descarga | Consultar Auditoría | «Descarga de informe de quincena» con la quincena, el tipo y el conteo | ⬜ |
-| PP-242 | Enlace desde el historial | Historial de pagos con una quincena elegida | Pulsar «Descargar informe de la quincena» | Descarga el informe confirmado si existe y, si no, el de la vista previa | ⬜ |
+| PP-242 | Enlace desde el historial | Historial de pagos con una quincena elegida | Abrir «Reportes y descargas» y pulsar «Descargar informe de la quincena (CSV)» | Descarga el informe confirmado si existe y, si no, el de la vista previa | ⬜ |
 | PP-243 | Nada cambia | Cualquier descarga | Revisar cuotas, pagos y procesos | Sin cambios; texto con `=` en un motivo sale neutralizado | ⬜ |
+| PP-244 | Menú «Reportes y descargas» | Historial de pagos | Mirar los controles junto a los filtros y abrir el menú con el mouse y con el teclado (Tab, Enter, flechas, Esc); probarlo en una pantalla angosta | «Buscar» queda a la vista y el menú a su derecha, con «Resumen de préstamos por modalidad y estado», «Imprimir o guardar la Q en PDF» (nueva pestaña, conserva año, quincena y cédula) y «Descargar informe de la quincena (CSV)»; sin permisos de quincenas no aparece el informe; el menú no se corta ni desborda | ⬜ |
 
 ## Pruebas no funcionales (verificación transversal)
 
@@ -433,4 +434,4 @@ Automatizados en `tests/Feature/InformeQuincenaTest.php`. Pantallas: Quincenas (
 | Aviso de cuota excluida del descuento por nómina (posterior) | Automatizada — PP-197 a PP-204; falta la prueba manual en el navegador |
 | Tipos de vinculación y docentes ocasionales (posterior) | Automatizada — PP-205 a PP-218; falta la prueba manual en el navegador |
 | DTF para la liquidación por retiro (posterior) | Automatizada — PP-219 a PP-230; falta la prueba manual en el navegador |
-| Informe de quincena por cuota (posterior) | Automatizada — PP-231 a PP-243; falta la prueba manual en el navegador |
+| Informe de quincena por cuota (posterior) | Automatizada — PP-231 a PP-244; falta la prueba manual en el navegador |
