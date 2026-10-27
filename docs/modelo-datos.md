@@ -117,9 +117,10 @@ Tabla física `tasas_dtf`.
 | Campo | Tipo | Nulo | Descripción |
 |---|---|---|---|
 | id_tasa_dtf | INT | No (PK) | |
-| fecha_vigencia | DATE | No (único) | |
-| valor | DECIMAL(7,4) | No | Tasa DTF; se usa como `reliquidacion.tasa_aplicada` en el retiro |
-| fuente_normativa | VARCHAR(100) | Sí | |
+| fecha_vigencia | DATE | No (único) | Desde cuándo aplica el DTF |
+| dtf_nominal | DECIMAL(7,4) | Sí | DTF nominal trimestre anticipado (%), el que se digita (0 ≤ valor < 100). Es nulo solo en registros anteriores a esta columna, a los que la migración les calculó el equivalente |
+| valor | DECIMAL(7,4) | No | DTF efectivo anual (%), calculado y guardado a partir del nominal: EA = (1/(1 − TA/4))^4 − 1 (9,81 → 10,44). Es el que se usará como `reliquidacion.tasa_aplicada` en el retiro |
+| fuente_normativa | VARCHAR(100) | Sí | Fuente u observación (ej. «Banco de la República, semana del …») |
 | created_at / updated_at | TIMESTAMP | Sí | |
 
 ### presupuesto_anual

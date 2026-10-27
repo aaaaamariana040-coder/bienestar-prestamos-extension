@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\CuantiaSmmlvController;
 use App\Http\Controllers\DesembolsoController;
 use App\Http\Controllers\DocumentoSolicitudController;
+use App\Http\Controllers\DtfController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\EnvioComiteController;
 use App\Http\Controllers\InformeGuardadoController;
@@ -83,12 +84,15 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
         Route::put('cuantias/{cuantia}', [CuantiaSmmlvController::class, 'update'])->name('cuantias-smmlv.update');
         Route::delete('cuantias/{cuantia}', [CuantiaSmmlvController::class, 'destroy'])->name('cuantias-smmlv.destroy');
         Route::put('tasa-vehiculo/{tasa_vehiculo}', [TasaVehiculoController::class, 'update'])->name('tasa-vehiculo.update');
+        Route::post('dtf', [DtfController::class, 'store'])->name('dtf.store');
+        Route::put('dtf/{dtf}', [DtfController::class, 'update'])->name('dtf.update');
     });
     Route::middleware('can:modalidades.ver')->group(function () {
         Route::resource('tipos-prestamo', TipoPrestamoController::class)
             ->only(['index', 'show'])
             ->parameters(['tipos-prestamo' => 'tipo_prestamo']);
         Route::get('tasa-vehiculo', [TasaVehiculoController::class, 'index'])->name('tasa-vehiculo.index');
+        Route::get('dtf', [DtfController::class, 'index'])->name('dtf.index');
     });
 
     Route::get('seguros', [PrimaSeguroController::class, 'index'])->middleware('can:seguros.ver')->name('seguros.index');

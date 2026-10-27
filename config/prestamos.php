@@ -43,6 +43,20 @@ return [
     ],
 
     /*
+     * DTF trimestre anticipado para liquidar el crédito de quien se retira
+     * (Acuerdo 19 de 2022, Art. 40). Criterio para elegir cuál DTF usar:
+     *  - vigente_a_fecha:       el vigente a la fecha del retiro (lo que dicen
+     *                           hacer en la práctica).
+     *  - cierre_anio_anterior:  el vigente al 31 de diciembre del año anterior
+     *                           (lo que dice el Acuerdo).
+     * Pendiente de confirmar con Bienestar (pregunta 39). Hoy nada lo consume:
+     * solo se captura y se consulta en la pantalla «DTF».
+     */
+    'dtf' => [
+        'criterio' => env('DTF_CRITERIO', 'vigente_a_fecha'),
+    ],
+
+    /*
      * Seguros que el simulador muestra aparte de la cuota (monto × prima, sumado a
      * la cuota quincenal). SOLO EN VIVIENDA entran en la comparación con la
      * capacidad de endeudamiento (simulador y aprobación): cuota + seguros. En las
