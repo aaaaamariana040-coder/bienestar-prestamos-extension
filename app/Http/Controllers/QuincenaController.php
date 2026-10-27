@@ -51,6 +51,7 @@ class QuincenaController extends Controller
             'vista' => $quincenaService->procesar($anio, $quincena),
             'fechaPago' => $periodo['corte']->min($calendario->hoy()),
             'cierreNovedades' => $calendario->cierreDeNovedades($periodo['corte']),
+            'avisoCuotaExcluida' => $quincenaService->avisoCuotaExcluida(),
         ]);
     }
 
@@ -73,10 +74,13 @@ class QuincenaController extends Controller
         return redirect()->route('quincenas.proceso', $proceso)->with('status', "Quincena {$quincena} de {$anio} confirmada: ".$proceso->resumen['pagos_creados'].' cuotas pagadas.');
     }
 
-    public function proceso(ProcesoQuincena $proceso): View
+    public function proceso(ProcesoQuincena $proceso, QuincenaService $quincenaService): View
     {
         $this->authorize('view', $proceso);
 
-        return view('quincenas.proceso', ['proceso' => $proceso->load('usuario')]);
+        return view('quincenas.proceso', [
+            'proceso' => $proceso->load('usuario'),
+            'avisoCuotaExcluida' => $quincenaService->avisoCuotaExcluida(),
+        ]);
     }
 }

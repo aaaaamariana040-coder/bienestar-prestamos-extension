@@ -10,6 +10,7 @@ use App\Enums\OrigenPago;
 use App\Enums\ReglaVencimiento;
 use App\Enums\TipoProcesoQuincena;
 use App\Models\Cuota;
+use App\Models\Prestamo;
 use App\Models\ProcesoQuincena;
 use App\Models\Usuario;
 use BackedEnum;
@@ -591,6 +592,45 @@ class QuincenaService
             EstadoCuota::Pagada => 'La cuota ya está pagada',
             EstadoCuota::Vencida => 'La cuota está en estado Vencida: no se paga desde el proceso',
         };
+    }
+
+    /**
+     * Texto del aviso para una cuota excluida del descuento por nómina, con el
+     * lugar de pago tomado de la configuración.
+     */
+    public function avisoCuotaExcluida(): string
+    {
+        return str_replace('{lugar}', (string) config('quincena.aviso_cuota_excluida_lugar'), (string) config('quincena.aviso_cuota_excluida'));
+    }
+
+    /**
+     * Cuotas del préstamo que una quincena confirmada excluyó a mano y siguen
+     * Pendiente, con el motivo de la exclusión más reciente. Solo informativo.
+     *
+     * @return array<int, string> id_cuota => motivo
+     */
+    public function cuotasExcluidasDelPrestamo(Prestamo $prestamo): array
+    {
+        $pendientes = $prestamo->cuotas
+            ->filter(fn (Cuota $cuota) => $cuota->estado === EstadoCuota::Pendiente)
+            ->pluck('id_cuota')
+            ->all();
+
+        if ($pendientes === []) {
+            return [];
+        }
+
+        $excluidas = [];
+
+        foreach (ProcesoQuincena::query()->confirmados()->get() as $proceso) {
+            foreach ($proceso->resumen['excluidas_manuales'] ?? [] as $fila) {
+                if (in_array($fila['id_cuota'], $pendientes, true) && ! isset($excluidas[$fila['id_cuota']])) {
+                    $excluidas[$fila['id_cuota']] = (string) $fila['motivo'];
+                }
+            }
+        }
+
+        return $excluidas;
     }
 
     /**

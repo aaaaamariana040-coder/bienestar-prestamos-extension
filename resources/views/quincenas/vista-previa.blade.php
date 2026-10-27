@@ -55,7 +55,7 @@
     @if ($vista['cuotas'] === [])
         <div class="alert alert-secondary">Esta quincena no tiene cuotas para confirmar.</div>
     @else
-        <form method="POST" action="{{ route('quincenas.confirmar', [$vista['anio'], $vista['quincena']]) }}" id="form-confirmar">
+        <form method="POST" action="{{ route('quincenas.confirmar', [$vista['anio'], $vista['quincena']]) }}" id="form-confirmar" data-aviso="{{ $avisoCuotaExcluida }}">
             @csrf
 
             <table class="table table-striped bg-white align-middle">
@@ -99,6 +99,9 @@
                                 <input type="text" name="motivo[{{ $id }}]" value="{{ old('motivo.'.$id) }}" maxlength="255"
                                        class="form-control form-control-sm campo-motivo" placeholder="Obligatorio si se excluye"
                                        @disabled(! $excluida)>
+                                @if ($excluida)
+                                    <div class="small text-warning-emphasis mt-1 aviso-cuota-excluida">{{ $avisoCuotaExcluida }}</div>
+                                @endif
                             </td>
                         </tr>
                     @endforeach
@@ -159,6 +162,18 @@
 
                     motivo.disabled = ! casilla.checked;
                     motivo.required = casilla.checked;
+
+                    const celda = motivo.closest('td');
+                    let aviso = celda.querySelector('.aviso-cuota-excluida');
+
+                    if (casilla.checked && ! aviso) {
+                        aviso = document.createElement('div');
+                        aviso.className = 'small text-warning-emphasis mt-1 aviso-cuota-excluida';
+                        aviso.textContent = formulario.dataset.aviso;
+                        celda.appendChild(aviso);
+                    } else if (! casilla.checked && aviso) {
+                        aviso.remove();
+                    }
 
                     if (! casilla.checked) {
                         total += parseFloat(casilla.dataset.valor);

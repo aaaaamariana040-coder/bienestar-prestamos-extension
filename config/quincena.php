@@ -47,6 +47,17 @@ return [
      * Si el programador (schedule) ejecuta el proceso real el 15 y el último
      * día de cada mes. Apagado por defecto.
      */
+    /*
+     * Aviso informativo para una cuota excluida del descuento por nómina
+     * (licencia no remunerada, situación administrativa sin pago de nómina,
+     * etc.): el aplicativo no controla ese pago, que depende de otra área.
+     * {lugar} se reemplaza por aviso_cuota_excluida_lugar. Solo informa: no
+     * cambia cálculos, estados, mora ni cierres.
+     */
+    'aviso_cuota_excluida' => env('QUINCENA_AVISO_CUOTA_EXCLUIDA', 'Esta cuota no se descontó por nómina. Debe pagarse directamente en: {lugar}.'),
+
+    'aviso_cuota_excluida_lugar' => env('QUINCENA_AVISO_CUOTA_EXCLUIDA_LUGAR', 'la dependencia que indique Bienestar Social'),
+
     'programador_activo' => (bool) env('QUINCENA_PROGRAMADOR_ACTIVO', false),
 
 ];
