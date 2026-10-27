@@ -325,6 +325,21 @@ Automatizados en `tests/Feature/PrimeraCuotaDesembolsoTest.php`. Pantallas: Pré
 | PP-195 | Los valores no cambian | Ídem | Simular el mismo crédito con y sin fecha | Cuota, intereses, capital, saldo, seguro, totales y capacidad idénticos; solo cambian las fechas de la tabla | ⬜ |
 | PP-196 | Hoja impresa | Ídem | Imprimir con y sin fecha | La línea «Primera cuota estimada: <fecha>» y su nota salen solo si se diligenció la fecha | ⬜ |
 
+## 22. Aviso de cuota excluida del descuento por nómina (RF-006, Bienestar)
+
+Automatizados en `tests/Feature/AvisoCuotaExcluidaTest.php`. Pantallas: Préstamos (ver préstamo) y Quincenas (vista previa y detalle de la quincena confirmada).
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-197 | Aviso en el préstamo | Quincena confirmada con una cuota excluida (con motivo) y otra pagada | Abrir el préstamo | El aviso aparece una sola vez, junto al estado de la cuota excluida, con su motivo; la cuota pagada no lo lleva | ⬜ |
+| PP-198 | Sin excluidas | Préstamo sin cuotas excluidas | Abrir el préstamo | No aparece ningún aviso | ⬜ |
+| PP-199 | Cuota excluida que se paga | Cuota excluida que luego se paga | Abrir el préstamo | El aviso desaparece | ⬜ |
+| PP-200 | Valor por defecto | Sin variables en `.env` | Abrir el préstamo | «Esta cuota no se descontó por nómina. Debe pagarse directamente en: la dependencia que indique Bienestar Social.» | ⬜ |
+| PP-201 | Texto y lugar configurables | Cambiar `QUINCENA_AVISO_CUOTA_EXCLUIDA` o `QUINCENA_AVISO_CUOTA_EXCLUIDA_LUGAR` y limpiar la configuración | Abrir el préstamo | El aviso usa el texto y el lugar nuevos; no queda el valor anterior | ⬜ |
+| PP-202 | Vista previa | Quincena con cuotas por confirmar | Abrir la vista previa; marcar y desmarcar «Excluir» | El aviso sale solo en la fila marcada y se quita al desmarcar; las demás filas no lo llevan | ⬜ |
+| PP-203 | Detalle de la quincena confirmada | Proceso con cuotas excluidas / sin ellas | Abrir «Ver» en Quincenas confirmadas | Con excluidas, el aviso sobre la tabla «Cuotas excluidas»; sin ellas, ninguno | ⬜ |
+| PP-204 | Nada financiero cambia | Préstamo con cuota excluida | Abrir préstamo, detalle y lista de quincenas | Estados, valores, pagos, mora, saldo y resumen del proceso idénticos | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -355,3 +370,4 @@ Automatizados en `tests/Feature/PrimeraCuotaDesembolsoTest.php`. Pantallas: Pré
 | Primas de seguros (posterior) | Automatizada — PP-153 a PP-166; falta la prueba manual en el navegador |
 | Capacidad de endeudamiento unificada (posterior) | Automatizada — PP-167 a PP-177; falta la prueba manual en el navegador |
 | Primera cuota desde el desembolso (posterior) | Automatizada — PP-178 a PP-196; falta la prueba manual en el navegador |
+| Aviso de cuota excluida del descuento por nómina (posterior) | Automatizada — PP-197 a PP-204; falta la prueba manual en el navegador |

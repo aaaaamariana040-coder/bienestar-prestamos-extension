@@ -239,3 +239,11 @@ Columnas del informe que usa Bienestar: cédula, nombre, concepto, fecha del pr�
 |---|---|---|
 | Acuerdo Directivo No. 19 | 12 de octubre de 2022 | Reglamento del Programa de Bienestar Social |
 | Acuerdo Directivo No. 11 | 15 de noviembre de 2023 | Modifica la tasa de interés (Arts. 10 y 14) del Acuerdo 19/2022 |
+
+## 19. Aviso de cuota excluida del descuento por nómina (Bienestar)
+Bienestar aclaró que el aplicativo no puede controlar el pago de una cuota que queda excluida del descuento por nómina (licencia no remunerada, situación administrativa en que no se paga nómina, etc.): eso depende de otra área. Por eso el aplicativo solo **informa** a dónde debe ir el empleado a pagarla.
+
+- **Qué es una cuota excluida:** hoy el único mecanismo explícito es la exclusión manual, con motivo, que quien confirma la quincena marca en la vista previa. La cuota queda Pendiente y la exclusión se guarda en el resumen del proceso confirmado. El aviso se muestra mientras la cuota siga Pendiente; deja de mostrarse al pagarse. No se infiere exclusión de ningún otro dato: los préstamos Cancelado/Pagado/En trámite y las cuotas Vencida o ya Pagada que la vista previa lista en «No entran en esta quincena» no son exclusiones por nómina y no llevan aviso. No existen en el aplicativo licencias ni novedades de nómina que alimenten una exclusión.
+- **Dónde se muestra:** en el préstamo, junto al estado de la cuota excluida; en la vista previa de la quincena, al marcar una cuota como excluida; y en el detalle de la quincena confirmada, sobre la tabla «Cuotas excluidas». Nunca en cuotas normales. No hay hoja imprimible de cuotas, por lo que no se agregó allí.
+- **Texto configurable (`config/quincena.php`, por `.env`):** `aviso_cuota_excluida` (`QUINCENA_AVISO_CUOTA_EXCLUIDA`), por defecto «Esta cuota no se descontó por nómina. Debe pagarse directamente en: {lugar}.», y `aviso_cuota_excluida_lugar` (`QUINCENA_AVISO_CUOTA_EXCLUIDA_LUGAR`), por defecto «la dependencia que indique Bienestar Social». `{lugar}` se reemplaza por el segundo valor. No se incluyen cuentas, direcciones ni teléfonos: los define Bienestar.
+- **Alcance:** solo informativo. No cambia cálculos, estados, mora, pagos ni cierres.

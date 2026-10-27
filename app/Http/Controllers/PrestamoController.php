@@ -6,6 +6,7 @@ use App\Models\Prestamo;
 use App\Models\Proveedor;
 use App\Services\DesembolsoService;
 use App\Services\PrestamoService;
+use App\Services\QuincenaService;
 use App\Services\ReliquidacionService;
 use Illuminate\View\View;
 
@@ -22,7 +23,7 @@ class PrestamoController extends Controller
         return view('prestamos.index', compact('prestamos'));
     }
 
-    public function show(Prestamo $prestamo, DesembolsoService $desembolsoService, ReliquidacionService $reliquidacionService, PrestamoService $prestamoService): View
+    public function show(Prestamo $prestamo, DesembolsoService $desembolsoService, ReliquidacionService $reliquidacionService, PrestamoService $prestamoService, QuincenaService $quincenaService): View
     {
         $this->authorize('view', $prestamo);
 
@@ -36,6 +37,9 @@ class PrestamoController extends Controller
 
         $tasa = $prestamoService->tasaDePrestamo($prestamo->loadMissing('tasaInt'));
 
-        return view('prestamos.show', compact('prestamo', 'tramosEsperados', 'proveedores', 'umbralCuotas', 'abonoAplicaAModalidad', 'tasa'));
+        $cuotasExcluidas = $quincenaService->cuotasExcluidasDelPrestamo($prestamo);
+        $avisoCuotaExcluida = $quincenaService->avisoCuotaExcluida();
+
+        return view('prestamos.show', compact('prestamo', 'tramosEsperados', 'proveedores', 'umbralCuotas', 'abonoAplicaAModalidad', 'tasa', 'cuotasExcluidas', 'avisoCuotaExcluida'));
     }
 }

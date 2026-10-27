@@ -68,6 +68,8 @@
     @if (! empty($resumen['excluidas_manuales']))
         <h2 class="h5 mb-3">Cuotas excluidas</h2>
 
+        <div class="alert alert-warning small aviso-cuota-excluida" role="note">{{ $avisoCuotaExcluida }}</div>
+
         <table class="table table-striped bg-white align-middle">
             <thead>
                 <tr>

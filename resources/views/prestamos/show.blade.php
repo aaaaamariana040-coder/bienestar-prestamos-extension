@@ -173,7 +173,15 @@
                     <td>{{ number_format($cuota->valor_capital, 2) }}</td>
                     <td>{{ number_format($cuota->valor_interes, 2) }}</td>
                     <td>{{ number_format($cuota->valor_total, 2) }}</td>
-                    <td>{{ $cuota->estado->value }}</td>
+                    <td>
+                        {{ $cuota->estado->value }}
+                        @if (isset($cuotasExcluidas[$cuota->id_cuota]))
+                            <div class="alert alert-warning small mt-1 mb-0 py-1 px-2 aviso-cuota-excluida" role="note">
+                                {{ $avisoCuotaExcluida }}
+                                <span class="text-muted">Motivo de la exclusión: {{ $cuotasExcluidas[$cuota->id_cuota] }}</span>
+                            </div>
+                        @endif
+                    </td>
                     @can('registrarPagoCuota', $prestamo)
                         <td class="text-end">
                             @if ($cuota->estado->value === 'Pendiente')
