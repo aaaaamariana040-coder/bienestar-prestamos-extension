@@ -7,6 +7,7 @@ use App\Models\Empleado;
 use App\Models\Pago;
 use App\Models\TipoPrestamo;
 use App\Services\HistorialPagosService;
+use App\Services\QuincenaService;
 use App\Services\ReporteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,7 +48,7 @@ class ReporteController extends Controller
         return view('reportes.pagos', compact('filas', 'desde', 'hasta'));
     }
 
-    public function historialPagos(Request $request, HistorialPagosService $historial): View
+    public function historialPagos(Request $request, HistorialPagosService $historial, QuincenaService $quincenaService): View
     {
         Gate::authorize('reportes.ver');
 
@@ -67,6 +68,7 @@ class ReporteController extends Controller
             'empleados' => $empleados,
             'lineas' => $historial->lineasDeCredito($empleados->getCollection(), $q['cierre']),
             'individual' => $individual,
+            'procesoQuincena' => $quincenaService->procesoConfirmado($q['anio'], $q['quincena']),
             'columnas' => HistorialPagosService::COLUMNAS,
             'historial' => $historial,
             'quincenas' => range(1, HistorialPagosService::QUINCENAS_POR_ANIO),

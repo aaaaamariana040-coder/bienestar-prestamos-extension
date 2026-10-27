@@ -39,8 +39,25 @@
             <button type="submit" class="btn btn-primary">Buscar</button>
             <a href="{{ route('reportes.historial-pagos.imprimir', ['anio' => $anio, 'quincena' => $quincena, 'cedula' => $cedula !== '' ? $cedula : null]) }}"
                target="_blank" rel="noopener" class="btn btn-outline-secondary" id="imprimir-q">Imprimir o guardar la Q en PDF</a>
+            @if ($procesoQuincena !== null)
+                @can('view', $procesoQuincena)
+                    <a href="{{ route('quincenas.proceso.excel', $procesoQuincena) }}" class="btn btn-outline-secondary" id="descargar-informe-quincena">Descargar informe de la quincena</a>
+                @endcan
+            @else
+                @can('confirmar', \App\Models\ProcesoQuincena::class)
+                    <button type="submit" form="form-informe-quincena" class="btn btn-outline-secondary" id="descargar-informe-quincena">Descargar informe de la quincena</button>
+                @endcan
+            @endif
         </div>
     </form>
+
+    @if ($procesoQuincena === null)
+        @can('confirmar', \App\Models\ProcesoQuincena::class)
+            <form id="form-informe-quincena" method="POST" action="{{ route('quincenas.excel', [$anio, $quincena]) }}" class="d-none">
+                @csrf
+            </form>
+        @endcan
+    @endif
 
     <div id="resultados-historial">
         <p class="text-muted">

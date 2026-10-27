@@ -3,15 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ConfirmarQuincenaRequest;
+use App\Http\Requests\DescargarInformeQuincenaRequest;
 use App\Models\ProcesoQuincena;
+use App\Models\Usuario;
 use App\Services\CalendarioQuincenalService;
+use App\Services\InformeQuincenaService;
 use App\Services\QuincenaCambioException;
 use App\Services\QuincenaService;
 use App\Services\QuincenaYaConfirmadaException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 use InvalidArgumentException;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class QuincenaController extends Controller
 {
@@ -72,6 +77,54 @@ class QuincenaController extends Controller
         }
 
         return redirect()->route('quincenas.proceso', $proceso)->with('status', "Quincena {$quincena} de {$anio} confirmada: ".$proceso->resumen['pagos_creados'].' cuotas pagadas.');
+    }
+
+    /**
+     * Informe por cuota de la vista previa, con las exclusiones marcadas en ese momento.
+     */
+    public function excelVistaPrevia(DescargarInformeQuincenaRequest $request, int $anio, int $quincena, QuincenaService $quincenaService, CalendarioQuincenalService $calendario, InformeQuincenaService $informes): StreamedResponse|RedirectResponse
+    {
+        $this->authorize('confirmar', ProcesoQuincena::class);
+
+        try {
+            $periodo = $calendario->quincena($anio, $quincena);
+        } catch (InvalidArgumentException $e) {
+            abort(404, $e->getMessage());
+        }
+
+        if ($periodo['inicio']->greaterThan($calendario->hoy())) {
+            return redirect()->route('quincenas.index')->with('error', "La quincena {$quincena} de {$anio} todavía no empieza: no hay informe que descargar.");
+        }
+
+        if ($proceso = $quincenaService->procesoConfirmado($anio, $quincena)) {
+            return redirect()->route('quincenas.proceso', $proceso)->with('error', (new QuincenaYaConfirmadaException($proceso))->getMessage());
+        }
+
+        return $this->descargar($informes, $informes->dePrevia($anio, $quincena, $request->exclusiones(), $request->user()), $request->user());
+    }
+
+    /**
+     * Informe por cuota de una quincena confirmada, con lo que quedó guardado.
+     */
+    public function excelProceso(ProcesoQuincena $proceso, Request $request, InformeQuincenaService $informes): StreamedResponse
+    {
+        $this->authorize('view', $proceso);
+
+        return $this->descargar($informes, $informes->deProceso($proceso, $request->user()), $request->user());
+    }
+
+    /**
+     * @param  array<string, mixed>  $informe
+     */
+    private function descargar(InformeQuincenaService $informes, array $informe, Usuario $actor): StreamedResponse
+    {
+        $informes->auditarDescarga($actor, $informe);
+
+        return response()->streamDownload(
+            fn () => print ($informes->csv($informe)),
+            $informes->nombreArchivo($informe),
+            ['Content-Type' => 'text/csv; charset=UTF-8'],
+        );
     }
 
     public function proceso(ProcesoQuincena $proceso, QuincenaService $quincenaService): View

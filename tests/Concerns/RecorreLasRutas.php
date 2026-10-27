@@ -30,6 +30,11 @@ use Illuminate\Support\Facades\Route;
 trait RecorreLasRutas
 {
     /**
+     * Cada proceso de quincena que crea la prueba usa un año propio, para no chocar con la llave única.
+     */
+    private static int $procesosCreados = 0;
+
+    /**
      * Rutas que no son una pantalla de la aplicación para un usuario en sesión.
      */
     private const RUTAS_FUERA_DE_LA_PRUEBA = ['login', 'logout'];
@@ -88,7 +93,7 @@ trait RecorreLasRutas
                     'estado' => EstadoCuota::Pendiente,
                 ]),
                 'presupuesto' => PresupuestoAnual::factory()->create(),
-                'proceso' => ProcesoQuincena::factory()->create(),
+                'proceso' => ProcesoQuincena::factory()->create(['anio' => 3000 + self::$procesosCreados++, 'numero_quincena' => 1]),
                 'informe' => InformeGuardado::factory()->create(),
                 'cedula' => '1234567890',
                 'anio' => 2026,

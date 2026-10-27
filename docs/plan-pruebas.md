@@ -380,6 +380,26 @@ Automatizados en `tests/Feature/DtfTest.php`. Pantalla: Modalidades y presupuest
 | PP-229 | Criterio configurable | `DTF_CRITERIO` | Consultar dtfParaRetiro con cada criterio | `vigente_a_fecha` (por defecto) usa el vigente a la fecha; `cierre_anio_anterior` el del cierre del año anterior; otro valor da error | ⬜ |
 | PP-230 | Nada más cambia | Un DTF registrado | Registrar un retiro | El retiro se comporta igual que antes: no consume el DTF | ⬜ |
 
+## 25. Informe de quincena por cuota (Q de Informática)
+
+Automatizados en `tests/Feature/InformeQuincenaTest.php`. Pantallas: Quincenas (vista previa y detalle) e Historial de pagos.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-231 | Descarga de la vista previa | Quincena con cuotas | Pulsar «Descargar Excel (CSV)» | Archivo `informe-quincena-AAAA-Qn-FECHA-vista-previa.csv` (UTF-8 con BOM, `;`) que abre en Excel; encabezado con «Informe de quincena», vencimiento, generación y usuario | ⬜ |
+| PP-232 | Columnas | Ídem | Abrir el archivo | Cédula, Nombre, Tipo de vinculación, Modalidad, N.º de préstamo, Monto inicial, Plazo total, Cuota n.º, Quincenas pagadas, Saldo inicial, Valor de la cuota, Capital, Intereses, Nuevo saldo, Estado, Motivo de exclusión | ⬜ |
+| PP-233 | Saldos | Préstamo de 600.000 en 3 cuotas (capital 100.000, 200.000, 300.000), la 1 pagada, la 2 en la quincena | Ver la fila de la cuota 2 | Saldo inicial 500.000, nuevo saldo 300.000, 1 quincena pagada | ⬜ |
+| PP-234 | Valores numéricos | Ídem | Abrir en Excel | Montos y conteos se reconocen como números (coma decimal), las fechas como AAAA-MM-DD | ⬜ |
+| PP-235 | Totales y resumen | Varias modalidades y una cuota excluida en la vista previa | Marcar la exclusión con motivo y descargar | La excluida sale como Excluida con su motivo y no suma en «A descontar»; los subtotales por modalidad y el total coinciden con la suma de las cuotas | ⬜ |
+| PP-236 | Préstamo sin desembolsar | Préstamo pendiente de desembolso con cuota en la quincena | Descargar | No aparece | ⬜ |
+| PP-237 | Quincena sin cuotas | Quincena sin cuotas | Descargar | Archivo válido con el aviso «La quincena no tiene cuotas.» | ⬜ |
+| PP-238 | Quincena confirmada | Quincena confirmada con una cuota excluida con motivo | Abrir «Ver» y descargar | Descontadas y Excluida con su motivo, igual a lo guardado | ⬜ |
+| PP-239 | Confirmada antigua sin motivo | Proceso confirmado sin motivo guardado | Descargar | No falla; el motivo queda vacío | ⬜ |
+| PP-240 | Permisos | Cuentas sin permiso, solo `quincenas.ver` y con `quincenas.confirmar` | Descargar de la vista previa y de la confirmada | Sin permiso 403; solo ver descarga la confirmada pero no la vista previa; invitado va al login | ⬜ |
+| PP-241 | Auditoría | Cualquier descarga | Consultar Auditoría | «Descarga de informe de quincena» con la quincena, el tipo y el conteo | ⬜ |
+| PP-242 | Enlace desde el historial | Historial de pagos con una quincena elegida | Pulsar «Descargar informe de la quincena» | Descarga el informe confirmado si existe y, si no, el de la vista previa | ⬜ |
+| PP-243 | Nada cambia | Cualquier descarga | Revisar cuotas, pagos y procesos | Sin cambios; texto con `=` en un motivo sale neutralizado | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -413,3 +433,4 @@ Automatizados en `tests/Feature/DtfTest.php`. Pantalla: Modalidades y presupuest
 | Aviso de cuota excluida del descuento por nómina (posterior) | Automatizada — PP-197 a PP-204; falta la prueba manual en el navegador |
 | Tipos de vinculación y docentes ocasionales (posterior) | Automatizada — PP-205 a PP-218; falta la prueba manual en el navegador |
 | DTF para la liquidación por retiro (posterior) | Automatizada — PP-219 a PP-230; falta la prueba manual en el navegador |
+| Informe de quincena por cuota (posterior) | Automatizada — PP-231 a PP-243; falta la prueba manual en el navegador |

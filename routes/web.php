@@ -168,6 +168,7 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
     Route::middleware('can:quincenas.ver')->group(function () {
         Route::get('quincenas', [QuincenaController::class, 'index'])->name('quincenas.index');
         Route::get('quincenas/proceso/{proceso}', [QuincenaController::class, 'proceso'])->name('quincenas.proceso');
+        Route::get('quincenas/proceso/{proceso}/excel', [QuincenaController::class, 'excelProceso'])->name('quincenas.proceso.excel');
     });
     Route::middleware('can:quincenas.confirmar')->group(function () {
         Route::get('quincenas/{anio}/{quincena}', [QuincenaController::class, 'vistaPrevia'])
@@ -176,6 +177,9 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
         Route::post('quincenas/{anio}/{quincena}/confirmar', [QuincenaController::class, 'confirmar'])
             ->where(['anio' => '[0-9]{4}', 'quincena' => '[0-9]{1,2}'])
             ->name('quincenas.confirmar');
+        Route::post('quincenas/{anio}/{quincena}/excel', [QuincenaController::class, 'excelVistaPrevia'])
+            ->where(['anio' => '[0-9]{4}', 'quincena' => '[0-9]{1,2}'])
+            ->name('quincenas.excel');
     });
 
     // Reportes e informes
