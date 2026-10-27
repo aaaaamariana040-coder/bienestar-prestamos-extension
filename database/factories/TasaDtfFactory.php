@@ -17,9 +17,12 @@ class TasaDtfFactory extends Factory
      */
     public function definition(): array
     {
+        $nominal = fake()->randomFloat(4, 3, 12);
+
         return [
             'fecha_vigencia' => fake()->unique()->date(),
-            'valor' => fake()->randomFloat(4, 3, 12),
+            'dtf_nominal' => $nominal,
+            'valor' => round(((1 / (1 - $nominal / 100 / 4)) ** 4 - 1) * 100, 4),
             'fuente_normativa' => 'Superfinanciera',
         ];
     }

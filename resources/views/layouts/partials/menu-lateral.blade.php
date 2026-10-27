@@ -30,6 +30,7 @@
             'items' => [
                 ['texto' => 'Modalidades', 'ruta' => 'tipos-prestamo.index', 'activo' => 'tipos-prestamo.*', 'visible' => $usuario->can('modalidades.ver')],
                 ['texto' => 'Tasa de vehículo', 'ruta' => 'tasa-vehiculo.index', 'activo' => 'tasa-vehiculo.*', 'visible' => $usuario->can('modalidades.ver')],
+                ['texto' => 'DTF', 'ruta' => 'dtf.index', 'activo' => 'dtf.*', 'visible' => $usuario->can('modalidades.ver')],
                 ['texto' => 'Presupuesto', 'ruta' => 'presupuestos.index', 'activo' => 'presupuestos.*', 'visible' => $usuario->can('presupuesto.ver')],
                 ['texto' => 'Salario mínimo (SMMLV)', 'ruta' => 'smmlv.index', 'activo' => 'smmlv.*', 'visible' => $usuario->can('smmlv.ver')],
                 ['texto' => 'Seguros', 'ruta' => 'seguros.index', 'activo' => 'seguros.*', 'visible' => $usuario->can('seguros.ver')],

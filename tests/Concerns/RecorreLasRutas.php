@@ -13,6 +13,7 @@ use App\Models\PresupuestoAnual;
 use App\Models\PrimaSeguro;
 use App\Models\ProcesoQuincena;
 use App\Models\SolicitudCredito;
+use App\Models\TasaDtf;
 use App\Models\TasaInt;
 use App\Models\TasaVehiculo;
 use App\Models\TipoPrestamo;
@@ -77,6 +78,7 @@ trait RecorreLasRutas
                 'cuantia' => CuantiaSmmlv::factory()->create(),
                 'tasa' => TasaInt::factory()->create(),
                 'prima' => PrimaSeguro::factory()->create(),
+                'dtf' => TasaDtf::factory()->create(),
                 'tasa_vehiculo' => TasaVehiculo::factory()->create(),
                 'solicitud' => SolicitudCredito::factory()->create(),
                 'documento' => DocumentoSolicitud::factory()->create(),

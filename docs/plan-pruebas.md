@@ -361,6 +361,25 @@ Automatizados en `tests/Feature/TipoVinculacionTest.php`. Pantallas: Empleados (
 | PP-217 | Hoja impresa y correo | Jubilado en el simulador; docente en una solicitud | Imprimir la hoja; ver el correo al comité | Se ve «Jubilado» / «Docente» como nombre | ⬜ |
 | PP-218 | de_carrera no cambia reglas | Dos empleados iguales, uno de carrera | Validar, evaluar y simular | Resultados idénticos | ⬜ |
 
+## 24. DTF para la liquidación por retiro (Bienestar, pregunta 39)
+
+Automatizados en `tests/Feature/DtfTest.php`. Pantalla: Modalidades y presupuesto → DTF.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-219 | Cálculo 9,81 → 10,44 | — | Registrar nominal 9,81 | Efectivo anual 10,44 (se calcula, no se digita); otros valores de control (0 → 0, 4 → 4,10, 8 → 8,42, 12 → 12,96) | ⬜ |
+| PP-220 | Listado | Dos DTF | Abrir la pantalla | Orden por vigencia descendente, nominal y efectivo con 2 decimales y coma, fuente | ⬜ |
+| PP-221 | Registrar | Permiso de gestionar | Registrar fecha, nominal (con coma o punto) y fuente opcional | Se guarda con el efectivo calculado; Auditoría con el valor anterior (ninguno) y el nuevo | ⬜ |
+| PP-222 | Nominal inválido | — | Enviar −1, 100, mayor que 100, texto, vacío o más de 4 decimales | Se rechaza con mensaje en español, campo con is-invalid y valor conservado; nada se guarda. El 0 se acepta | ⬜ |
+| PP-223 | Fecha | Un DTF ya registrado | Repetir la fecha, enviar una inexistente (30 de febrero), otro formato o vacía | Se rechaza con el mensaje correspondiente | ⬜ |
+| PP-224 | Editar | Un DTF | Cambiar fecha, nominal y fuente | Se recalcula el efectivo; Auditoría con anterior y nuevo; sin cambios no escribe ni audita; no se puede tomar la fecha de otro | ⬜ |
+| PP-225 | Sin borrado | Un DTF | Intentar borrar | No existe la ruta (405) | ⬜ |
+| PP-226 | Permisos | Cuentas sin permiso, solo ver y gestor | Abrir, registrar y editar | Sin permiso 403; solo ver consulta sin formularios ni botones; gestor puede todo; invitado va al login; el menú muestra «DTF» solo con modalidades.ver | ⬜ |
+| PP-227 | vigenteEn | DTF en 2025-01-01, 2025-07-01 y 2026-01-01 | Consultar antes del primero, en cada fecha, entre registros y después del último | Antes: null; el más reciente con vigencia ≤ la fecha; sin registros: null | ⬜ |
+| PP-228 | delCierreDeAnio | DTF de 2025-06-01, 2025-12-31 y 2026-01-01 | Consultar 2025, 2026 y 2027 | El vigente al 31 de diciembre anterior (2025 → null; 2026 → el del 31-dic; 2027 → el del 1-ene-2026) | ⬜ |
+| PP-229 | Criterio configurable | `DTF_CRITERIO` | Consultar dtfParaRetiro con cada criterio | `vigente_a_fecha` (por defecto) usa el vigente a la fecha; `cierre_anio_anterior` el del cierre del año anterior; otro valor da error | ⬜ |
+| PP-230 | Nada más cambia | Un DTF registrado | Registrar un retiro | El retiro se comporta igual que antes: no consume el DTF | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -393,3 +412,4 @@ Automatizados en `tests/Feature/TipoVinculacionTest.php`. Pantallas: Empleados (
 | Primera cuota desde el desembolso (posterior) | Automatizada — PP-178 a PP-196; falta la prueba manual en el navegador |
 | Aviso de cuota excluida del descuento por nómina (posterior) | Automatizada — PP-197 a PP-204; falta la prueba manual en el navegador |
 | Tipos de vinculación y docentes ocasionales (posterior) | Automatizada — PP-205 a PP-218; falta la prueba manual en el navegador |
+| DTF para la liquidación por retiro (posterior) | Automatizada — PP-219 a PP-230; falta la prueba manual en el navegador |
