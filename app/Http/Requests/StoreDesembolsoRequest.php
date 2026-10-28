@@ -21,6 +21,8 @@ class StoreDesembolsoRequest extends FormRequest
             'id_proveedor' => ['nullable', 'string', 'exists:proveedores,id_proveedor'],
             'fecha' => ['required', 'date'],
             'inspeccion_aprobada' => ['sometimes', 'boolean'],
+            'primera_cuota_opcion' => ['nullable', 'in:propuesta,anterior,siguiente'],
+            'motivo_primera_cuota' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

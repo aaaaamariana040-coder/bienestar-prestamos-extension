@@ -160,10 +160,70 @@ class CalendarioQuincenalService
     }
 
     /**
+     * Primera cuota de un crédito nuevo según el cierre de novedades de nómina: el primer
+     * vencimiento V (15 o último día del mes) que sigue siendo posterior a la fecha del
+     * desembolso y cuyo cierre (V menos los días de quincena.cierre_novedades_dias_antes)
+     * es posterior a ella; con quincena.desembolso_dia_cierre_entra, un desembolso el mismo
+     * día del cierre todavía alcanza a reportarse. Es la única regla de la primera cuota:
+     * la usan el desembolso real y la fecha estimada del simulador.
+     */
+    public function primeraCuotaConCierre(string|DateTimeInterface $fechaDesembolso): string
+    {
+        $desembolso = $this->dia($fechaDesembolso);
+        $entra = (bool) config('quincena.desembolso_dia_cierre_entra');
+
+        foreach ($this->vencimientosDesde($desembolso->addDay(), 400) as $vencimiento) {
+            $cierre = $this->cierreDeNovedades($vencimiento);
+
+            if ($cierre->gt($desembolso) || ($entra && $cierre->eq($desembolso))) {
+                return $vencimiento;
+            }
+        }
+
+        return $this->primerVencimientoPosterior($desembolso);
+    }
+
+    /**
+     * La propuesta (primeraCuotaConCierre) y las quincenas que el funcionario puede elegir en
+     * su lugar: la siguiente, y la anterior solo si su vencimiento sigue siendo posterior a la
+     * fecha del desembolso. Cada una con su vencimiento y su fecha de cierre de novedades.
+     *
+     * @return array{propuesta: array{vencimiento: string, cierre: string}, anterior: ?array{vencimiento: string, cierre: string}, siguiente: array{vencimiento: string, cierre: string}}
+     */
+    public function opcionesPrimeraCuota(string|DateTimeInterface $fechaDesembolso): array
+    {
+        $desembolso = $this->dia($fechaDesembolso);
+        $propuesta = $this->primeraCuotaConCierre($desembolso);
+        $fecha = CarbonImmutable::parse($propuesta, self::ZONA);
+
+        $anterior = collect($this->vencimientosDesde($fecha->subDays(20), 3))->filter(fn (string $v): bool => $v < $propuesta)->last();
+        $siguiente = $this->vencimientosDesde($fecha->addDay(), 1)[0];
+
+        return [
+            'propuesta' => $this->conCierre($propuesta),
+            'anterior' => $anterior !== null && CarbonImmutable::parse($anterior, self::ZONA)->gt($desembolso) ? $this->conCierre($anterior) : null,
+            'siguiente' => $this->conCierre($siguiente),
+        ];
+    }
+
+    /**
+     * @return array{vencimiento: string, cierre: string}
+     */
+    private function conCierre(string $vencimiento): array
+    {
+        return ['vencimiento' => $vencimiento, 'cierre' => $this->cierreDeNovedades($vencimiento)->toDateString()];
+    }
+
+    private function dia(string|DateTimeInterface $fecha): CarbonImmutable
+    {
+        return CarbonImmutable::parse($fecha instanceof DateTimeInterface ? $fecha->format('Y-m-d') : $fecha, self::ZONA)->startOfDay();
+    }
+
+    /**
      * Fecha provisional de cierre de las novedades de nómina para un
      * vencimiento: los días calendario de config('quincena.cierre_novedades_dias_antes')
-     * antes de la fecha. Es solo informativa: ninguna operación la consulta
-     * para permitir o bloquear algo.
+     * antes de la fecha. Solo la primera cuota de un crédito nuevo la usa para decidir
+     * (primeraCuotaConCierre); ninguna otra operación se bloquea por ella.
      */
     public function cierreDeNovedades(string|DateTimeInterface $vencimiento): CarbonImmutable
     {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Prestamo;
 use App\Models\Proveedor;
+use App\Services\CalendarioQuincenalService;
 use App\Services\DesembolsoService;
 use App\Services\PrestamoService;
 use App\Services\QuincenaService;
@@ -23,7 +24,7 @@ class PrestamoController extends Controller
         return view('prestamos.index', compact('prestamos'));
     }
 
-    public function show(Prestamo $prestamo, DesembolsoService $desembolsoService, ReliquidacionService $reliquidacionService, PrestamoService $prestamoService, QuincenaService $quincenaService): View
+    public function show(Prestamo $prestamo, DesembolsoService $desembolsoService, ReliquidacionService $reliquidacionService, PrestamoService $prestamoService, QuincenaService $quincenaService, CalendarioQuincenalService $calendario): View
     {
         $this->authorize('view', $prestamo);
 
@@ -40,6 +41,10 @@ class PrestamoController extends Controller
         $cuotasExcluidas = $quincenaService->cuotasExcluidasDelPrestamo($prestamo);
         $avisoCuotaExcluida = $quincenaService->avisoCuotaExcluida();
 
-        return view('prestamos.show', compact('prestamo', 'tramosEsperados', 'proveedores', 'umbralCuotas', 'abonoAplicaAModalidad', 'tasa', 'cuotasExcluidas', 'avisoCuotaExcluida'));
+        $fechaDesembolso = (string) old('fecha', now()->toDateString());
+        $opcionesPrimeraCuota = $prestamo->pendiente_desembolso && strtotime($fechaDesembolso) !== false ? $calendario->opcionesPrimeraCuota($fechaDesembolso) : null;
+        $cierrePrimeraCuota = ! $prestamo->pendiente_desembolso && $prestamo->inicio_primera_cuota !== null ? $calendario->cierreDeNovedades($prestamo->inicio_primera_cuota) : null;
+
+        return view('prestamos.show', compact('prestamo', 'opcionesPrimeraCuota', 'cierrePrimeraCuota', 'tramosEsperados', 'proveedores', 'umbralCuotas', 'abonoAplicaAModalidad', 'tasa', 'cuotasExcluidas', 'avisoCuotaExcluida'));
     }
 }

@@ -44,6 +44,14 @@ return [
     'cierre_novedades_dias_antes' => (int) env('QUINCENA_CIERRE_NOVEDADES_DIAS_ANTES', 2),
 
     /*
+     * Primera cuota de un crédito nuevo: el desembolso que se hace el mismo día del
+     * cierre de novedades de una quincena, ¿alcanza a reportarse en ella? Pendiente de
+     * confirmar con Bienestar. false: no entra y la primera cuota pasa a la quincena
+     * siguiente; true: sí entra.
+     */
+    'desembolso_dia_cierre_entra' => (bool) env('QUINCENA_DESEMBOLSO_DIA_CIERRE_ENTRA', false),
+
+    /*
      * Si el programador (schedule) ejecuta el proceso real el 15 y el último
      * día de cada mes. Apagado por defecto.
      */

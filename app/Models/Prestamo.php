@@ -26,6 +26,7 @@ use RuntimeException;
     'estado',
     'pendiente_desembolso',
     'inicio_primera_cuota',
+    'motivo_primera_cuota',
 ])]
 class Prestamo extends Model
 {

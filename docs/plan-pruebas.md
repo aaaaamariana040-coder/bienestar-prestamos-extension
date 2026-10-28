@@ -427,6 +427,23 @@ Automatizados en `tests/Feature/TasaVehiculoPorPlazoTest.php`, `SimuladorCredito
 | PP-255 | Solicitud y préstamo | Solicitud de vehículo a 144 quincenas | Aprobar y abrir el préstamo | La tasa del préstamo es la del tramo de 5 años, igual que en el simulador | ⬜ |
 | PP-256 | Otras modalidades | Educación, calamidad, vivienda | Simular y solicitar | Sin cambios en tasas ni notas | ⬜ |
 
+## 28. Primera cuota según el cierre de novedades (Bienestar)
+
+Automatizados en `tests/Feature/PrimeraCuotaConCierreTest.php` y `SimuladorFechaDesembolsoTest.php`. Pantallas: Préstamos (registrar desembolso, ver préstamo) y Simulador.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-257 | Antes, el día y después del cierre | Cierre a 2 días; préstamo pendiente de desembolso | Desembolsar el 28, el 29 y el 30 de octubre (en préstamos distintos) | 31/10, 15/11 y 15/11 (el día del cierre no entra por defecto) | ⬜ |
+| PP-258 | El día del cierre entra | `QUINCENA_DESEMBOLSO_DIA_CIERRE_ENTRA=true` | Desembolsar el 29 de octubre | Primera cuota el 31/10 | ⬜ |
+| PP-259 | Cierres de 1 y 3 días y vencimiento 15 | Cambiar `QUINCENA_CIERRE_NOVEDADES_DIAS_ANTES` a 1 y a 3 | Desembolsar alrededor del cierre del 15 (13, 14 y 12 de noviembre) | La primera cuota pasa a la quincena siguiente al llegar el cierre | ⬜ |
+| PP-260 | Fin de mes y fin de año | Febrero de 28 y 29 días, meses de 30 y 31, diciembre | Desembolsar justo antes y el día del cierre | Regla correcta en cada fin de mes y 15/01 para el 29 y 31 de diciembre | ⬜ |
+| PP-261 | Propuesta en pantalla | Préstamo pendiente | Abrir el préstamo y cambiar la fecha del desembolso | «Primera cuota propuesta: 15/11/2026. Cierre de novedades de esa quincena: 13/11/2026.» se actualiza con la fecha | ⬜ |
+| PP-262 | Elegir otra quincena | Desembolso del 30 de octubre | Elegir la anterior (31/10) o la siguiente (30/11); primero sin motivo, luego con motivo | Sin motivo se rechaza y no se guarda; con motivo se registra y el préstamo muestra «Quincena elegida por el funcionario: <motivo>» | ⬜ |
+| PP-263 | Anterior no permitida | Desembolso del 31 de octubre | Mirar las opciones | No hay quincena anterior (su vencimiento no es posterior al desembolso) | ⬜ |
+| PP-264 | Auditoría | Desembolso con quincena elegida | Consultar Auditoría | «Registro de desembolso» trae la primera cuota, la propuesta, el cierre, el criterio y el motivo | ⬜ |
+| PP-265 | Simulador | Fecha estimada de desembolso 30/10 | Simular | Primera cuota estimada 15/11, igual que el desembolso real | ⬜ |
+| PP-266 | Sin cambios | Préstamos ya desembolsados; segundo tramo de construcción | Abrir el préstamo y desembolsar el segundo tramo | Sus fechas no cambian; el segundo tramo no mueve la primera cuota | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -463,3 +480,4 @@ Automatizados en `tests/Feature/TasaVehiculoPorPlazoTest.php`, `SimuladorCredito
 | Informe de quincena por cuota (posterior) | Automatizada — PP-231 a PP-244; falta la prueba manual en el navegador |
 | Pagos y abonos solo después del desembolso (posterior) | Automatizada — PP-245 a PP-249; falta la prueba manual en el navegador |
 | Tasa de vehículo por tramo de plazo (posterior) | Automatizada — PP-250 a PP-256; falta la prueba manual en el navegador |
+| Primera cuota según el cierre de novedades (posterior) | Automatizada — PP-257 a PP-266; falta la prueba manual en el navegador |
