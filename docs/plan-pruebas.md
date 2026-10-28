@@ -476,6 +476,20 @@ Automatizados en `tests/Feature/AjustesJefe2Test.php`. Pantallas: Préstamos (li
 | PP-283 | Quincena en curso | Hoy dentro de una quincena (y tras su cierre) | Abrir Quincenas | El selector trae la en curso seleccionada (la siguiente si hoy ya pasó el cierre) | ⬜ |
 | PP-284 | Etiquetas | Quincenas pendientes y confirmadas | Mirar las listas y el selector | «En curso», «Pendiente anterior» y «Confirmada»; las demás siguen accesibles | ⬜ |
 
+## 31. Resumen de pagos: todas las modalidades y detalle (jefatura)
+
+Automatizados en `tests/Feature/ResumenPagosDetalleTest.php`. Pantallas: Reportes → Resumen de pagos y su detalle por modalidad.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-285 | Todas las modalidades con pagos | Pagos en varias modalidades | Abrir el resumen sin fechas | Aparece cada modalidad con pagos (cuotas, abonos y cancelaciones), no las que no tienen; dice «Periodo: todos los pagos registrados» | ⬜ |
+| PP-286 | Filtro de fechas | Pagos en distintos meses | Pagado desde / hasta | Solo las modalidades con pagos en el rango; el periodo se muestra | ⬜ |
+| PP-287 | Ver detalle | Modalidad con varios préstamos | Pulsar «Ver detalle» | Línea con modalidad y periodo; columnas Empleado, Cédula, N.º de préstamo, Estado, Monto solicitado, N.º de cuotas, Valor de la cuota, Cuotas pagadas y Total pagado; orden por nombre; totales que coinciden con el resumen | ⬜ |
+| PP-288 | Sin datos y periodo | Periodo sin pagos de la modalidad | Abrir el detalle con fechas | «No hay pagos de esta modalidad en el periodo seleccionado.» | ⬜ |
+| PP-289 | Búsqueda del detalle | Modalidad con más de 10 préstamos | Escribir nombre o cédula | Filtra en tiempo real; sin coincidencias, «No hay préstamos que coincidan con la búsqueda» | ⬜ |
+| PP-290 | Imprimir y volver | Detalle abierto | «Imprimir»; «Volver al resumen» | Hoja con logo, título, modalidad y periodo, tabla, totales y pie con fecha, hora y usuario, sin botones; el enlace conserva las fechas | ⬜ |
+| PP-291 | Permisos | Cuenta sin / con `reportes.ver` | Abrir el detalle | 403 / pantalla; invitado va al login | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -515,3 +529,4 @@ Automatizados en `tests/Feature/AjustesJefe2Test.php`. Pantallas: Préstamos (li
 | Primera cuota según el cierre de novedades (posterior) | Automatizada — PP-257 a PP-266; falta la prueba manual en el navegador |
 | Administrador principal, Acción y datos del empleado (posterior) | Automatizada — PP-267 a PP-275; falta la prueba manual en el navegador |
 | Lista de préstamos, hoja impresa y quincena en curso (posterior) | Automatizada — PP-276 a PP-284; falta la prueba manual en el navegador |
+| Resumen de pagos: todas las modalidades y detalle (posterior) | Automatizada — PP-285 a PP-291; falta la prueba manual en el navegador |

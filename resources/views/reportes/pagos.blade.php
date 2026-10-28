@@ -17,6 +17,8 @@
         </div>
     </form>
 
+    <p class="text-muted" id="periodo-resumen">Periodo: {{ $periodo }}.</p>
+
     @include('informes._guardar', ['tipo' => 'pagos', 'parametros' => ['desde' => $desde, 'hasta' => $hasta]])
 
     <table class="table table-striped bg-white">
@@ -27,6 +29,7 @@
                 <th>Monto total</th>
                 <th>Interés aplicado</th>
                 <th>Capital aplicado</th>
+                <th class="text-end">Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -37,10 +40,15 @@
                     <td>{{ number_format($fila->monto_total, 2) }}</td>
                     <td>{{ number_format($fila->monto_interes, 2) }}</td>
                     <td>{{ number_format($fila->monto_capital, 2) }}</td>
+                    <td class="text-end">
+                        @if (isset($fila->id_tipo))
+                            <a href="{{ route('reportes.pagos.detalle', array_filter(['tipoPrestamo' => $fila->id_tipo, 'desde' => $desde, 'hasta' => $hasta])) }}" class="btn btn-sm btn-outline-secondary">Ver detalle</a>
+                        @endif
+                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="text-center text-muted">No hay pagos que coincidan con los filtros.</td>
+                    <td colspan="6" class="text-center text-muted">No hay pagos que coincidan con los filtros.</td>
                 </tr>
             @endforelse
         </tbody>

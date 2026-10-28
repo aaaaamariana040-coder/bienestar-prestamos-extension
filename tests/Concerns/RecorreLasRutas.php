@@ -87,6 +87,7 @@ trait RecorreLasRutas
                 'tasa_vehiculo' => TasaVehiculo::factory()->create(),
                 'solicitud' => SolicitudCredito::factory()->create(),
                 'documento' => DocumentoSolicitud::factory()->create(),
+                'tipoPrestamo' => TipoPrestamo::factory()->create(),
                 'prestamo' => $prestamo ??= Prestamo::factory()->create(),
                 'cuota' => Cuota::factory()->create([
                     'id_prestamo' => ($prestamo ??= Prestamo::factory()->create())->id_prestamo,

@@ -15,11 +15,15 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ReporteController extends Controller
 {
+    /** Desde esta cantidad de filas el detalle de una modalidad ofrece búsqueda. */
+    private const FILAS_SIN_BUSQUEDA = 10;
+
     public function prestamos(Request $request, ReporteService $reporteService): View
     {
         Gate::authorize('reportes.ver');
@@ -44,8 +48,47 @@ class ReporteController extends Controller
         $hasta = $request->query('hasta');
 
         $filas = $reporteService->pagosPorPeriodo($desde, $hasta);
+        $periodo = $reporteService->periodoLegible($desde, $hasta);
 
-        return view('reportes.pagos', compact('filas', 'desde', 'hasta'));
+        return view('reportes.pagos', compact('filas', 'desde', 'hasta', 'periodo'));
+    }
+
+    /**
+     * Detalle de una modalidad del resumen de pagos. `q` filtra por nombre (sin mayúsculas ni
+     * tildes) o por cédula (prefijo); la búsqueda solo se ofrece cuando hay muchas filas.
+     */
+    public function pagosDetalle(Request $request, TipoPrestamo $tipoPrestamo, ReporteService $reporteService): View
+    {
+        Gate::authorize('reportes.ver');
+
+        $desde = $request->query('desde');
+        $hasta = $request->query('hasta');
+        $busqueda = trim((string) $request->query('q', ''));
+
+        $todas = $reporteService->detallePagosDeModalidad($tipoPrestamo->id_tipo, $desde, $hasta);
+        $filas = $todas;
+
+        if ($busqueda !== '') {
+            $texto = Str::lower(Str::ascii($busqueda));
+            $filas = $todas->filter(fn (object $fila): bool => str_contains(Str::lower(Str::ascii($fila->empleado)), $texto)
+                || str_starts_with($fila->cedula, $busqueda))->values();
+        }
+
+        return view('reportes.pagos-detalle', [
+            'modalidad' => $tipoPrestamo,
+            'filas' => $filas,
+            'hayFilas' => $todas->isNotEmpty(),
+            'ofreceBusqueda' => $todas->count() > self::FILAS_SIN_BUSQUEDA,
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'busqueda' => $busqueda,
+            'periodo' => $reporteService->periodoLegible($desde, $hasta),
+            'totales' => (object) [
+                'prestamos' => $filas->count(),
+                'monto_solicitado' => round((float) $filas->sum('monto_solicitado'), 2),
+                'total_pagado' => round((float) $filas->sum('total_pagado'), 2),
+            ],
+        ]);
     }
 
     public function historialPagos(Request $request, HistorialPagosService $historial, QuincenaService $quincenaService): View
