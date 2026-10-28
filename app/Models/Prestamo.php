@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use RuntimeException;
 
 #[Fillable([
     'id_solicitud',
@@ -49,6 +50,21 @@ class Prestamo extends Model
             'pendiente_desembolso' => 'boolean',
             'inicio_primera_cuota' => 'date',
         ];
+    }
+
+    public const MENSAJE_PENDIENTE_DESEMBOLSO = 'No se puede registrar: el préstamo aún no se ha desembolsado. Los pagos y abonos se registran después del desembolso.';
+
+    /**
+     * Un pago o abono solo existe sobre un crédito efectivo: mientras el préstamo espera
+     * su desembolso no hay saldo al cual aplicarlo.
+     *
+     * @throws RuntimeException
+     */
+    public function asegurarDesembolsado(): void
+    {
+        if ($this->pendiente_desembolso) {
+            throw new RuntimeException(self::MENSAJE_PENDIENTE_DESEMBOLSO);
+        }
     }
 
     /**

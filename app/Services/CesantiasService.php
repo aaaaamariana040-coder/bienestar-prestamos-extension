@@ -34,6 +34,8 @@ class CesantiasService
         Usuario $actor,
         string $modoReliquidacion = 'plazo',
     ): AbonoCesantias {
+        $prestamo->asegurarDesembolsado();
+
         if (! str_starts_with($prestamo->tipoPrestamo->nombre, 'Vivienda')) {
             throw new RuntimeException('El abono de cesantías solo aplica a préstamos de vivienda (Art. 13).');
         }

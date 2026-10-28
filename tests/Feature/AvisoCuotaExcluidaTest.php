@@ -21,7 +21,7 @@ class AvisoCuotaExcluidaTest extends TestCase
 
     private const QUINCENA = 19;
 
-    private const AVISO_POR_DEFECTO = 'Esta cuota no se descontó por nómina. Debe pagarse directamente en: la dependencia que indique Bienestar Social.';
+    private const AVISO_POR_DEFECTO = 'Esta cuota no se descontó por nómina. Debe pagarse por ventanilla: consigne en la cuenta del Fondo de Bienestar Social el valor de la cuota, con la factura que genera Costeo y Facturación (puede solicitarla allí o a Bienestar Social), y entregue el soporte de pago a Bienestar Social para legalizarlo en Tesorería.';
 
     private Usuario $funcionario;
 
@@ -88,7 +88,7 @@ class AvisoCuotaExcluidaTest extends TestCase
         config(['quincena.aviso_cuota_excluida_lugar' => 'la Caja de Bienestar']);
 
         $this->actingAs($this->funcionario)->get(route('prestamos.show', $prestamo))
-            ->assertSee('Debe pagarse directamente en: la Caja de Bienestar.')
+            ->assertSee('Debe pagarse por ventanilla: la Caja de Bienestar.')
             ->assertDontSee('la dependencia que indique Bienestar Social');
     }
 
@@ -118,7 +118,7 @@ class AvisoCuotaExcluidaTest extends TestCase
 
         $this->actingAs($this->funcionario)->get(route('quincenas.vista-previa', [self::ANIO, self::QUINCENA]))
             ->assertOk()
-            ->assertSee('data-aviso="Esta cuota no se descontó por nómina. Debe pagarse directamente en: la ventanilla 3."', false)
+            ->assertSee('data-aviso="Esta cuota no se descontó por nómina. Debe pagarse por ventanilla: la ventanilla 3."', false)
             ->assertDontSee('<div class="small text-warning-emphasis mt-1 aviso-cuota-excluida">', false);
 
         $this->actingAs($this->funcionario)

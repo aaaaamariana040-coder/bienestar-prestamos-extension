@@ -334,7 +334,7 @@ Automatizados en `tests/Feature/AvisoCuotaExcluidaTest.php`. Pantallas: Préstam
 | PP-197 | Aviso en el préstamo | Quincena confirmada con una cuota excluida (con motivo) y otra pagada | Abrir el préstamo | El aviso aparece una sola vez, junto al estado de la cuota excluida, con su motivo; la cuota pagada no lo lleva | ⬜ |
 | PP-198 | Sin excluidas | Préstamo sin cuotas excluidas | Abrir el préstamo | No aparece ningún aviso | ⬜ |
 | PP-199 | Cuota excluida que se paga | Cuota excluida que luego se paga | Abrir el préstamo | El aviso desaparece | ⬜ |
-| PP-200 | Valor por defecto | Sin variables en `.env` | Abrir el préstamo | «Esta cuota no se descontó por nómina. Debe pagarse directamente en: la dependencia que indique Bienestar Social.» | ⬜ |
+| PP-200 | Valor por defecto | Sin variables en `.env` | Abrir el préstamo | «Esta cuota no se descontó por nómina. Debe pagarse por ventanilla: consigne en la cuenta del Fondo de Bienestar Social el valor de la cuota, con la factura que genera Costeo y Facturación (puede solicitarla allí o a Bienestar Social), y entregue el soporte de pago a Bienestar Social para legalizarlo en Tesorería.» | ⬜ |
 | PP-201 | Texto y lugar configurables | Cambiar `QUINCENA_AVISO_CUOTA_EXCLUIDA` o `QUINCENA_AVISO_CUOTA_EXCLUIDA_LUGAR` y limpiar la configuración | Abrir el préstamo | El aviso usa el texto y el lugar nuevos; no queda el valor anterior | ⬜ |
 | PP-202 | Vista previa | Quincena con cuotas por confirmar | Abrir la vista previa; marcar y desmarcar «Excluir» | El aviso sale solo en la fila marcada y se quita al desmarcar; las demás filas no lo llevan | ⬜ |
 | PP-203 | Detalle de la quincena confirmada | Proceso con cuotas excluidas / sin ellas | Abrir «Ver» en Quincenas confirmadas | Con excluidas, el aviso sobre la tabla «Cuotas excluidas»; sin ellas, ninguno | ⬜ |
@@ -401,6 +401,18 @@ Automatizados en `tests/Feature/InformeQuincenaTest.php`. Pantallas: Quincenas (
 | PP-243 | Nada cambia | Cualquier descarga | Revisar cuotas, pagos y procesos | Sin cambios; texto con `=` en un motivo sale neutralizado | ⬜ |
 | PP-244 | Menú «Reportes y descargas» | Historial de pagos | Mirar los controles junto a los filtros y abrir el menú con el mouse y con el teclado (Tab, Enter, flechas, Esc); probarlo en una pantalla angosta | «Buscar» queda a la vista y el menú a su derecha, con «Resumen de préstamos por modalidad y estado», «Imprimir o guardar la Q en PDF» (nueva pestaña, conserva año, quincena y cédula) y «Descargar informe de la quincena (CSV)»; sin permisos de quincenas no aparece el informe; el menú no se corta ni desborda | ⬜ |
 
+## 26. Pagos y abonos solo después del desembolso (Bienestar)
+
+Automatizados en `tests/Feature/PagosSinDesembolsoTest.php`. Pantalla: Préstamos (ver préstamo).
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-245 | Bloqueo en el servicio | Préstamo aprobado, pendiente de desembolso | Registrar pago de cuota, abono, cancelación total, reliquidación o abono de cesantías (por la pantalla o directo en el servicio) | Se rechaza con «No se puede registrar: el préstamo aún no se ha desembolsado. Los pagos y abonos se registran después del desembolso.»; no se crea ningún pago ni reliquidación y las cuotas siguen pendientes | ⬜ |
+| PP-246 | Botones deshabilitados | Mismo préstamo | Abrir el préstamo | «Pagar», «Confirmar abono», «Cancelar préstamo» y «Registrar abono de cesantías» (vivienda) salen deshabilitados, con el motivo «Disponible después del desembolso» | ⬜ |
+| PP-247 | Después del desembolso | Mismo préstamo | Registrar el desembolso y repetir los movimientos | Los botones se habilitan y los movimientos se registran con normalidad | ⬜ |
+| PP-248 | Préstamos anteriores | Préstamo con `pendiente_desembolso = false` | Pagar, abonar y cancelar | Sin cambios: se registran como siempre | ⬜ |
+| PP-249 | Aviso de cuota excluida | Sin variables en `.env` / con ellas | Abrir un préstamo con cuota excluida | Texto «…Debe pagarse por ventanilla: consigne en la cuenta del Fondo de Bienestar Social…»; configurable por `.env` | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -435,3 +447,4 @@ Automatizados en `tests/Feature/InformeQuincenaTest.php`. Pantallas: Quincenas (
 | Tipos de vinculación y docentes ocasionales (posterior) | Automatizada — PP-205 a PP-218; falta la prueba manual en el navegador |
 | DTF para la liquidación por retiro (posterior) | Automatizada — PP-219 a PP-230; falta la prueba manual en el navegador |
 | Informe de quincena por cuota (posterior) | Automatizada — PP-231 a PP-244; falta la prueba manual en el navegador |
+| Pagos y abonos solo después del desembolso (posterior) | Automatizada — PP-245 a PP-249; falta la prueba manual en el navegador |
