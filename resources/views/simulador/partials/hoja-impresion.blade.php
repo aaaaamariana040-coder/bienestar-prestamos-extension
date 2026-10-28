@@ -51,6 +51,10 @@
             <p class="hoja-alerta">{{ $tasa['nota'] }}</p>
         @endif
 
+        @if ($tasa['nota_tramo'])
+            <p class="hoja-alerta">{{ $tasa['nota_tramo'] }}</p>
+        @endif
+
         @if ($tasa['editada'])
             <p class="hoja-alerta">
                 <strong>TASA CORREGIDA A MANO.</strong>

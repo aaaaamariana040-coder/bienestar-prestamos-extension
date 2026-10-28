@@ -29,6 +29,9 @@
         @if ($tasa['nota'])
             <div class="alert alert-info py-2 mt-2 mb-0" id="nota-tope-tasa">{{ $tasa['nota'] }}</div>
         @endif
+        @if ($tasa['nota_tramo'])
+            <div class="alert alert-info py-2 mt-2 mb-0" id="nota-tramo-vehiculo">{{ $tasa['nota_tramo'] }}</div>
+        @endif
         <hr>
         <dl class="row mb-0">
             <dt class="col-sm-4">Cuota fija quincenal</dt><dd class="col-sm-8 fs-5">{{ $pesos($cuota_quincenal, 2) }}</dd>

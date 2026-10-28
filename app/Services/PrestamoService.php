@@ -11,6 +11,7 @@ use App\Models\TipoPrestamo;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class PrestamoService
 {
@@ -29,6 +30,10 @@ class PrestamoService
         return DB::transaction(function () use ($solicitud) {
             $tipoPrestamo = $solicitud->tipoPrestamo;
             $anio = $solicitud->fecha_solicitud->year;
+
+            if ($tipoPrestamo->esVehiculo() && $solicitud->plazo_solicitado > TasaVehiculoService::PLAZO_MAXIMO_QUINCENAS) {
+                throw new RuntimeException($this->tasaVehiculoService->mensajePlazoExcedido());
+            }
 
             [$idTasa, $tasaAnual] = $this->resolverTasa($solicitud, $tipoPrestamo, $anio);
 
@@ -110,8 +115,7 @@ class PrestamoService
     public function tasaDetallada(TipoPrestamo $tipoPrestamo, int $anio, int $plazoQuincenas, bool $esPrimeraSolicitud, DateTimeInterface|string|null $fechaSolicitud = null): array
     {
         if ($tipoPrestamo->esVehiculo()) {
-            $plazoAnios = intdiv($plazoQuincenas, self::QUINCENAS_POR_ANIO);
-            $tasa = $this->tasaVehiculoService->tasaEfectiva($anio, $plazoAnios, $esPrimeraSolicitud);
+            $tasa = $this->tasaVehiculoService->tasaEfectiva($anio, $plazoQuincenas, $esPrimeraSolicitud);
 
             return ['id_tasa' => null, 'tasa' => $tasa, 'registrada' => $tasa, 'limitada' => false, 'tope' => null];
         }

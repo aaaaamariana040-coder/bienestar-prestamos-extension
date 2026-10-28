@@ -20,6 +20,7 @@ use App\Models\TipoPrestamo;
 use App\Models\Usuario;
 use App\Services\PrestamoService;
 use Carbon\Carbon;
+use Database\Seeders\TasaVehiculoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -538,7 +539,7 @@ class SimuladorPantallaTest extends TestCase
         $this->getJson(route('simulador.tasa', ['cedula' => $empleado->cedula]))->assertJsonValidationErrors('id_tipo');
     }
 
-    public function test_la_tasa_de_vehiculo_trae_puntos_y_avisa_si_falta_la_fila(): void
+    public function test_la_tasa_de_vehiculo_trae_puntos_y_el_tramo_aplicado(): void
     {
         $empleado = $this->empleado();
         $vehiculo = $this->modalidad('Vehículo', 168, 50);
@@ -553,9 +554,36 @@ class SimuladorPantallaTest extends TestCase
 
         $this->getJson(route('simulador.tasa', ['cedula' => $empleado->cedula, 'id_tipo' => $vehiculo->id_tipo, 'plazo' => 144]))
             ->assertOk()
-            ->assertJsonPath('puntos', 0)
-            ->assertJsonPath('total', 4.85)
-            ->assertJsonCount(1, 'avisos');
+            ->assertJsonPath('puntos', 1)
+            ->assertJsonPath('total', 5.85)
+            ->assertJsonPath('nota_tramo', 'Tramo de 4 años: IPC + 1 punto (plazo solicitado: 6 años)')
+            ->assertJsonPath('avisos', []);
+    }
+
+    public function test_el_simulador_muestra_el_tramo_aplicado_del_vehiculo_junto_a_la_tasa(): void
+    {
+        $empleado = $this->empleado(8_000_000);
+        $vehiculo = $this->modalidad('Vehículo', 168, 50);
+        $this->seed(TasaVehiculoSeeder::class);
+
+        $respuesta = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $vehiculo, ['plazo' => 144])))
+            ->assertOk()
+            ->assertJsonPath('errores', [])
+            ->assertJsonPath('encabezado.puntos', 2)
+            ->assertJsonPath('encabezado.tasa_total', 6.85);
+
+        $this->assertStringContainsString('Tramo de 5 años: IPC + 2 puntos (plazo solicitado: 6 años)', $respuesta->json('html'));
+    }
+
+    public function test_el_simulador_rechaza_un_plazo_de_vehiculo_mayor_a_siete_anos(): void
+    {
+        $empleado = $this->empleado(8_000_000);
+        $vehiculo = $this->modalidad('Vehículo', 168, 50);
+        $this->seed(TasaVehiculoSeeder::class);
+
+        $respuesta = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $vehiculo, ['plazo' => 169])));
+
+        $this->assertNotEmpty($respuesta->json('errores') ?? $respuesta->json('errors'));
     }
 
     public function test_calcular_con_el_interruptor_apagado_usa_la_capacidad_guardada(): void
@@ -627,7 +655,7 @@ class SimuladorPantallaTest extends TestCase
             'Capacidad guardada del empleado',
             'Tabla de amortización (72 cuotas)',
             'Simulación informativa; no constituye aprobación del crédito.',
-            'por '.auth()->user()->nombre_completo,
+            'por '.e(auth()->user()->nombre_completo),
             'Simulación realizada el '.now()->format('d/m/Y').' 10:30',
         ] as $esperado) {
             $this->assertStringContainsString($esperado, $hoja);

@@ -57,7 +57,7 @@ class TasaVehiculoTest extends TestCase
 
         TasaVehiculo::factory()->create(['plazo_anios' => 7, 'es_primera_solicitud' => false, 'puntos_adicionales_ipc' => 5]);
 
-        $tasaEfectiva = app(TasaVehiculoService::class)->tasaEfectiva(2026, 7, false);
+        $tasaEfectiva = app(TasaVehiculoService::class)->tasaEfectiva(2026, 168, false);
 
         $this->assertSame(10.1234, $tasaEfectiva);
     }
@@ -67,7 +67,7 @@ class TasaVehiculoTest extends TestCase
         TipoPrestamo::factory()->create(['nombre' => 'Vehículo']);
         TasaVehiculo::factory()->create(['plazo_anios' => 3, 'es_primera_solicitud' => true, 'puntos_adicionales_ipc' => 0]);
 
-        $tasaEfectiva = app(TasaVehiculoService::class)->tasaEfectiva(2026, 3, true);
+        $tasaEfectiva = app(TasaVehiculoService::class)->tasaEfectiva(2026, 72, true);
 
         $this->assertNull($tasaEfectiva);
     }

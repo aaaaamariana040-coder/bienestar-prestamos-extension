@@ -543,7 +543,7 @@
                             avisosTasa.innerHTML = '<div class="alert alert-warning py-2">No hay tasa oficial registrada para esta modalidad en el año actual: digita la tasa para simular.</div>';
                         }
 
-                        pintarNotaTope(r.datos.nota);
+                        pintarNotaTope(r.datos.nota_tramo || r.datos.nota);
 
                         r.datos.avisos.forEach(function (aviso) {
                             avisosTasa.insertAdjacentHTML('beforeend', '<div class="alert alert-warning py-2">' + escapar(aviso) + '</div>');
