@@ -42,7 +42,7 @@ class AuditoriaTest extends TestCase
 
     public function test_aprobar_una_solicitud_deja_traza_de_auditoria(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $empleado = Empleado::factory()->create(['salario' => 3_000_000]);
         $tipoPrestamo = TipoPrestamo::factory()->create(['plazo_maximo' => 72]);
 
@@ -231,14 +231,14 @@ class AuditoriaTest extends TestCase
 
     public function test_el_administrador_puede_consultar_la_auditoria(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
 
         $this->actingAs($administrador)->get(route('auditoria.index'))->assertOk();
     }
 
     public function test_la_auditoria_muestra_el_nombre_y_apellido_de_quien_hizo_la_accion_sin_empleado(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $funcionario = Usuario::factory()->create(['nombre' => 'Camila', 'apellido' => 'Ospina']);
         $this->assertDatabaseMissing('empleados', ['cedula' => $funcionario->cedula]);
 

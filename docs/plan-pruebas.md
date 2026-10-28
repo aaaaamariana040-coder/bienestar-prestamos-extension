@@ -444,11 +444,27 @@ Automatizados en `tests/Feature/PrimeraCuotaConCierreTest.php` y `SimuladorFecha
 | PP-265 | Simulador | Fecha estimada de desembolso 30/10 | Simular | Primera cuota estimada 15/11, igual que el desembolso real | ⬜ |
 | PP-266 | Sin cambios | Préstamos ya desembolsados; segundo tramo de construcción | Abrir el préstamo y desembolsar el segundo tramo | Sus fechas no cambian; el segundo tramo no mueve la primera cuota | ⬜ |
 
+## 29. Administrador principal, Acción en la auditoría y datos del empleado (jefatura)
+
+Automatizados en `tests/Feature/AdministradorPrincipalTest.php` (y los ajustes a `PermisosCatalogoTest`, `PermisosPorCuentaTest`, `UsuarioSalvaguardasTest`). Pantallas: Usuarios, Auditoría y Empleados (nuevo y editar).
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-267 | Permisos del principal | Entrar como administrador principal | Editar su propia cuenta | «Gestionar usuarios» y «Consultar la auditoría» salen marcados y bloqueados; el rol no se puede cambiar | ⬜ |
+| PP-268 | Principal en el servidor | Cuenta principal | Enviar la edición sin esas casillas (petición manipulada) | Siguen asignadas y el principal conserva el acceso | ⬜ |
+| PP-269 | Administrador que no es el principal | Otro administrador | Abrir su edición como principal; entrar con esa cuenta | Casillas deshabilitadas y vacías con la nota «Solo el administrador principal gestiona usuarios y auditoría.»; Usuarios y Auditoría dan 403 y no están en el menú | ⬜ |
+| PP-270 | Ignorar lo que llegue | Petición con `usuarios.gestionar` para un administrador no principal | Enviar | Se ignora sin error | ⬜ |
+| PP-271 | Principal protegido | Cuenta principal | Intentar deshabilitarla o pasarla a Funcionario | Botón deshabilitado / rechazo con mensaje; siempre queda un principal activo | ⬜ |
+| PP-272 | Migración | Varias cuentas | Correr la migración | Una sola cuenta principal: el administrador activo más antiguo que no es Sistema | ⬜ |
+| PP-273 | «Acción» | — | Abrir Auditoría | La columna y el filtro dicen «Acción»; no aparece «Función» | ⬜ |
+| PP-274 | Cédula del empleado | Formulario de empleado nuevo | Escribir o pegar letras y símbolos; saltarse el navegador | El campo borra lo no numérico; el servidor rechaza con mensaje en español | ⬜ |
+| PP-275 | Nombre del empleado | Formulario nuevo y edición | Escribir o pegar números y símbolos; probar «María José», «Begoña Muñoz», «O'Hara», «Ana-María», «De la Cruz Jr.» | Los números se borran / el servidor los rechaza; los nombres válidos se aceptan; con otros errores se conserva lo digitado | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
 |---|---|---|---|
-| PP-053 | RNF-001 | Un Funcionario Bienestar no puede acceder a funciones exclusivas de Administrador | ⬜ |
+| PP-053 | RNF-001 | Un Funcionario Bienestar (o un administrador que no es el principal) no puede acceder a Usuarios ni a Auditoría | ⬜ |
 | PP-054 | RNF-002 | Las contraseñas nunca aparecen en texto plano en base de datos ni en logs | ⬜ |
 | PP-055 | RNF-003 | Eliminar un empleado con préstamos activos no deja registros huérfanos | ⬜ |
 | PP-056 | RNF-004 | Los totales de la tabla de amortización cuadran exactamente con el monto aprobado | ⬜ |
@@ -481,3 +497,4 @@ Automatizados en `tests/Feature/PrimeraCuotaConCierreTest.php` y `SimuladorFecha
 | Pagos y abonos solo después del desembolso (posterior) | Automatizada — PP-245 a PP-249; falta la prueba manual en el navegador |
 | Tasa de vehículo por tramo de plazo (posterior) | Automatizada — PP-250 a PP-256; falta la prueba manual en el navegador |
 | Primera cuota según el cierre de novedades (posterior) | Automatizada — PP-257 a PP-266; falta la prueba manual en el navegador |
+| Administrador principal, Acción y datos del empleado (posterior) | Automatizada — PP-267 a PP-275; falta la prueba manual en el navegador |

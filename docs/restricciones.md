@@ -28,7 +28,7 @@ Aplicación de Préstamos de Bienestar Social — Politécnico Colombiano Jaime 
 
 ## 4. Restricciones de datos
 - No existe historial de pagos previo que migrar: el AS/400 no conserva histórico de nómina. El historial de la nueva aplicación inicia desde su puesta en funcionamiento.
-- Roles fijos: Administrador y Funcionario Bienestar. El Funcionario tiene las mismas funciones que el Administrador, salvo dos exclusivas del Administrador: la gestión de cuentas de usuario y la consulta de auditoría. Los reportes e indicadores (RF-009) están disponibles para ambos roles.
+- Roles fijos: Administrador y Funcionario Bienestar. El Funcionario tiene las mismas funciones que el Administrador, salvo dos exclusivas del administrador principal (la cuenta con rol Administrador marcada como principal): la gestión de cuentas de usuario y la consulta de auditoría. Los demás administradores no las tienen. Los reportes e indicadores (RF-009) están disponibles para ambos roles.
 
 ## 5. Fuentes normativas
 | Fuente | Uso en el proyecto |
@@ -55,4 +55,4 @@ El envío de solicitudes al Comité (`config/comite.php`) funciona hoy con valor
 - El envío es síncrono (sin colas): no hace falta un worker. Después de cambiar el `.env`, ejecutar `php artisan config:clear`.
 
 ## 8. Permisos por cuenta
-Cada cuenta guarda su lista de permisos (`usuarios.permisos`). El catálogo, las dependencias («gestionar» implica «ver»), los permisos exclusivos del Administrador (Usuarios y Auditoría) y los **permisos por defecto de cada perfil** están en `config/permisos.php`; los defaults están **pendientes de confirmación de Bienestar** y se cambian solo ahí. Valen para las cuentas nuevas y para «Restablecer a los permisos del perfil»; no cambian las cuentas que ya existen. Un permiso nuevo exige agregarlo al catálogo, protegerlo con `can:` en las rutas y, si las cuentas existentes deben tenerlo, una migración que se lo asigne.
+Cada cuenta guarda su lista de permisos (`usuarios.permisos`). El catálogo, las dependencias («gestionar» implica «ver»), los permisos exclusivos del administrador principal (Usuarios y Auditoría) y los **permisos por defecto de cada perfil** están en `config/permisos.php`; los defaults están **pendientes de confirmación de Bienestar** y se cambian solo ahí. Valen para las cuentas nuevas y para «Restablecer a los permisos del perfil»; no cambian las cuentas que ya existen. Un permiso nuevo exige agregarlo al catálogo, protegerlo con `can:` en las rutas y, si las cuentas existentes deben tenerlo, una migración que se lo asigne.

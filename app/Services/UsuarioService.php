@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Hash;
 /**
  * Altas y cambios de cuentas, con sus salvaguardas y su auditoría. Salvaguardas:
  *  - al único administrador activo no se le quita ningún permiso ni se le cambia el rol;
+ *  - el administrador principal no se deshabilita ni deja de ser Administrador, y siempre
+ *    tiene los permisos de Usuarios y Auditoría, que ninguna otra cuenta puede tener;
  *  - nadie puede quitarse a sí mismo el acceso a Usuarios;
  *  - siempre queda al menos una cuenta activa que pueda gestionar usuarios.
  */
@@ -36,6 +38,9 @@ class UsuarioService
             : $this->permisosService->normalizar($datos['permisos']);
 
         $this->exigirQueSeanPermitidosParaElRol($rol, $permisos);
+
+        // Una cuenta nueva nunca es la principal: los permisos exclusivos del principal se ignoran.
+        $permisos = array_values(array_diff($permisos, $this->permisosService->soloAdministrador()));
 
         return DB::transaction(function () use ($datos, $rol, $permisos, $actor): Usuario {
             $usuario = Usuario::create([
@@ -67,16 +72,27 @@ class UsuarioService
     public function actualizar(Usuario $usuario, array $datos, Usuario $actor): Usuario
     {
         $rolNuevo = RolUsuario::from($datos['rol']);
+        if ($usuario->esPrincipal() && $rolNuevo !== RolUsuario::Administrador) {
+            throw new CambioDeUsuarioNoPermitidoException('El administrador principal no puede dejar de ser Administrador.');
+        }
+
         $permisosAntes = $usuario->permisosAsignados();
         $permisosDespues = ($datos['permisos'] ?? null) === null
             ? $permisosAntes
             : $this->permisosService->normalizar($datos['permisos']);
 
-        if (($datos['permisos'] ?? null) === null && $rolNuevo !== RolUsuario::Administrador) {
+        if (($datos['permisos'] ?? null) === null && $rolNuevo !== RolUsuario::Administrador && ! $usuario->esPrincipal()) {
             $permisosDespues = array_values(array_diff($permisosDespues, $this->permisosService->soloAdministrador()));
         }
 
         $this->exigirQueSeanPermitidosParaElRol($rolNuevo, $permisosDespues);
+
+        // Usuarios y Auditoría: el principal siempre los tiene; las demás cuentas, nunca (se ignoran si llegan).
+        $exclusivos = $this->permisosService->soloAdministrador();
+        $permisosDespues = $usuario->esPrincipal()
+            ? $this->permisosService->normalizar([...$permisosDespues, ...$exclusivos])
+            : array_values(array_diff($permisosDespues, $rolNuevo === RolUsuario::Administrador ? $exclusivos : []));
+
         $cambios = $this->permisosService->diferencia($permisosAntes, $permisosDespues);
         $rolAntes = $usuario->rol;
 
@@ -118,6 +134,10 @@ class UsuarioService
 
     public function deshabilitar(Usuario $usuario, Usuario $actor): void
     {
+        if ($usuario->esPrincipal()) {
+            throw new CambioDeUsuarioNoPermitidoException('El administrador principal no se puede deshabilitar.');
+        }
+
         if ($this->perderiaLaGestionDeUsuarios($usuario) && ! $this->hayOtraCuentaQueGestioneUsuarios($usuario)) {
             throw new CambioDeUsuarioNoPermitidoException('Debe quedar al menos una cuenta activa con permiso para gestionar usuarios.');
         }

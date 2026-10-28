@@ -39,7 +39,7 @@ class UsuarioController extends Controller
         $rol = RolUsuario::tryFrom((string) old('rol')) ?? RolUsuario::cases()[0];
 
         return view('usuarios.create', $this->datosDelFormularioDePermisos(
-            old('permisos_enviados') ? (array) old('permisos', []) : $this->permisosService->defaultsPara($rol),
+            old('permisos_enviados') ? (array) old('permisos', []) : $this->permisosService->defaultsPara($rol, false),
         ));
     }
 
@@ -63,7 +63,7 @@ class UsuarioController extends Controller
         return view('usuarios.edit', [
             'usuario' => $usuario,
             'personalizado' => $this->permisosService->esPersonalizado($usuario),
-            ...$this->datosDelFormularioDePermisos(old('permisos_enviados') ? (array) old('permisos', []) : $usuario->permisosAsignados()),
+            ...$this->datosDelFormularioDePermisos(old('permisos_enviados') ? (array) old('permisos', []) : $usuario->permisosAsignados(), $usuario->esPrincipal()),
         ]);
     }
 
@@ -104,21 +104,22 @@ class UsuarioController extends Controller
 
     /**
      * Lo que el parcial de casillas necesita: el catálogo agrupado, qué casillas están
-     * marcadas, los defaults de cada perfil, las dependencias y los permisos exclusivos
-     * del Administrador.
+     * marcadas, los defaults de cada perfil, las dependencias, los permisos exclusivos
+     * del administrador principal y si la cuenta es la principal.
      *
      * @param  array<int, mixed>  $seleccionados
      * @return array<string, mixed>
      */
-    private function datosDelFormularioDePermisos(array $seleccionados): array
+    private function datosDelFormularioDePermisos(array $seleccionados, bool $esPrincipal = false): array
     {
         return [
             'grupos' => $this->permisosService->agrupado(),
             'seleccionados' => array_map('strval', $seleccionados),
-            'defaultsPorRol' => collect(RolUsuario::cases())->mapWithKeys(fn (RolUsuario $rol): array => [$rol->value => $this->permisosService->defaultsPara($rol)])->all(),
+            'defaultsPorRol' => collect(RolUsuario::cases())->mapWithKeys(fn (RolUsuario $rol): array => [$rol->value => $this->permisosService->defaultsPara($rol, $esPrincipal)])->all(),
             'exigidos' => config('permisos.dependencias'),
             'dependientes' => $this->permisosService->dependientes(),
             'soloAdministrador' => $this->permisosService->soloAdministrador(),
+            'esPrincipal' => $esPrincipal,
         ];
     }
 }

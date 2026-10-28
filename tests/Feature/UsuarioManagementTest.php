@@ -13,7 +13,7 @@ class UsuarioManagementTest extends TestCase
 
     public function test_administrador_puede_listar_usuarios(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         Usuario::factory()->count(2)->create();
 
         $this->actingAs($administrador)->get(route('usuarios.index'))->assertOk();
@@ -28,7 +28,7 @@ class UsuarioManagementTest extends TestCase
 
     public function test_administrador_puede_cambiar_el_rol_de_un_usuario(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $usuario = Usuario::factory()->create();
 
         $this->actingAs($administrador)
@@ -50,7 +50,7 @@ class UsuarioManagementTest extends TestCase
 
     public function test_administrador_puede_deshabilitar_y_habilitar_un_usuario(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $usuario = Usuario::factory()->create();
 
         $this->actingAs($administrador)
@@ -68,7 +68,7 @@ class UsuarioManagementTest extends TestCase
 
     public function test_administrador_no_puede_deshabilitar_su_propia_cuenta(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
 
         $this->actingAs($administrador)
             ->patch(route('usuarios.deshabilitar', $administrador))
@@ -79,7 +79,7 @@ class UsuarioManagementTest extends TestCase
 
     public function test_nadie_puede_deshabilitar_a_otro_administrador(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $otroAdministrador = Usuario::factory()->administrador()->create();
 
         $this->actingAs($actor)
@@ -91,20 +91,20 @@ class UsuarioManagementTest extends TestCase
 
     public function test_listado_muestra_desactivado_y_en_gris_el_boton_del_administrador(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         Usuario::factory()->create(['nombre' => 'Funcionario', 'apellido' => 'Normal']);
 
         $this->actingAs($administrador)
             ->get(route('usuarios.index'))
             ->assertOk()
-            ->assertSee('title="El administrador no se puede deshabilitar"', false)
+            ->assertSee('title="El administrador principal no se puede deshabilitar"', false)
             ->assertSee('class="btn btn-sm btn-outline-secondary" disabled>Deshabilitar</button>', false)
             ->assertSee('btn-outline-danger">Deshabilitar</button>', false);
     }
 
     public function test_el_rol_del_administrador_si_se_puede_editar(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $otroAdministrador = Usuario::factory()->administrador()->create();
 
         $this->actingAs($actor)
@@ -114,7 +114,7 @@ class UsuarioManagementTest extends TestCase
 
     public function test_administrador_puede_editar_nombre_y_apellido_de_un_usuario(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $usuario = Usuario::factory()->create(['nombre' => 'Viejo', 'apellido' => 'Apellido']);
 
         $this->actingAs($administrador)
@@ -133,7 +133,7 @@ class UsuarioManagementTest extends TestCase
 
     public function test_editar_usuario_exige_nombre_y_apellido_con_mensajes_en_espanol(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $usuario = Usuario::factory()->create(['nombre' => 'Ana', 'apellido' => 'Ruiz']);
 
         $this->actingAs($administrador)
@@ -150,7 +150,7 @@ class UsuarioManagementTest extends TestCase
 
     public function test_pantalla_de_editar_usuario_muestra_nombre_y_apellido_editables(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $usuario = Usuario::factory()->create(['nombre' => 'Ana', 'apellido' => 'Ruiz']);
 
         $this->actingAs($administrador)
@@ -164,7 +164,7 @@ class UsuarioManagementTest extends TestCase
 
     public function test_el_listado_de_usuarios_se_ordena_por_nombre_y_apellido(): void
     {
-        $administrador = Usuario::factory()->administrador()->create(['nombre' => 'Zeta', 'apellido' => 'Zeta']);
+        $administrador = Usuario::factory()->principal()->create(['nombre' => 'Zeta', 'apellido' => 'Zeta']);
         Usuario::factory()->create(['nombre' => 'Beatriz', 'apellido' => 'Soto']);
         Usuario::factory()->create(['nombre' => 'Andres', 'apellido' => 'Vega']);
 
@@ -175,7 +175,7 @@ class UsuarioManagementTest extends TestCase
 
     public function test_la_barra_superior_muestra_nombre_y_apellido_y_no_el_rol(): void
     {
-        $administrador = Usuario::factory()->administrador()->create(['nombre' => 'Laura', 'apellido' => 'Mejia']);
+        $administrador = Usuario::factory()->principal()->create(['nombre' => 'Laura', 'apellido' => 'Mejia']);
 
         $this->actingAs($administrador)
             ->get(route('empleados.index'))

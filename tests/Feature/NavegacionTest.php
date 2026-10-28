@@ -87,7 +87,7 @@ class NavegacionTest extends TestCase
 
     public function test_el_administrador_ve_todos_los_grupos_del_menu_lateral(): void
     {
-        $respuesta = $this->actingAs(Usuario::factory()->administrador()->create())
+        $respuesta = $this->actingAs(Usuario::factory()->principal()->create())
             ->get(route('inicio'))
             ->assertOk()
             ->assertSee('id="menu-lateral"', false)

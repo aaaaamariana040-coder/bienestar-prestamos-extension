@@ -8,7 +8,7 @@ use App\Models\Usuario;
 /**
  * Catálogo de permisos y sus reglas (config/permisos.php), sin base de datos:
  * defaults por perfil, dependencias («gestionar» implica «ver»), permisos
- * exclusivos del Administrador y diferencias entre dos listas.
+ * exclusivos del administrador principal y diferencias entre dos listas.
  */
 class PermisosUsuarioService
 {
@@ -53,12 +53,13 @@ class PermisosUsuarioService
     }
 
     /**
-     * Permisos por defecto de un perfil, ya sin los exclusivos del Administrador si
-     * el perfil no lo es y con las dependencias resueltas.
+     * Permisos por defecto de un perfil, ya sin los exclusivos si el perfil no es
+     * Administrador (ni la cuenta es la principal, con $principal en false) y con las
+     * dependencias resueltas.
      *
      * @return list<string>
      */
-    public function defaultsPara(RolUsuario|string $rol): array
+    public function defaultsPara(RolUsuario|string $rol, bool $principal = true): array
     {
         $clave = $rol instanceof RolUsuario ? $rol->value : $rol;
         $permisos = [];
@@ -73,7 +74,7 @@ class PermisosUsuarioService
             }
         }
 
-        if ($clave !== RolUsuario::Administrador->value) {
+        if ($clave !== RolUsuario::Administrador->value || ! $principal) {
             $permisos = array_values(array_diff($permisos, $this->soloAdministrador()));
         }
 
@@ -104,7 +105,7 @@ class PermisosUsuarioService
     }
 
     /**
-     * Los permisos de la lista que solo puede tener un Administrador.
+     * Los permisos de la lista que solo tiene el administrador principal.
      *
      * @param  array<int, mixed>  $permisos
      * @return list<string>
@@ -119,7 +120,7 @@ class PermisosUsuarioService
      */
     public function esPersonalizado(Usuario $usuario): bool
     {
-        return $this->normalizar($usuario->permisosAsignados()) !== $this->defaultsPara($usuario->rol);
+        return $this->normalizar($usuario->permisosAsignados()) !== $this->defaultsPara($usuario->rol, $usuario->esPrincipal());
     }
 
     /**

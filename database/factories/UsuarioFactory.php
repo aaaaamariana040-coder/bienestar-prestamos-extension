@@ -47,6 +47,17 @@ class UsuarioFactory extends Factory
     }
 
     /**
+     * El administrador principal (Usuarios y Auditoría): rol Administrador y marca de principal.
+     */
+    public function principal(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'rol' => RolUsuario::Administrador,
+            'es_principal' => true,
+        ]);
+    }
+
+    /**
      * Cuenta sin ningún permiso.
      */
     public function sinPermisos(): static

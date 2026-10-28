@@ -14,7 +14,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use LogicException;
 use RuntimeException;
 
-#[Fillable(['cedula', 'nombre', 'apellido', 'contrasena_hash', 'rol', 'permisos', 'habilitado'])]
+#[Fillable(['cedula', 'nombre', 'apellido', 'contrasena_hash', 'rol', 'permisos', 'habilitado', 'es_principal'])]
 #[Hidden(['contrasena_hash', 'remember_token'])]
 class Usuario extends Authenticatable
 {
@@ -41,6 +41,7 @@ class Usuario extends Authenticatable
         return [
             'contrasena_hash' => 'hashed',
             'habilitado' => 'boolean',
+            'es_principal' => 'boolean',
             'rol' => RolUsuario::class,
             'permisos' => 'array',
         ];
@@ -83,6 +84,13 @@ class Usuario extends Authenticatable
             }
         });
 
+        // Solo puede haber un administrador principal.
+        static::saving(function (Usuario $usuario): void {
+            if ($usuario->es_principal && $usuario->isDirty('es_principal') && static::where('es_principal', true)->where('cedula', '!=', $usuario->cedula)->exists()) {
+                throw new LogicException('Ya existe un administrador principal: solo puede haber uno.');
+            }
+        });
+
         static::deleting(function (Usuario $usuario): void {
             if ($usuario->esSistema()) {
                 throw new LogicException('No se puede eliminar al usuario Sistema.');
@@ -101,21 +109,34 @@ class Usuario extends Authenticatable
     }
 
     /**
+     * El administrador principal: la única cuenta con rol Administrador que gestiona
+     * usuarios y consulta la auditoría.
+     */
+    public function esPrincipal(): bool
+    {
+        return $this->es_principal && $this->rol === RolUsuario::Administrador;
+    }
+
+    /**
      * Permisos asignados a la cuenta, sin repetidos y solo los que existen en el
-     * catálogo (config/permisos.php). Los exclusivos del Administrador solo cuentan
-     * si el rol lo es, aunque la lista guardada los trajera. No mira si la cuenta
-     * está habilitada.
+     * catálogo (config/permisos.php). Los exclusivos del administrador principal
+     * (Usuarios y Auditoría) los tiene siempre el principal, aunque la lista guardada
+     * no los traiga, y ninguna otra cuenta, aunque la lista los traiga. No mira si la
+     * cuenta está habilitada.
      *
      * @return list<string>
      */
     public function permisosAsignados(): array
     {
         $catalogo = array_keys(config('permisos.catalogo'));
-        $soloAdministrador = $this->rol === RolUsuario::Administrador ? [] : config('permisos.solo_administrador');
+        $exclusivos = config('permisos.solo_administrador');
+        $principal = $this->esPrincipal();
 
         return array_values(array_filter(
             $catalogo,
-            fn (string $permiso): bool => in_array($permiso, (array) $this->permisos, true) && ! in_array($permiso, $soloAdministrador, true),
+            fn (string $permiso): bool => in_array($permiso, $exclusivos, true)
+                ? $principal
+                : in_array($permiso, (array) $this->permisos, true),
         ));
     }
 
