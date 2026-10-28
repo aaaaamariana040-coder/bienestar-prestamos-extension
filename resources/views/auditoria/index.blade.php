@@ -14,7 +14,7 @@
             </select>
         </div>
         <div class="col-auto">
-            <label for="funcion_realizada" class="form-label">Función</label>
+            <label for="funcion_realizada" class="form-label">Acción</label>
             <select id="funcion_realizada" name="funcion_realizada" class="form-select">
                 <option value="">Todas</option>
                 @foreach ($funciones as $funcion)
@@ -41,7 +41,7 @@
                 <th>Fecha</th>
                 <th>Hora</th>
                 <th>Usuario</th>
-                <th>Función</th>
+                <th>Acción</th>
                 <th>Detalle</th>
             </tr>
         </thead>

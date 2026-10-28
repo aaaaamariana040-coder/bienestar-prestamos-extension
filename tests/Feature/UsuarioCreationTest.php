@@ -14,7 +14,7 @@ class UsuarioCreationTest extends TestCase
 
     public function test_formulario_de_crear_usuario_muestra_las_reglas_de_contrasena(): void
     {
-        $this->actingAs(Usuario::factory()->administrador()->create())
+        $this->actingAs(Usuario::factory()->principal()->create())
             ->get(route('usuarios.create'))
             ->assertOk()
             ->assertSee('Mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número. La confirmación debe coincidir con la contraseña.')
@@ -23,7 +23,7 @@ class UsuarioCreationTest extends TestCase
 
     public function test_contrasena_debil_es_rechazada_con_mensajes_en_espanol(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $cedula = '1234567890';
         $casos = [
             'Corta1a' => 'La contraseña debe tener mínimo 8 caracteres.',
@@ -57,7 +57,7 @@ class UsuarioCreationTest extends TestCase
 
     public function test_administrador_puede_crear_usuario_sin_empleado_asociado(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $cedula = '1234567890';
 
         $this->actingAs($administrador)->post(route('usuarios.store'), [
@@ -78,7 +78,7 @@ class UsuarioCreationTest extends TestCase
 
     public function test_formulario_de_crear_usuario_pide_cedula_nombre_apellido_y_no_elige_empleado(): void
     {
-        $this->actingAs(Usuario::factory()->administrador()->create())
+        $this->actingAs(Usuario::factory()->principal()->create())
             ->get(route('usuarios.create'))
             ->assertOk()
             ->assertSee('name="cedula"', false)
@@ -92,7 +92,7 @@ class UsuarioCreationTest extends TestCase
 
     public function test_crear_usuario_valida_cedula_nombre_y_apellido_en_espanol(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $existente = Usuario::factory()->create();
         $base = ['nombre' => 'Camila', 'apellido' => 'Ospina', 'rol' => RolUsuario::FuncionarioBienestar->value, 'password' => 'ClaveSegura1', 'password_confirmation' => 'ClaveSegura1'];
 

@@ -99,7 +99,15 @@ class PermisosCatalogoTest extends TestCase
     public function test_los_defaults_del_administrador_son_todos_los_permisos(): void
     {
         $this->assertSame($this->permisos()->nombres(), $this->permisos()->defaultsPara(RolUsuario::Administrador));
-        $this->assertSame($this->permisos()->nombres(), Usuario::factory()->administrador()->create()->permisosAsignados());
+        $this->assertSame($this->permisos()->nombres(), Usuario::factory()->principal()->create()->permisosAsignados());
+    }
+
+    public function test_un_administrador_que_no_es_el_principal_no_tiene_usuarios_ni_auditoria(): void
+    {
+        $esperados = array_values(array_diff($this->permisos()->nombres(), $this->permisos()->soloAdministrador()));
+
+        $this->assertSame($esperados, Usuario::factory()->administrador()->create()->permisosAsignados());
+        $this->assertSame($esperados, $this->permisos()->defaultsPara(RolUsuario::Administrador, false));
     }
 
     public function test_los_defaults_se_cambian_en_un_solo_lugar_y_solo_afectan_a_cuentas_nuevas(): void
@@ -205,6 +213,7 @@ class PermisosCatalogoTest extends TestCase
     {
         $todos = $this->permisos()->nombres();
         $revisadas = 0;
+        $principal = null;
 
         foreach ($this->rutasDeLaAplicacion() as $ruta) {
             $permiso = $this->permisoDeLaRuta($ruta);
@@ -215,7 +224,11 @@ class PermisosCatalogoTest extends TestCase
 
             $revisadas++;
             $sinEl = Usuario::factory()->administrador()->conPermisos(array_values(array_diff($todos, [$permiso])))->create();
-            $soloEl = Usuario::factory()->administrador()->conPermisos([$permiso])->create();
+
+            // Usuarios y Auditoría solo los tiene el administrador principal (el único que existe).
+            $soloEl = in_array($permiso, $this->permisos()->soloAdministrador(), true)
+                ? ($principal ??= Usuario::factory()->principal()->create())
+                : Usuario::factory()->administrador()->conPermisos([$permiso])->create();
 
             $this->assertSame(403, $this->estadoDeLaRuta($sinEl, $ruta), "{$ruta->getName()}: sin «{$permiso}» debería dar 403.");
             $this->assertNotSame(403, $this->estadoDeLaRuta($soloEl, $ruta), "{$ruta->getName()}: con solo «{$permiso}» no debería dar 403.");

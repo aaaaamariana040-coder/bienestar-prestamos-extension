@@ -97,9 +97,11 @@ return [
     ],
 
     /*
-     * Solo una cuenta con el rol Administrador puede tener estos permisos: quien
-     * gestiona usuarios podría darse cualquier otro permiso, y la auditoría es el
-     * control sobre todo lo demás. Se aplica en el formulario y en el servidor.
+     * Solo el administrador principal (usuarios.es_principal) tiene estos permisos, y
+     * siempre los tiene: quien gestiona usuarios podría darse cualquier otro permiso, y
+     * la auditoría es el control sobre todo lo demás. Los demás administradores y el
+     * Funcionario no los tienen aunque la lista guardada los traiga. Se aplica en el
+     * formulario y en el servidor. (El nombre de la clave es anterior a «principal».)
      */
     'solo_administrador' => [
         'usuarios.gestionar',

@@ -16,7 +16,7 @@
     <div class="mb-3">
         <label for="cedula" class="form-label">Cédula</label>
         <input type="text" id="cedula" name="cedula" class="form-control" value="{{ old('cedula') }}"
-               inputmode="numeric" maxlength="10" pattern="[0-9]{1,10}"
+               inputmode="numeric" autocomplete="off" maxlength="10" pattern="[0-9]{1,10}"
                title="Solo números, máximo 10 dígitos, sin puntos ni caracteres especiales" required>
     </div>
 @endif
@@ -24,7 +24,8 @@
 <div class="mb-3">
     <label for="nombre_completo" class="form-label">Nombre completo</label>
     <input type="text" id="nombre_completo" name="nombre_completo" class="form-control"
-           value="{{ old('nombre_completo', optional($empleado)->nombre_completo) }}" required>
+           value="{{ old('nombre_completo', optional($empleado)->nombre_completo) }}"
+           title="Solo letras (con tildes y ñ), espacios, apóstrofos, guiones y puntos; sin números" maxlength="150" required>
 </div>
 
 <div class="row">
@@ -91,6 +92,22 @@
 </div>
 
 <script>
+    (function () {
+        // Cédula: solo dígitos (también al pegar). Nombre: sin números ni símbolos (también al pegar).
+        const cedulaCampo = document.getElementById('cedula');
+        const nombreCampo = document.getElementById('nombre_completo');
+
+        if (cedulaCampo) {
+            cedulaCampo.addEventListener('input', function () {
+                cedulaCampo.value = cedulaCampo.value.replace(/\D/g, '').slice(0, 10);
+            });
+        }
+
+        nombreCampo.addEventListener('input', function () {
+            nombreCampo.value = nombreCampo.value.replace(/[^\p{L}\s'’.\-]/gu, '');
+        });
+    })();
+
     (function () {
         const salario = document.getElementById('salario');
         const capacidad = document.getElementById('capacidad_endeudamiento');

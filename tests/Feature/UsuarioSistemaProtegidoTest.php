@@ -26,7 +26,7 @@ class UsuarioSistemaProtegidoTest extends TestCase
 
         $this->seed(SistemaUsuarioSeeder::class);
         $this->sistema = Usuario::sistema();
-        $this->administrador = Usuario::factory()->administrador()->create(['nombre' => 'Ada', 'apellido' => 'Admin']);
+        $this->administrador = Usuario::factory()->principal()->create(['nombre' => 'Ada', 'apellido' => 'Admin']);
         Usuario::factory()->create(['nombre' => 'Fernando', 'apellido' => 'Funcionario']);
         $this->actingAs($this->administrador);
     }

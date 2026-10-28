@@ -30,7 +30,7 @@ class UpdateEmpleadoRequest extends FormRequest
         $estadosPermitidos = $this->route('empleado')->estado === 'Retirado' ? ['Activo', 'Retirado'] : ['Activo'];
 
         return [
-            'nombre_completo' => ['required', 'string', 'max:150'],
+            'nombre_completo' => ['required', 'string', 'max:150', "regex:/^[\p{L}\s'’.\-]+$/u"],
             'tipo_vinculacion' => ['required', Rule::enum(TipoVinculacion::class)],
             'de_carrera' => ['boolean'],
             'cargo' => ['nullable', 'string', 'max:100'],
@@ -48,6 +48,7 @@ class UpdateEmpleadoRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'nombre_completo.regex' => 'El nombre solo puede tener letras (con tildes y ñ), espacios, apóstrofos, guiones y puntos; no admite números.',
             'estado.in' => 'El retiro de un empleado solo se puede registrar mediante el flujo de retiro, no editando el estado.',
         ];
     }

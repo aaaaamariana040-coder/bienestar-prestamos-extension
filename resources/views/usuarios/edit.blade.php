@@ -36,13 +36,19 @@
 
         <div class="mb-3">
             <label for="rol" class="form-label">Rol</label>
-            <select id="rol" name="rol" class="form-select" required>
+            @if ($usuario->esPrincipal())
+                <input type="hidden" name="rol" value="{{ $usuario->rol->value }}">
+            @endif
+            <select id="rol" @unless ($usuario->esPrincipal()) name="rol" @endunless class="form-select" required @disabled($usuario->esPrincipal())>
                 @foreach (\App\Enums\RolUsuario::cases() as $rol)
                     <option value="{{ $rol->value }}" @selected(old('rol', $usuario->rol->value) === $rol->value)>
                         {{ $rol->name }}
                     </option>
                 @endforeach
             </select>
+            @if ($usuario->esPrincipal())
+                <div class="form-text">El administrador principal no puede dejar de ser Administrador.</div>
+            @endif
         </div>
 
         @include('usuarios._permisos', ['modo' => 'editar'])

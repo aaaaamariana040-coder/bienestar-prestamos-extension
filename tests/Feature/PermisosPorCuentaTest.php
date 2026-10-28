@@ -29,7 +29,7 @@ class PermisosPorCuentaTest extends TestCase
     {
         $fabrica = Usuario::factory()->conPermisos($permisos);
 
-        return ($administrador ? $fabrica->administrador() : $fabrica)->create();
+        return ($administrador ? $fabrica->principal() : $fabrica)->create();
     }
 
     // ───────── Menú ─────────
@@ -62,7 +62,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_usuarios_y_auditoria_aparecen_en_el_menu_solo_del_administrador(): void
     {
-        $this->actingAs(Usuario::factory()->administrador()->create())->get(route('inicio'))
+        $this->actingAs(Usuario::factory()->principal()->create())->get(route('inicio'))
             ->assertSee(route('usuarios.index'), false)->assertSee(route('auditoria.index'), false);
 
         $this->actingAs(Usuario::factory()->create())->get(route('inicio'))
@@ -159,7 +159,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_una_cuenta_deshabilitada_no_tiene_ningun_permiso(): void
     {
-        $cuenta = Usuario::factory()->administrador()->create(['habilitado' => false]);
+        $cuenta = Usuario::factory()->principal()->create(['habilitado' => false]);
 
         $this->assertFalse($cuenta->tienePermiso('usuarios.gestionar'));
         $this->assertFalse($cuenta->tienePermiso('empleados.ver'));
@@ -195,7 +195,7 @@ class PermisosPorCuentaTest extends TestCase
     public function test_una_cuenta_que_nace_sin_lista_recibe_los_permisos_de_su_perfil(): void
     {
         $creada = Usuario::create(['cedula' => '9990001', 'nombre' => 'Persona', 'apellido' => 'Ficticia', 'contrasena_hash' => 'x', 'rol' => RolUsuario::FuncionarioBienestar, 'habilitado' => true]);
-        $administrador = Usuario::create(['cedula' => '9990002', 'nombre' => 'Persona', 'apellido' => 'Ficticia', 'contrasena_hash' => 'x', 'rol' => RolUsuario::Administrador, 'habilitado' => true]);
+        $administrador = Usuario::create(['cedula' => '9990002', 'nombre' => 'Persona', 'apellido' => 'Ficticia', 'contrasena_hash' => 'x', 'rol' => RolUsuario::Administrador, 'habilitado' => true, 'es_principal' => true]);
         $vacia = Usuario::create(['cedula' => '9990003', 'nombre' => 'Persona', 'apellido' => 'Ficticia', 'contrasena_hash' => 'x', 'rol' => RolUsuario::FuncionarioBienestar, 'permisos' => [], 'habilitado' => true]);
 
         $this->assertContains('solicitudes.aprobar', $creada->fresh()->permisosAsignados());
@@ -224,13 +224,16 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_el_formulario_de_crear_muestra_las_casillas_agrupadas_marcadas_segun_el_perfil(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
 
         $respuesta = $this->actingAs($administrador)->get(route('usuarios.create'))->assertOk();
         $respuesta->assertSee('Permisos de la cuenta')->assertSee('name="permisos_enviados"', false)
             ->assertSee('Gestionar usuarios')->assertSee('Aprobar solicitudes')->assertSee('Cancelar un préstamo (cancelación total)')
             ->assertDontSee('Restablecer a los permisos del perfil');
-        $this->assertMatchesRegularExpression('/value="usuarios\.gestionar"[^>]*checked/s', $respuesta->getContent());
+        // Una cuenta nueva nunca es la principal: Usuarios y Auditoría salen deshabilitadas y sin marcar.
+        $this->assertMatchesRegularExpression('/value="usuarios\.gestionar"[^>]*disabled/s', $respuesta->getContent());
+        $this->assertDoesNotMatchRegularExpression('/value="usuarios\.gestionar"[^>]*checked/s', $respuesta->getContent());
+        $respuesta->assertSee('Solo el administrador principal gestiona usuarios y auditoría.');
 
         $comoFuncionario = $this->actingAs($administrador)->withSession(['_old_input' => ['rol' => 'FUNCIONARIO_BIENESTAR']])->get(route('usuarios.create'))->getContent();
         $this->assertDoesNotMatchRegularExpression('/value="usuarios\.gestionar"[^>]*checked/s', $comoFuncionario);
@@ -239,7 +242,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_crear_un_usuario_sin_casillas_usa_los_permisos_del_perfil(): void
     {
-        $this->actingAs(Usuario::factory()->administrador()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('FUNCIONARIO_BIENESTAR'))->assertRedirect();
+        $this->actingAs(Usuario::factory()->principal()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('FUNCIONARIO_BIENESTAR'))->assertRedirect();
 
         $this->assertSame(
             app(PermisosUsuarioService::class)->defaultsPara(RolUsuario::FuncionarioBienestar),
@@ -249,7 +252,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_crear_un_usuario_con_casillas_guarda_exactamente_las_marcadas_mas_lo_que_exigen(): void
     {
-        $this->actingAs(Usuario::factory()->administrador()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('FUNCIONARIO_BIENESTAR') + [
+        $this->actingAs(Usuario::factory()->principal()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('FUNCIONARIO_BIENESTAR') + [
             'permisos_enviados' => 1,
             'permisos' => ['solicitudes.registrar', 'simulador.usar'],
         ])->assertRedirect();
@@ -259,14 +262,14 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_crear_un_usuario_sin_ninguna_casilla_marcada_lo_deja_sin_permisos(): void
     {
-        $this->actingAs(Usuario::factory()->administrador()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('FUNCIONARIO_BIENESTAR') + ['permisos_enviados' => 1])->assertRedirect();
+        $this->actingAs(Usuario::factory()->principal()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('FUNCIONARIO_BIENESTAR') + ['permisos_enviados' => 1])->assertRedirect();
 
         $this->assertSame([], Usuario::findOrFail('5550001')->permisosAsignados());
     }
 
     public function test_un_permiso_exclusivo_del_administrador_se_rechaza_para_otro_rol(): void
     {
-        $this->actingAs(Usuario::factory()->administrador()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('FUNCIONARIO_BIENESTAR') + [
+        $this->actingAs(Usuario::factory()->principal()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('FUNCIONARIO_BIENESTAR') + [
             'permisos_enviados' => 1,
             'permisos' => ['usuarios.gestionar', 'empleados.ver'],
         ])->assertSessionHasErrors('permisos');
@@ -277,7 +280,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_un_permiso_que_no_existe_se_rechaza(): void
     {
-        $this->actingAs(Usuario::factory()->administrador()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('ADMINISTRADOR') + [
+        $this->actingAs(Usuario::factory()->principal()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('ADMINISTRADOR') + [
             'permisos_enviados' => 1,
             'permisos' => ['permiso.inventado'],
         ])->assertSessionHasErrors('permisos.0');
@@ -285,19 +288,22 @@ class PermisosPorCuentaTest extends TestCase
         $this->assertNull(Usuario::find('5550001'));
     }
 
-    public function test_un_administrador_nuevo_puede_tener_usuarios_y_auditoria(): void
+    public function test_un_administrador_nuevo_no_recibe_usuarios_ni_auditoria_aunque_lleguen_en_la_peticion(): void
     {
-        $this->actingAs(Usuario::factory()->administrador()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('ADMINISTRADOR') + [
+        $this->actingAs(Usuario::factory()->principal()->create())->post(route('usuarios.store'), $this->datosNuevoUsuario('ADMINISTRADOR') + [
             'permisos_enviados' => 1,
-            'permisos' => ['usuarios.gestionar', 'auditoria.ver'],
+            'permisos' => ['usuarios.gestionar', 'auditoria.ver', 'empleados.ver'],
         ])->assertRedirect();
 
-        $this->assertSame(['usuarios.gestionar', 'auditoria.ver'], Usuario::findOrFail('5550001')->permisosAsignados());
+        $nuevo = Usuario::findOrFail('5550001');
+        $this->assertSame(['empleados.ver'], $nuevo->permisosAsignados());
+        $this->assertNotContains('usuarios.gestionar', (array) $nuevo->permisos);
+        $this->assertFalse($nuevo->esPrincipal());
     }
 
     public function test_editar_sin_casillas_conserva_los_permisos_aunque_cambie_el_nombre(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $cuenta = $this->cuenta(['empleados.ver', 'simulador.usar']);
 
         $this->actingAs($administrador)->put(route('usuarios.update', $cuenta), ['nombre' => 'Nuevo', 'apellido' => 'Nombre', 'rol' => 'FUNCIONARIO_BIENESTAR'])->assertRedirect(route('usuarios.index'));
@@ -308,7 +314,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_cambiar_el_rol_al_editar_no_sobrescribe_las_casillas(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $cuenta = $this->cuenta(['empleados.ver', 'simulador.usar']);
 
         $this->actingAs($administrador)->put(route('usuarios.update', $cuenta), ['nombre' => 'A', 'apellido' => 'B', 'rol' => 'ADMINISTRADOR'])->assertRedirect();
@@ -319,7 +325,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_pasar_a_un_administrador_a_otro_rol_sin_casillas_le_quita_lo_exclusivo(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $otro = Usuario::factory()->administrador()->create();
 
         $this->actingAs($administrador)->put(route('usuarios.update', $otro), ['nombre' => 'A', 'apellido' => 'B', 'rol' => 'FUNCIONARIO_BIENESTAR'])->assertRedirect();
@@ -331,7 +337,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_la_pantalla_de_editar_muestra_restablecer_y_la_etiqueta_personalizado_solo_si_difiere(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $personalizada = $this->cuenta(['empleados.ver']);
         $delPerfil = Usuario::factory()->create();
 
@@ -345,7 +351,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_la_pantalla_de_editar_marca_las_casillas_de_la_cuenta_y_el_script_no_toca_el_rol_al_editar(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $cuenta = $this->cuenta(['empleados.ver', 'simulador.usar']);
 
         $html = $this->actingAs($administrador)->get(route('usuarios.edit', $cuenta))->getContent();
@@ -358,7 +364,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_el_listado_marca_como_personalizadas_solo_las_cuentas_que_difieren_del_perfil(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $this->cuenta(['empleados.ver']);
 
         $html = $this->actingAs($administrador)->get(route('usuarios.index'))->assertOk()->getContent();
@@ -368,7 +374,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_restablecer_a_los_defaults_del_perfil_deja_la_cuenta_sin_etiqueta(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $cuenta = $this->cuenta(['empleados.ver']);
         $defaults = app(PermisosUsuarioService::class)->defaultsPara(RolUsuario::FuncionarioBienestar);
 
@@ -400,7 +406,8 @@ class PermisosPorCuentaTest extends TestCase
         $funcionario = Usuario::findOrFail('7770002');
         $todos = array_keys(config('permisos.catalogo'));
 
-        $this->assertEqualsCanonicalizing($todos, $administrador->permisosAsignados());
+        // Esta migración es anterior a «principal»: el administrador no lo es y no recibe Usuarios ni Auditoría.
+        $this->assertEqualsCanonicalizing(array_values(array_diff($todos, ['usuarios.gestionar', 'auditoria.ver'])), $administrador->permisosAsignados());
         $this->assertEqualsCanonicalizing(array_values(array_diff($todos, ['usuarios.gestionar', 'auditoria.ver', 'seguros.gestionar'])), $funcionario->permisosAsignados());
         $this->assertSame([], Usuario::findOrFail('0000000000')->permisos);
     }

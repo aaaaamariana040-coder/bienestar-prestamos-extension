@@ -29,7 +29,7 @@ class StoreEmpleadoRequest extends FormRequest
     {
         return [
             'cedula' => ['required', 'regex:/^\d{1,10}$/', 'unique:empleados,cedula'],
-            'nombre_completo' => ['required', 'string', 'max:150'],
+            'nombre_completo' => ['required', 'string', 'max:150', "regex:/^[\p{L}\s'’.\-]+$/u"],
             'tipo_vinculacion' => ['required', Rule::enum(TipoVinculacion::class)],
             'de_carrera' => ['boolean'],
             'cargo' => ['nullable', 'string', 'max:100'],
@@ -49,6 +49,7 @@ class StoreEmpleadoRequest extends FormRequest
         return [
             'cedula.required' => 'La cédula es obligatoria.',
             'cedula.regex' => 'La cédula debe contener solo números, máximo 10 dígitos, sin puntos ni caracteres especiales.',
+            'nombre_completo.regex' => 'El nombre solo puede tener letras (con tildes y ñ), espacios, apóstrofos, guiones y puntos; no admite números.',
             'cedula.unique' => 'Ya existe un empleado con esa cédula.',
             'estado.in' => 'Un empleado nuevo solo puede crearse con estado Activo.',
         ];

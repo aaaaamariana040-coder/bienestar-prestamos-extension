@@ -43,7 +43,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_al_unico_administrador_activo_no_se_le_quita_ningun_permiso(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $sinUnPermiso = array_values(array_diff($administrador->permisosAsignados(), ['simulador.usar']));
 
         $this->editar($administrador, $administrador, 'ADMINISTRADOR', $sinUnPermiso)->assertSessionHasErrors(['permisos' => 'No se pueden quitar permisos al único administrador activo.']);
@@ -54,9 +54,9 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_al_unico_administrador_activo_no_se_le_cambia_el_rol(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
 
-        $this->editar($administrador, $administrador, 'FUNCIONARIO_BIENESTAR')->assertSessionHasErrors(['permisos' => 'No se puede cambiar el rol del único administrador activo.']);
+        $this->editar($administrador, $administrador, 'FUNCIONARIO_BIENESTAR')->assertSessionHasErrors(['permisos' => 'El administrador principal no puede dejar de ser Administrador.']);
 
         $this->assertSame(RolUsuario::Administrador, $administrador->fresh()->rol);
         $this->assertSame(0, Auditoria::count());
@@ -64,7 +64,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_el_unico_administrador_si_puede_cambiar_su_nombre_y_recibir_mas_permisos(): void
     {
-        $administrador = Usuario::factory()->administrador()->conPermisos(['usuarios.gestionar', 'auditoria.ver'])->create();
+        $administrador = Usuario::factory()->principal()->conPermisos(['usuarios.gestionar', 'auditoria.ver'])->create();
 
         $this->editar($administrador, $administrador, 'ADMINISTRADOR', [...$administrador->permisosAsignados(), 'simulador.usar'], 'Otro')->assertSessionHasNoErrors();
 
@@ -74,7 +74,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_con_otro_administrador_activo_si_se_le_pueden_quitar_permisos_a_uno(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $otro = Usuario::factory()->administrador()->create();
         $sinUnPermiso = array_values(array_diff($otro->permisosAsignados(), ['simulador.usar']));
 
@@ -85,7 +85,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_un_administrador_deshabilitado_no_cuenta_como_otro_administrador_activo(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         Usuario::factory()->administrador()->create(['habilitado' => false]);
 
         $this->editar($administrador, $administrador, 'FUNCIONARIO_BIENESTAR')->assertSessionHasErrors('permisos');
@@ -93,30 +93,32 @@ class UsuarioSalvaguardasTest extends TestCase
 
     // ───────── Auto-bloqueo ─────────
 
-    public function test_un_administrador_no_puede_quitarse_a_si_mismo_el_acceso_a_usuarios(): void
+    public function test_el_principal_no_puede_quitarse_el_acceso_a_usuarios_ni_a_auditoria_aunque_manipule_la_peticion(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         Usuario::factory()->administrador()->create();
-        $sinUsuarios = array_values(array_diff($actor->permisosAsignados(), ['usuarios.gestionar']));
+        $sinExclusivos = array_values(array_diff($actor->permisosAsignados(), ['usuarios.gestionar', 'auditoria.ver']));
 
-        $this->editar($actor, $actor, 'ADMINISTRADOR', $sinUsuarios)->assertSessionHasErrors(['permisos' => 'No puedes quitarte a ti mismo el acceso a Usuarios.']);
+        $this->editar($actor, $actor, 'ADMINISTRADOR', $sinExclusivos)->assertSessionHasNoErrors();
 
         $this->assertContains('usuarios.gestionar', $actor->fresh()->permisosAsignados());
+        $this->assertContains('auditoria.ver', $actor->fresh()->permisosAsignados());
+        $this->actingAs($actor->fresh())->get(route('usuarios.index'))->assertOk();
     }
 
     public function test_un_administrador_no_puede_pasarse_a_otro_rol_aunque_haya_otro_administrador(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         Usuario::factory()->administrador()->create();
 
-        $this->editar($actor, $actor, 'FUNCIONARIO_BIENESTAR')->assertSessionHasErrors(['permisos' => 'No puedes quitarte a ti mismo el acceso a Usuarios.']);
+        $this->editar($actor, $actor, 'FUNCIONARIO_BIENESTAR')->assertSessionHasErrors(['permisos' => 'El administrador principal no puede dejar de ser Administrador.']);
 
         $this->assertSame(RolUsuario::Administrador, $actor->fresh()->rol);
     }
 
     public function test_un_administrador_si_puede_quitarle_usuarios_a_otro_administrador_mientras_quede_quien_gestione(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $otro = Usuario::factory()->administrador()->create();
         $sinUsuarios = array_values(array_diff($otro->permisosAsignados(), ['usuarios.gestionar']));
 
@@ -128,22 +130,21 @@ class UsuarioSalvaguardasTest extends TestCase
 
     // ───────── Al menos una cuenta que gestione usuarios ─────────
 
-    public function test_siempre_debe_quedar_una_cuenta_activa_que_gestione_usuarios(): void
+    public function test_siempre_queda_una_cuenta_activa_que_gestione_usuarios_porque_el_principal_los_conserva(): void
     {
-        $unica = Usuario::factory()->administrador()->create();
+        $unica = Usuario::factory()->principal()->create();
         $sinGestion = Usuario::factory()->administrador()->conPermisos(['empleados.ver'])->create();
         $sinUsuarios = array_values(array_diff($unica->permisosAsignados(), ['usuarios.gestionar']));
 
         // Quien actúa (un tercero, por ejemplo desde la consola) intenta dejar al sistema sin gestión de usuarios.
-        $this->expectException(CambioDeUsuarioNoPermitidoException::class);
-        $this->expectExceptionMessage('Debe quedar al menos una cuenta activa con permiso para gestionar usuarios.');
-
         app(UsuarioService::class)->actualizar($unica, ['nombre' => 'A', 'apellido' => 'B', 'rol' => 'ADMINISTRADOR', 'permisos' => $sinUsuarios], $sinGestion);
+
+        $this->assertTrue($unica->fresh()->tienePermiso('usuarios.gestionar'));
     }
 
     public function test_deshabilitar_a_la_unica_cuenta_que_gestiona_usuarios_se_rechaza(): void
     {
-        $unica = Usuario::factory()->administrador()->create();
+        $unica = Usuario::factory()->principal()->create();
         $otro = Usuario::factory()->create();
 
         $this->expectException(CambioDeUsuarioNoPermitidoException::class);
@@ -153,7 +154,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_el_servidor_rechaza_dar_permisos_exclusivos_a_un_funcionario_aunque_se_salte_el_formulario(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $funcionario = Usuario::factory()->create();
 
         $this->expectException(CambioDeUsuarioNoPermitidoException::class);
@@ -163,7 +164,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_el_servidor_rechaza_crear_un_funcionario_con_permisos_exclusivos_sin_pasar_por_el_formulario(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
 
         $this->expectException(CambioDeUsuarioNoPermitidoException::class);
 
@@ -172,7 +173,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_deshabilitar_a_un_funcionario_sigue_funcionando(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $funcionario = Usuario::factory()->create();
 
         $this->actingAs($actor)->patch(route('usuarios.deshabilitar', $funcionario))->assertRedirect(route('usuarios.index'))->assertSessionHas('status');
@@ -184,7 +185,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_crear_un_usuario_deja_auditoria_con_su_rol_y_permisos(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
 
         $this->actingAs($actor)->post(route('usuarios.store'), [
             'cedula' => '5550001', 'nombre' => 'Persona', 'apellido' => 'Ficticia', 'password' => 'Clave12345', 'password_confirmation' => 'Clave12345',
@@ -200,7 +201,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_cambiar_permisos_deja_auditoria_con_quien_a_quien_y_lo_agregado_y_quitado(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $cuenta = Usuario::factory()->conPermisos(['empleados.ver', 'simulador.usar'])->create();
 
         $this->editar($actor, $cuenta, 'FUNCIONARIO_BIENESTAR', ['empleados.ver', 'proveedores.ver'])->assertSessionHasNoErrors();
@@ -215,7 +216,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_cambiar_el_rol_deja_su_propia_auditoria(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $cuenta = Usuario::factory()->create();
 
         $this->editar($actor, $cuenta, 'ADMINISTRADOR', $cuenta->permisosAsignados())->assertSessionHasNoErrors();
@@ -225,21 +226,21 @@ class UsuarioSalvaguardasTest extends TestCase
         $this->assertStringContainsString('de FUNCIONARIO_BIENESTAR a ADMINISTRADOR', $auditoria->detalle);
     }
 
-    public function test_pasar_a_un_administrador_a_funcionario_audita_el_rol_y_lo_exclusivo_quitado(): void
+    public function test_pasar_a_un_administrador_a_funcionario_audita_el_rol(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $otro = Usuario::factory()->administrador()->create();
 
         $this->editar($actor, $otro, 'FUNCIONARIO_BIENESTAR')->assertSessionHasNoErrors();
 
         $this->assertSame(1, Auditoria::where('funcion_realizada', 'Cambio de rol de usuario')->count());
-        $permisos = Auditoria::where('funcion_realizada', 'Cambio de permisos de usuario')->sole();
-        $this->assertStringContainsString('quitó: usuarios.gestionar, auditoria.ver', $permisos->detalle);
+        // Un administrador que no es el principal no tenía Usuarios ni Auditoría: no hay permisos que quitar.
+        $this->assertSame(0, Auditoria::where('funcion_realizada', 'Cambio de permisos de usuario')->count());
     }
 
     public function test_habilitar_y_deshabilitar_dejan_auditoria(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $cuenta = Usuario::factory()->create();
 
         $this->actingAs($actor)->patch(route('usuarios.deshabilitar', $cuenta));
@@ -252,7 +253,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_si_no_cambia_nada_de_rol_ni_permisos_no_hay_auditoria(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $cuenta = Usuario::factory()->create();
 
         $this->editar($actor, $cuenta, 'FUNCIONARIO_BIENESTAR', $cuenta->permisosAsignados(), 'Nombre nuevo')->assertSessionHasNoErrors();
@@ -263,7 +264,7 @@ class UsuarioSalvaguardasTest extends TestCase
 
     public function test_un_cambio_rechazado_no_deja_auditoria_ni_cambia_la_cuenta(): void
     {
-        $actor = Usuario::factory()->administrador()->create();
+        $actor = Usuario::factory()->principal()->create();
         $funcionario = Usuario::factory()->create();
         $antes = $funcionario->permisosAsignados();
 

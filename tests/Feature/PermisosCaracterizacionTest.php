@@ -53,9 +53,9 @@ class PermisosCaracterizacionTest extends TestCase
         $this->assertSame([], $rechazadas, 'El Funcionario no debe recibir 403 fuera de usuarios, auditoría y gestión de seguros.');
     }
 
-    public function test_el_administrador_pasa_la_autorizacion_en_todas_las_rutas(): void
+    public function test_el_administrador_principal_pasa_la_autorizacion_en_todas_las_rutas(): void
     {
-        $administrador = Usuario::factory()->administrador()->create();
+        $administrador = Usuario::factory()->principal()->create();
         $rechazadas = [];
 
         foreach ($this->rutasDeLaAplicacion() as $ruta) {
@@ -64,7 +64,7 @@ class PermisosCaracterizacionTest extends TestCase
             }
         }
 
-        $this->assertSame([], $rechazadas, 'El Administrador no debe recibir 403 en ninguna ruta.');
+        $this->assertSame([], $rechazadas, 'El administrador principal no debe recibir 403 en ninguna ruta.');
     }
 
     public function test_un_invitado_no_pasa_en_ninguna_ruta_protegida(): void

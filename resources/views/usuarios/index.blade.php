@@ -23,6 +23,9 @@
                     <td>{{ $usuario->nombre_completo }}</td>
                     <td>
                         {{ $usuario->rol->name }}
+                        @if ($usuario->esPrincipal())
+                            <span class="badge text-bg-primary" title="Gestiona usuarios y consulta la auditoría">Principal</span>
+                        @endif
                         @if ($personalizados[$usuario->cedula] ?? false)
                             <span class="badge text-bg-warning" title="Sus permisos difieren de los del perfil">Personalizado</span>
                         @endif
@@ -32,7 +35,7 @@
                         <a href="{{ route('usuarios.edit', $usuario) }}" class="btn btn-sm btn-outline-secondary">Editar rol y permisos</a>
 
                         @if ($usuario->habilitado && $usuario->rol === \App\Enums\RolUsuario::Administrador)
-                            <span class="d-inline-block" title="El administrador no se puede deshabilitar" tabindex="0">
+                            <span class="d-inline-block" title="{{ $usuario->esPrincipal() ? 'El administrador principal no se puede deshabilitar' : 'El administrador no se puede deshabilitar' }}" tabindex="0">
                                 <button type="button" class="btn btn-sm btn-outline-secondary" disabled>Deshabilitar</button>
                             </span>
                         @elseif ($usuario->habilitado)

@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        Usuario::factory()->administrador()->create([
+        Usuario::factory()->principal()->create([
             'cedula' => '1000000000',
             'nombre' => 'Administrador',
             'apellido' => 'Bienestar',

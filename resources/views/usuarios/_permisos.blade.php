@@ -1,12 +1,13 @@
 {{--
     Casillas de permisos de la cuenta, agrupadas por módulo.
     Variables: $grupos, $seleccionados, $defaultsPorRol, $exigidos, $dependientes, $soloAdministrador,
-    $modo ('crear' | 'editar') y $personalizado (solo al editar).
+    $esPrincipal, $modo ('crear' | 'editar') y $personalizado (solo al editar).
 
     Al crear, cambiar el rol marca los permisos por defecto de ese perfil. Al editar, cambiar el rol NO
     toca las casillas: el botón «Restablecer a los permisos del perfil» las lleva a los del perfil.
-    Los permisos exclusivos del Administrador se deshabilitan si el rol no lo es, y «gestionar» marca
-    también los permisos que exige («ver»). El servidor aplica las mismas reglas.
+    Usuarios y Auditoría son exclusivos del administrador principal: en su cuenta salen marcados y
+    bloqueados; en las demás, deshabilitados. «gestionar» marca también los permisos que exige («ver»).
+    El servidor aplica las mismas reglas (ignora lo que llegue en esas casillas).
 --}}
 <fieldset class="border rounded p-3 mb-3" id="permisos-cuenta">
     <legend class="float-none w-auto px-2 fs-6">
@@ -18,7 +19,7 @@
 
     <p class="small text-muted">
         Marca lo que podrá hacer esta cuenta. Las casillas parten de los permisos del perfil elegido; «gestionar» marca también «ver».
-        Usuarios y Auditoría son exclusivos del rol Administrador.
+        Solo el administrador principal gestiona usuarios y auditoría.
     </p>
 
     @if ($modo === 'editar')
@@ -36,10 +37,17 @@
                                data-exige="{{ json_encode($exigidos[$permiso] ?? []) }}"
                                data-exigido-por="{{ json_encode($dependientes[$permiso] ?? []) }}"
                                data-solo-administrador="{{ in_array($permiso, $soloAdministrador, true) ? '1' : '0' }}"
-                               @checked(in_array($permiso, $seleccionados, true))>
+                               @if (in_array($permiso, $soloAdministrador, true))
+                                   @checked($esPrincipal) disabled
+                               @else
+                                   @checked(in_array($permiso, $seleccionados, true))
+                               @endif>
                         <label class="form-check-label" for="permiso-{{ str_replace('.', '-', $permiso) }}">
                             {{ $datos['nombre'] }}
                             <small class="text-muted d-block">{{ $datos['descripcion'] }}</small>
+                            @if (in_array($permiso, $soloAdministrador, true))
+                                <small class="text-muted d-block fst-italic">{{ $esPrincipal ? 'Fijo: pertenece al administrador principal.' : 'Solo el administrador principal gestiona usuarios y auditoría.' }}</small>
+                            @endif
                         </label>
                     </div>
                 @endforeach
@@ -55,6 +63,7 @@
         const defaults = @json($defaultsPorRol);
         const modo = @json($modo);
         const etiqueta = document.getElementById('etiqueta-personalizado');
+        const esPrincipal = @json($esPrincipal);
         const porNombre = {};
 
         cajas.forEach(function (caja) {
@@ -83,16 +92,12 @@
             });
         }
 
+        // Usuarios y Auditoría: marcadas y bloqueadas en el principal; deshabilitadas y vacías en las demás.
         function aplicarRol() {
-            const esAdministrador = rol.value === 'ADMINISTRADOR';
-
             cajas.forEach(function (caja) {
                 if (caja.dataset.soloAdministrador === '1') {
-                    caja.disabled = ! esAdministrador;
-
-                    if (! esAdministrador) {
-                        caja.checked = false;
-                    }
+                    caja.disabled = true;
+                    caja.checked = esPrincipal;
                 }
             });
         }
@@ -111,7 +116,9 @@
             const porDefecto = defaults[rol.value] || [];
 
             cajas.forEach(function (caja) {
-                caja.checked = porDefecto.indexOf(caja.value) !== -1 && ! caja.disabled;
+                if (caja.dataset.soloAdministrador !== '1') {
+                    caja.checked = porDefecto.indexOf(caja.value) !== -1;
+                }
             });
         }
 
