@@ -350,7 +350,9 @@ class VencimientosCalendarioTest extends TestCase
         $this->assertSame('Pagada', $referencia['cuotas'][1][5]);
         $this->assertSame(1, $referencia['proceso'][1]);
 
-        foreach ([0, 1, 5, 14, 30] as $dias) {
+        // Con un cierre más temprano que el desembolso (14 o 30 días) la primera cuota pasa a la quincena
+        // siguiente por diseño (PrimeraCuotaConCierreTest); estos cierres la dejan en la misma.
+        foreach ([0, 1, 5, 9] as $dias) {
             $this->assertSame($referencia, $this->operacionesConCierre($dias, $modalidad, $actor), "Con el cierre a {$dias} días antes");
         }
     }

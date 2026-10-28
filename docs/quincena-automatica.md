@@ -33,7 +33,8 @@ Todas las claves se pueden fijar en `.env` o en `config/quincena.php`.
 | `modo_marcado` | `QUINCENA_MODO_MARCADO` | `confirmar`: el proceso por consola solo calcula y muestra la vista previa; una persona confirma la quincena desde la pantalla. `automatico`: el proceso real crea los pagos con origen Automático a nombre de Sistema. | `confirmar` |
 | `inicio_primera_cuota` | `QUINCENA_INICIO_PRIMERA_CUOTA` | `desde_aprobacion` o `desde_desembolso`. | `desde_desembolso` |
 | `programador_activo` | `QUINCENA_PROGRAMADOR_ACTIVO` | `true` / `false`. | `false` |
-| `cierre_novedades_dias_antes` | `QUINCENA_CIERRE_NOVEDADES_DIAS_ANTES` | Días calendario antes de cada vencimiento. **Provisional** y solo informativo: se muestra en la vista previa de la quincena y no bloquea nada. | `2` |
+| `cierre_novedades_dias_antes` | `QUINCENA_CIERRE_NOVEDADES_DIAS_ANTES` | Días calendario antes de cada vencimiento. **Provisional**: se muestra en la vista previa de la quincena y no bloquea nada; decide la quincena de la primera cuota de un crédito nuevo. | `2` |
+| `desembolso_dia_cierre_entra` | `QUINCENA_DESEMBOLSO_DIA_CIERRE_ENTRA` | Si un desembolso hecho el mismo día del cierre de novedades todavía entra en esa quincena. **Por confirmar con Bienestar.** | `false` |
 
 Un valor inválido en `regla_vencimiento` o `modo_marcado` hace fallar el proceso con un mensaje claro: nunca se adivina ni se cae en el modo automático.
 

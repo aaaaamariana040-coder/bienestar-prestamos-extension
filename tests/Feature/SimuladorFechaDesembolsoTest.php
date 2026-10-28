@@ -131,6 +131,23 @@ class SimuladorFechaDesembolsoTest extends TestCase
         $this->assertSame(app(CalendarioQuincenalService::class)->vencimientosDesde($esperada, self::PLAZO), $this->fechas($resultado), 'Las demás cuotas siguen el calendario quincenal.');
     }
 
+    public function test_la_fecha_estimada_usa_la_misma_regla_del_cierre_de_novedades(): void
+    {
+        config(['quincena.cierre_novedades_dias_antes' => 2, 'quincena.desembolso_dia_cierre_entra' => false]);
+
+        $this->assertSame('2026-11-15', $this->simular('2026-10-30')['primera_cuota']['fecha']);
+        $this->assertSame('2026-11-15', $this->simular('2026-10-29')['primera_cuota']['fecha']);
+        $this->assertSame('2026-10-31', $this->simular('2026-10-28')['primera_cuota']['fecha']);
+
+        config(['quincena.desembolso_dia_cierre_entra' => true]);
+        $this->assertSame('2026-10-31', $this->simular('2026-10-29')['primera_cuota']['fecha']);
+
+        $this->assertSame(
+            app(CalendarioQuincenalService::class)->primeraCuotaConCierre('2026-10-30'),
+            $this->simular('2026-10-30')['primera_cuota']['fecha'],
+        );
+    }
+
     public function test_la_pantalla_muestra_la_primera_cuota_estimada_con_su_nota(): void
     {
         $html = $this->calcular('2026-11-03')->assertOk()->json('html');

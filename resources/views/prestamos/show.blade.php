@@ -62,6 +62,12 @@
                         Las cuotas empiezan a descontarse a partir del desembolso.
                     @else
                         Primera cuota: {{ ($prestamo->inicio_primera_cuota ?? $prestamo->cuotas->first()?->fecha_vencimiento)?->format('Y-m-d') ?? '—' }}
+                        @if ($cierrePrimeraCuota)
+                            <div class="small text-muted" id="cierre-primera-cuota">Cierre de novedades de esa quincena: {{ $cierrePrimeraCuota->format('d/m/Y') }}.</div>
+                        @endif
+                        @if ($prestamo->motivo_primera_cuota)
+                            <div class="small text-muted" id="motivo-primera-cuota">Quincena elegida por el funcionario: {{ $prestamo->motivo_primera_cuota }}</div>
+                        @endif
                     @endif
                 </td>
             </tr>
@@ -130,6 +136,36 @@
                                 @endforeach
                             </select>
                         </div>
+
+                        @if ($opcionesPrimeraCuota !== null && $siguienteTramo === 1)
+                            @php
+                                $fmt = fn (string $f): string => \Carbon\Carbon::parse($f)->format('d/m/Y');
+                                $opcionElegida = old('primera_cuota_opcion', 'propuesta');
+                            @endphp
+                            <div class="col-12" id="primera-cuota-desembolso">
+                                <div class="alert alert-info py-2 mb-2" id="primera-cuota-propuesta">
+                                    Primera cuota propuesta: <strong data-propuesta-vencimiento>{{ $fmt($opcionesPrimeraCuota['propuesta']['vencimiento']) }}</strong>. Cierre de novedades de esa quincena: <span data-propuesta-cierre>{{ $fmt($opcionesPrimeraCuota['propuesta']['cierre']) }}</span>.
+                                </div>
+                                <div class="mb-2">
+                                    <div class="form-check">
+                                        <input type="radio" class="form-check-input" name="primera_cuota_opcion" id="opcion_propuesta" value="propuesta" @checked($opcionElegida === 'propuesta')>
+                                        <label class="form-check-label" for="opcion_propuesta">Usar la propuesta</label>
+                                    </div>
+                                    <div class="form-check" id="opcion-anterior-contenedor" @if ($opcionesPrimeraCuota['anterior'] === null) hidden @endif>
+                                        <input type="radio" class="form-check-input" name="primera_cuota_opcion" id="opcion_anterior" value="anterior" @checked($opcionElegida === 'anterior')>
+                                        <label class="form-check-label" for="opcion_anterior">Quincena anterior: <span data-anterior>{{ $opcionesPrimeraCuota['anterior'] ? $fmt($opcionesPrimeraCuota['anterior']['vencimiento']).' (cierre '.$fmt($opcionesPrimeraCuota['anterior']['cierre']).')' : '' }}</span></label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="radio" class="form-check-input" name="primera_cuota_opcion" id="opcion_siguiente" value="siguiente" @checked($opcionElegida === 'siguiente')>
+                                        <label class="form-check-label" for="opcion_siguiente">Quincena siguiente: <span data-siguiente>{{ $fmt($opcionesPrimeraCuota['siguiente']['vencimiento']).' (cierre '.$fmt($opcionesPrimeraCuota['siguiente']['cierre']).')' }}</span></label>
+                                    </div>
+                                </div>
+                                <div id="motivo-primera-cuota-grupo" @if ($opcionElegida === 'propuesta') hidden @endif>
+                                    <label for="motivo_primera_cuota" class="form-label">Motivo de elegir otra quincena (obligatorio)</label>
+                                    <input type="text" id="motivo_primera_cuota" name="motivo_primera_cuota" maxlength="500" class="form-control" value="{{ old('motivo_primera_cuota') }}">
+                                </div>
+                            </div>
+                        @endif
 
                         @if ($siguienteTramo === 2)
                             <div class="col-auto form-check">
@@ -391,6 +427,63 @@
 @endsection
 
 @push('scripts')
+    @if ($opcionesPrimeraCuota !== null)
+        <script>
+            (function () {
+                const campoFecha = document.getElementById('fecha');
+                const bloque = document.getElementById('primera-cuota-desembolso');
+
+                if (! campoFecha || ! bloque) {
+                    return;
+                }
+
+                const url = @json(route('desembolsos.primera-cuota', $prestamo));
+                const motivoGrupo = document.getElementById('motivo-primera-cuota-grupo');
+                const radios = document.querySelectorAll('input[name="primera_cuota_opcion"]');
+                const motivo = document.getElementById('motivo_primera_cuota');
+
+                function alternarMotivo() {
+                    const otra = document.querySelector('input[name="primera_cuota_opcion"]:checked').value !== 'propuesta';
+                    motivoGrupo.hidden = ! otra;
+                    motivo.required = otra;
+                }
+
+                function texto(opcion) {
+                    return opcion.vencimiento_legible + ' (cierre ' + opcion.cierre_legible + ')';
+                }
+
+                function consultar() {
+                    if (campoFecha.value === '') {
+                        return;
+                    }
+
+                    fetch(url + '?fecha=' + encodeURIComponent(campoFecha.value), { headers: { 'Accept': 'application/json' } })
+                        .then(function (respuesta) { return respuesta.ok ? respuesta.json() : null; })
+                        .then(function (datos) {
+                            if (! datos) {
+                                return;
+                            }
+
+                            bloque.querySelector('[data-propuesta-vencimiento]').textContent = datos.propuesta.vencimiento_legible;
+                            bloque.querySelector('[data-propuesta-cierre]').textContent = datos.propuesta.cierre_legible;
+                            bloque.querySelector('[data-siguiente]').textContent = texto(datos.siguiente);
+                            bloque.querySelector('[data-anterior]').textContent = datos.anterior ? texto(datos.anterior) : '';
+                            document.getElementById('opcion-anterior-contenedor').hidden = datos.anterior === null;
+
+                            if (datos.anterior === null && document.getElementById('opcion_anterior').checked) {
+                                document.getElementById('opcion_propuesta').checked = true;
+                            }
+
+                            alternarMotivo();
+                        });
+                }
+
+                radios.forEach(function (radio) { radio.addEventListener('change', alternarMotivo); });
+                campoFecha.addEventListener('change', consultar);
+                alternarMotivo();
+            })();
+        </script>
+    @endif
     @can('registrarAbono', $prestamo)
         <script>
             (function () {

@@ -156,6 +156,7 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
         Route::get('prestamos', [PrestamoController::class, 'index'])->name('prestamos.index');
         Route::get('prestamos/{prestamo}', [PrestamoController::class, 'show'])->name('prestamos.show');
     });
+    Route::get('prestamos/{prestamo}/desembolsos/primera-cuota', [DesembolsoController::class, 'primeraCuota'])->middleware('can:desembolsos.registrar')->name('desembolsos.primera-cuota');
     Route::post('prestamos/{prestamo}/desembolsos', [DesembolsoController::class, 'store'])->middleware('can:desembolsos.registrar')->name('desembolsos.store');
     Route::post('prestamos/{prestamo}/cuotas/{cuota}/pagos', [PagoController::class, 'storeCuota'])->middleware('can:pagos.registrar-cuota')->name('pagos.store-cuota');
     Route::middleware('can:pagos.registrar-abono')->group(function () {

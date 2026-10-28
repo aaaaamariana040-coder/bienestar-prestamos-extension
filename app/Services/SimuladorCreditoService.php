@@ -578,9 +578,9 @@ class SimuladorCreditoService
      */
     private function conFechasEstimadas(array $tabla, int $plazoQuincenas, ?string $fechaDesembolso = null): array
     {
-        // Con fecha de desembolso: la misma regla del desembolso real (primer vencimiento posterior).
+        // Con fecha de desembolso: la misma regla del desembolso real (vencimiento posterior y cierre de novedades).
         $primera = $fechaDesembolso !== null
-            ? $this->calendario->primerVencimientoPosterior($fechaDesembolso)
+            ? $this->calendario->primeraCuotaConCierre($fechaDesembolso)
             : $this->prestamoService->fechaPrimeraCuota(now()->toDateString());
 
         $fechas = $this->prestamoService->fechasDeVencimiento($primera, $plazoQuincenas);
