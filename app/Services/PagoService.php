@@ -32,6 +32,8 @@ class PagoService
      */
     public function registrarPagoCuota(Prestamo $prestamo, Cuota $cuota, string $fechaPago, Usuario $actor, OrigenPago $origen = OrigenPago::Manual, ?int $idProcesoQuincena = null): Pago
     {
+        $prestamo->asegurarDesembolsado();
+
         if ($cuota->id_prestamo !== $prestamo->id_prestamo) {
             throw new RuntimeException('La cuota no pertenece a este préstamo.');
         }
@@ -78,6 +80,8 @@ class PagoService
      */
     public function registrarAbonoExtraordinario(Prestamo $prestamo, float $monto, string $fechaPago, Usuario $actor, ?string $modoReliquidacion = null, ?int $numCuotas = null): Pago
     {
+        $prestamo->asegurarDesembolsado();
+
         if ($monto <= 0) {
             throw new RuntimeException('El monto del abono debe ser mayor que cero.');
         }
@@ -128,6 +132,8 @@ class PagoService
      */
     public function registrarCancelacion(Prestamo $prestamo, string $fechaPago, Usuario $actor): Pago
     {
+        $prestamo->asegurarDesembolsado();
+
         $cuotasPendientes = $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->get();
 
         if ($cuotasPendientes->isEmpty()) {

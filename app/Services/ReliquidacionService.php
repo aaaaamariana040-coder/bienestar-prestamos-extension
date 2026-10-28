@@ -166,6 +166,8 @@ class ReliquidacionService
         ?int $numCuotasElegido = null,
         bool $automatica = false,
     ): Reliquidacion {
+        $prestamo->asegurarDesembolsado();
+
         return DB::transaction(function () use ($prestamo, $montoAbono, $motivo, $modo, $fecha, $actor, $numCuotasElegido, $automatica) {
             $plan = $this->calcular($prestamo, $montoAbono, $modo, $numCuotasElegido, $automatica);
             $pendientes = $prestamo->cuotas()->where('estado', EstadoCuota::Pendiente)->orderBy('numero_cuota')->get();
