@@ -215,22 +215,23 @@ class SimuladorCreditoServiceTest extends TestCase
     public function test_vehiculo_sin_fila_de_puntos_para_el_plazo_avisa_explicitamente(): void
     {
         $vehiculo = $this->modalidad('Vehículo', 168, 50, 3.0);
-        TasaVehiculo::factory()->create(['plazo_anios' => 4, 'es_primera_solicitud' => true, 'puntos_adicionales_ipc' => 1]);
+        // Solo hay tramos de segunda solicitud; el empleado pide su primera.
+        TasaVehiculo::factory()->create(['plazo_anios' => 4, 'es_primera_solicitud' => false, 'puntos_adicionales_ipc' => 3]);
         $empleado = $this->empleado();
 
-        // 120 quincenas = 5 años, y no hay fila de 5 años.
         $oficial = $this->simulador()->tasaOficial($empleado, $vehiculo, $this->anio, 120);
         $this->assertSame(3.0, $oficial['base']);
         $this->assertSame(0.0, $oficial['puntos']);
+        $this->assertNull($oficial['nota_tramo']);
         $this->assertCount(1, $oficial['avisos']);
-        $this->assertStringContainsString('No hay puntos adicionales registrados para vehículo a 5 años', $oficial['avisos'][0]);
+        $this->assertStringContainsString('No hay puntos adicionales registrados para vehículo (primera solicitud)', $oficial['avisos'][0]);
 
         $resultado = $this->simulador()->simular($empleado, $vehiculo, 20_000_000, 120);
         $this->assertSame([], $resultado['errores']);
         $this->assertContains($oficial['avisos'][0], $resultado['avisos']);
     }
 
-    public function test_vehiculo_avisa_que_los_puntos_se_toman_por_anios_completos(): void
+    public function test_vehiculo_toma_el_tramo_anterior_y_lo_explica(): void
     {
         $vehiculo = $this->modalidad('Vehículo', 168, 50, 3.0);
         TasaVehiculo::factory()->create(['plazo_anios' => 4, 'es_primera_solicitud' => true, 'puntos_adicionales_ipc' => 1]);
@@ -238,8 +239,8 @@ class SimuladorCreditoServiceTest extends TestCase
         $oficial = $this->simulador()->tasaOficial($this->empleado(), $vehiculo, $this->anio, 100);
 
         $this->assertSame(1.0, $oficial['puntos']);
-        $this->assertCount(1, $oficial['avisos']);
-        $this->assertStringContainsString('100 quincenas se tratan como 4 años', $oficial['avisos'][0]);
+        $this->assertSame([], $oficial['avisos']);
+        $this->assertSame('Tramo de 4 años: IPC + 1 punto (plazo solicitado: 4,17 años)', $oficial['nota_tramo']);
     }
 
     public function test_rechaza_un_plazo_mayor_al_maximo_de_la_modalidad(): void

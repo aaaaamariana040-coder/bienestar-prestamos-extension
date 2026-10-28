@@ -104,6 +104,8 @@ Puede reliquidarse semestralmente si al momento de la solicitud el empleado tien
 | Primera solicitud | IPC | IPC+1 | IPC+2 | IPC+3 | Hasta 50 SMMLV |
 | A partir de la segunda solicitud | IPC+2 | IPC+3 | IPC+4 | IPC+5 | Hasta 50 SMMLV |
 
+**Cómo se aplica el tramo según el plazo (aclarado por Bienestar, art. 38):** el plazo máximo es 7 años (168 quincenas) en la primera y en la segunda solicitud. Con el plazo en quincenas (72, 96, 120 y 168 son los tramos de 3, 4, 5 y 7 años), si el plazo cae entre dos tramos se toma **siempre el tramo anterior** (84 → 3 años; 108 → 4; 132, 144 y 150 → 5; 6 años = 144 quincenas usa el de 5). Un plazo menor al primer tramo (24 o 48 quincenas) usa el tramo de 3 años. Un plazo mayor a 168 quincenas se rechaza: «El plazo máximo del crédito de vehículo es de 7 años (168 quincenas).» Se usa la tabla de primera o de segunda solicitud según corresponda; el redondeo de la tasa (4 decimales) no cambia. Antes los años se tomaban completos y un plazo sin fila exacta (1, 2 o 6 años) quedaba con 0 puntos. El simulador muestra junto a la tasa el tramo aplicado, p. ej. «Tramo de 5 años: IPC + 2 puntos (plazo solicitado: 6 años)». La implementación es `TasaVehiculoService::tramoPara()`; los puntos se leen de la tabla editable `tasas_vehiculo`.
+
 ## 5. Presupuesto del Fondo
 - Se constituye con: abono a capital e intereses recaudados, partidas del presupuesto institucional (0.5% del presupuesto anual de funcionamiento, incrementado cada año en IPC + 5 puntos porcentuales), rendimientos de inversiones y donaciones (Art. 2).
 - 70% del presupuesto se destina a vivienda, 30% a las demás modalidades (Art. 2, parágrafo 2, y Art. 18).

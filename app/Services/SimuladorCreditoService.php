@@ -260,7 +260,7 @@ class SimuladorCreditoService
      * es el IPC tal cual está en tasas_int, `limitada` indica si se recortó y `nota`
      * es el texto que lo explica.
      *
-     * @return array{base: ?float, puntos: float, primera_solicitud: bool, avisos: list<string>, registrada: ?float, limitada: bool, tope: ?float, nota: ?string}
+     * @return array{base: ?float, puntos: float, primera_solicitud: bool, avisos: list<string>, registrada: ?float, limitada: bool, tope: ?float, nota: ?string, nota_tramo: ?string}
      */
     public function tasaOficial(Empleado $empleado, TipoPrestamo $modalidad, int $anio, int $plazoQuincenas, DateTimeInterface|string|null $fechaSolicitud = null): array
     {
@@ -281,19 +281,19 @@ class SimuladorCreditoService
                 'limitada' => $detalle['limitada'],
                 'tope' => $detalle['tope'],
                 'nota' => $detalle['limitada'] ? $this->prestamoService->notaTopeVivienda($detalle['tope'], $detalle['registrada']) : null,
+                'nota_tramo' => null,
             ];
         }
 
-        $plazoAnios = intdiv(max($plazoQuincenas, 0), PrestamoService::QUINCENAS_POR_ANIO);
-        $componentes = $this->tasaVehiculoService->componentes($anio, $plazoAnios, $esPrimeraSolicitud);
+        $plazo = max($plazoQuincenas, 0);
+        $componentes = $this->tasaVehiculoService->componentes($anio, $plazo, $esPrimeraSolicitud);
+        $tramo = $componentes['tramo'] ?? null;
         $tipoSolicitud = $esPrimeraSolicitud ? 'primera solicitud' : 'segunda solicitud o posterior';
 
-        if ($componentes !== null && $componentes['puntos'] === null) {
-            $avisos[] = "No hay puntos adicionales registrados para vehículo a {$plazoAnios} años ({$tipoSolicitud}); se muestran 0 puntos. Si corresponden, digítalos a mano.";
-        }
-
-        if ($plazoQuincenas % PrestamoService::QUINCENAS_POR_ANIO !== 0) {
-            $avisos[] = "En vehículo los puntos se toman por años completos: {$plazoQuincenas} quincenas se tratan como {$plazoAnios} años, igual que en el préstamo real.";
+        if ($plazo > TasaVehiculoService::PLAZO_MAXIMO_QUINCENAS) {
+            $avisos[] = $this->tasaVehiculoService->mensajePlazoExcedido();
+        } elseif ($componentes !== null && $tramo === null) {
+            $avisos[] = "No hay puntos adicionales registrados para vehículo ({$tipoSolicitud}); se muestran 0 puntos. Si corresponden, digítalos a mano.";
         }
 
         return [
@@ -305,6 +305,7 @@ class SimuladorCreditoService
             'limitada' => false,
             'tope' => null,
             'nota' => null,
+            'nota_tramo' => $tramo === null ? null : $this->tasaVehiculoService->notaDelTramo($tramo, $plazo),
         ];
     }
 
@@ -401,6 +402,7 @@ class SimuladorCreditoService
                 'registrada' => $oficial['registrada'],
                 'limitada' => $oficial['limitada'] && ! $editada,
                 'nota' => $editada ? null : $oficial['nota'],
+                'nota_tramo' => $editada ? null : $oficial['nota_tramo'],
             ],
             'cuota_quincenal' => $cuota,
             'seguro' => $seguro,

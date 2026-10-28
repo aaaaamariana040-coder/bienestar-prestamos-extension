@@ -413,6 +413,20 @@ Automatizados en `tests/Feature/PagosSinDesembolsoTest.php`. Pantalla: Préstamo
 | PP-248 | Préstamos anteriores | Préstamo con `pendiente_desembolso = false` | Pagar, abonar y cancelar | Sin cambios: se registran como siempre | ⬜ |
 | PP-249 | Aviso de cuota excluida | Sin variables en `.env` / con ellas | Abrir un préstamo con cuota excluida | Texto «…Debe pagarse por ventanilla: consigne en la cuenta del Fondo de Bienestar Social…»; configurable por `.env` | ⬜ |
 
+## 27. Tasa de vehículo por tramo de plazo (Bienestar, Acuerdo 19, art. 38)
+
+Automatizados en `tests/Feature/TasaVehiculoPorPlazoTest.php`, `SimuladorCreditoServiceTest.php` y `SimuladorPantallaTest.php`. Pantallas: Simulador, Solicitudes y Préstamos.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-250 | Plazos exactos de cada tramo | Matriz de puntos cargada | Simular vehículo a 72, 96, 120 y 168 quincenas (primera y segunda solicitud) | Primera: IPC, +1, +2, +3; segunda: +2, +3, +4, +5 | ⬜ |
+| PP-251 | Plazos intermedios | Igual | 84, 108, 132, 144 y 150 quincenas | Tramo anterior: 84 → 3 años; 108 → 4; 132, 144 y 150 → 5 | ⬜ |
+| PP-252 | Plazo menor al primer tramo | Igual | 24 y 48 quincenas | Usa el tramo de 3 años | ⬜ |
+| PP-253 | Plazo mayor al máximo | Igual | 169 quincenas en el simulador y al aprobar una solicitud | Se rechaza: «El plazo máximo del crédito de vehículo es de 7 años (168 quincenas).» | ⬜ |
+| PP-254 | Nota del tramo | Simulación de vehículo a 144 quincenas | Mirar el resumen y la hoja impresa | «Tramo de 5 años: IPC + 2 puntos (plazo solicitado: 6 años)» junto a la tasa | ⬜ |
+| PP-255 | Solicitud y préstamo | Solicitud de vehículo a 144 quincenas | Aprobar y abrir el préstamo | La tasa del préstamo es la del tramo de 5 años, igual que en el simulador | ⬜ |
+| PP-256 | Otras modalidades | Educación, calamidad, vivienda | Simular y solicitar | Sin cambios en tasas ni notas | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -448,3 +462,4 @@ Automatizados en `tests/Feature/PagosSinDesembolsoTest.php`. Pantalla: Préstamo
 | DTF para la liquidación por retiro (posterior) | Automatizada — PP-219 a PP-230; falta la prueba manual en el navegador |
 | Informe de quincena por cuota (posterior) | Automatizada — PP-231 a PP-244; falta la prueba manual en el navegador |
 | Pagos y abonos solo después del desembolso (posterior) | Automatizada — PP-245 a PP-249; falta la prueba manual en el navegador |
+| Tasa de vehículo por tramo de plazo (posterior) | Automatizada — PP-250 a PP-256; falta la prueba manual en el navegador |
