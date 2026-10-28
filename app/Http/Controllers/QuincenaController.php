@@ -11,6 +11,7 @@ use App\Services\InformeQuincenaService;
 use App\Services\QuincenaCambioException;
 use App\Services\QuincenaService;
 use App\Services\QuincenaYaConfirmadaException;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -20,14 +21,67 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class QuincenaController extends Controller
 {
-    public function index(QuincenaService $quincenaService): View
+    public function index(QuincenaService $quincenaService, CalendarioQuincenalService $calendario): View
     {
         $this->authorize('viewAny', ProcesoQuincena::class);
 
+        $pendientes = $quincenaService->quincenasPendientes();
+        $enCurso = $quincenaService->quincenaEnCurso();
+
         return view('quincenas.index', [
-            'pendientes' => $quincenaService->quincenasPendientes(),
+            'pendientes' => $pendientes,
             'procesos' => ProcesoQuincena::query()->confirmados()->with('usuario')->paginate(15),
+            'enCurso' => $enCurso,
+            'opciones' => $this->opcionesDeQuincena($quincenaService, $calendario, $pendientes, $enCurso),
         ]);
+    }
+
+    /**
+     * Las quincenas que se pueden abrir desde el selector, cada una con su etiqueta: la que
+     * está en curso (la seleccionada por defecto), las pendientes anteriores y las últimas
+     * confirmadas. Una quincena confirmada se etiqueta «Confirmada» aunque sea la del momento.
+     *
+     * @param  list<array{anio: int, numero: int, inicio: string, corte: string, cuotas: int, total: float}>  $pendientes
+     * @param  array{anio: int, numero: int, inicio: CarbonImmutable, corte: CarbonImmutable}  $enCurso
+     * @return list<array{clave: string, texto: string, etiqueta: string, url: string, abrible: bool, por_defecto: bool}>
+     */
+    private function opcionesDeQuincena(QuincenaService $quincenaService, CalendarioQuincenalService $calendario, array $pendientes, array $enCurso): array
+    {
+        $opciones = [];
+        $vistas = [];
+        $agregar = function (int $anio, int $numero, string $etiqueta) use (&$opciones, &$vistas, $quincenaService, $calendario, $enCurso): void {
+            $clave = "{$anio}-{$numero}";
+
+            if (isset($vistas[$clave])) {
+                return;
+            }
+
+            $vistas[$clave] = true;
+            $periodo = $calendario->quincena($anio, $numero);
+            $proceso = $quincenaService->procesoConfirmado($anio, $numero);
+            $etiqueta = $proceso !== null ? 'Confirmada' : $etiqueta;
+
+            $opciones[] = [
+                'clave' => $clave,
+                'texto' => "Quincena {$numero} de {$anio} ({$periodo['inicio']->format('d/m')} al {$periodo['corte']->format('d/m')}) — {$etiqueta}",
+                'etiqueta' => $etiqueta,
+                'url' => $proceso !== null ? route('quincenas.proceso', $proceso) : route('quincenas.vista-previa', [$anio, $numero]),
+                'abrible' => $proceso !== null || ($periodo['inicio']->lessThanOrEqualTo($calendario->hoy()) && (bool) request()->user()?->can('quincenas.confirmar')),
+                'por_defecto' => $anio === $enCurso['anio'] && $numero === $enCurso['numero'],
+            ];
+        };
+
+        $agregar($enCurso['anio'], $enCurso['numero'], 'En curso');
+
+        foreach ($pendientes as $pendiente) {
+            $agregar($pendiente['anio'], $pendiente['numero'], 'Pendiente anterior');
+        }
+
+        foreach (ProcesoQuincena::query()->confirmados()->limit(6)->get() as $proceso) {
+            $agregar($proceso->anio, $proceso->numero_quincena, 'Confirmada');
+        }
+
+        return $opciones;
     }
 
     /**

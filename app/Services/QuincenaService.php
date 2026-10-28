@@ -160,8 +160,31 @@ class QuincenaService
      */
     public function quincenasPendientes(): array
     {
-        $regla = $this->reglaVencimiento();
+        return $this->pendientesHasta($this->calendario->quincenaActual());
+    }
+
+    /**
+     * La quincena «en curso» para trabajar: la del rango que incluye hoy o, si hoy ya pasó
+     * el cierre de novedades de esa quincena (está entre su cierre y su fin), la siguiente.
+     *
+     * @return array{anio: int, numero: int, inicio: CarbonImmutable, corte: CarbonImmutable}
+     */
+    public function quincenaEnCurso(): array
+    {
         $actual = $this->calendario->quincenaActual();
+
+        return $this->calendario->hoy()->greaterThan($this->calendario->cierreDeNovedades($actual['corte']))
+            ? $this->calendario->quincenaSiguiente($actual)
+            : $actual;
+    }
+
+    /**
+     * @param  array{anio: int, numero: int, inicio: CarbonImmutable, corte: CarbonImmutable}  $actual
+     * @return list<array{anio: int, numero: int, inicio: string, corte: string, cuotas: int, total: float}>
+     */
+    private function pendientesHasta(array $actual): array
+    {
+        $regla = $this->reglaVencimiento();
 
         $cuotas = Cuota::query()
             ->with('prestamo')
