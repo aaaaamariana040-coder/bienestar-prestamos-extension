@@ -1,9 +1,15 @@
 @extends('layouts.app')
 
 @section('content')
+    <div class="no-imprimir">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Préstamo #{{ $prestamo->id_prestamo }}</h1>
-        <a href="{{ route('prestamos.index') }}" class="btn btn-outline-secondary">Volver a préstamos</a>
+        <div class="d-flex gap-2">
+            @can('view', $prestamo)
+                <button type="button" id="imprimir-prestamo" class="btn btn-outline-primary" onclick="window.print()">Imprimir</button>
+            @endcan
+            <a href="{{ route('prestamos.index') }}" class="btn btn-outline-secondary">Volver a préstamos</a>
+        </div>
     </div>
 
     @if ($errors->any())
@@ -424,6 +430,11 @@
             @endforelse
         </tbody>
     </table>
+    </div>
+
+    @can('view', $prestamo)
+        @include('prestamos.partials.hoja-impresion')
+    @endcan
 @endsection
 
 @push('scripts')

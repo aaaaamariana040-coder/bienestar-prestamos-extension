@@ -54,7 +54,7 @@
             'icono' => 'pagos',
             'items' => [
                 // Los pagos y abonos se registran desde el detalle de cada préstamo.
-                ['texto' => 'Registrar pago o abono', 'ruta' => 'prestamos.index', 'activo' => null, 'visible' => $usuario->can('prestamos.ver') && ($usuario->can('pagos.registrar-cuota') || $usuario->can('pagos.registrar-abono') || $usuario->can('pagos.cancelar-prestamo'))],
+                ['texto' => 'Pagos y abonos', 'ruta' => 'prestamos.index', 'activo' => null, 'visible' => $usuario->can('prestamos.ver') && ($usuario->can('pagos.registrar-cuota') || $usuario->can('pagos.registrar-abono') || $usuario->can('pagos.cancelar-prestamo'))],
                 ['texto' => 'Quincenas', 'ruta' => 'quincenas.index', 'activo' => 'quincenas.*', 'visible' => $usuario->can('quincenas.ver'), 'insignia' => $cuotasPorConfirmar],
                 ['texto' => 'Resumen de pagos', 'ruta' => 'reportes.pagos', 'activo' => 'reportes.pagos', 'visible' => $usuario->can('reportes.ver')],
             ],

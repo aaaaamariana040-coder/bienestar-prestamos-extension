@@ -460,6 +460,22 @@ Automatizados en `tests/Feature/AdministradorPrincipalTest.php` (y los ajustes a
 | PP-274 | Cédula del empleado | Formulario de empleado nuevo | Escribir o pegar letras y símbolos; saltarse el navegador | El campo borra lo no numérico; el servidor rechaza con mensaje en español | ⬜ |
 | PP-275 | Nombre del empleado | Formulario nuevo y edición | Escribir o pegar números y símbolos; probar «María José», «Begoña Muñoz», «O'Hara», «Ana-María», «De la Cruz Jr.» | Los números se borran / el servidor los rechaza; los nombres válidos se aceptan; con otros errores se conserva lo digitado | ⬜ |
 
+## 30. Lista de préstamos, hoja impresa y quincena en curso (jefatura)
+
+Automatizados en `tests/Feature/AjustesJefe2Test.php`. Pantallas: Préstamos (lista y detalle), Quincenas y menú lateral.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-276 | Búsqueda por nombre | Varios préstamos | Escribir parte del nombre con otras mayúsculas o sin tildes («jose angel», «PÉREZ», «munoz») | La lista se filtra mientras se escribe, sin recargar | ⬜ |
+| PP-277 | Búsqueda por cédula | Varios préstamos | Escribir una cédula parcial y luego completa | Solo los empleados cuya cédula empieza por lo digitado | ⬜ |
+| PP-278 | Vacía y sin resultados | — | Borrar el texto; escribir algo inexistente | Lista normal; «No hay préstamos que coincidan con la búsqueda» | ⬜ |
+| PP-279 | Parámetro en la URL | — | Abrir `/prestamos?q=ana` | La búsqueda queda aplicada y el campo la muestra | ⬜ |
+| PP-280 | Menú y ayuda | — | Mirar el menú Pagos y la lista | «Pagos y abonos» (misma ruta) y la línea de ayuda arriba de la lista | ⬜ |
+| PP-281 | Imprimir el préstamo | Préstamo con cuotas, pagos y desembolso | Pulsar «Imprimir» y mirar la vista previa | Hoja A4 con logo, «Información del préstamo», empleado, préstamo, cuotas, pagos, desembolsos y aviso si aplica; sin botones; pie con fecha, hora y usuario; encabezado de tabla repetido | ⬜ |
+| PP-282 | Permiso de imprimir | Cuenta sin `prestamos.ver` / con ella | Abrir el préstamo | Sin permiso 403; con permiso, botón y hoja | ⬜ |
+| PP-283 | Quincena en curso | Hoy dentro de una quincena (y tras su cierre) | Abrir Quincenas | El selector trae la en curso seleccionada (la siguiente si hoy ya pasó el cierre) | ⬜ |
+| PP-284 | Etiquetas | Quincenas pendientes y confirmadas | Mirar las listas y el selector | «En curso», «Pendiente anterior» y «Confirmada»; las demás siguen accesibles | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -498,3 +514,4 @@ Automatizados en `tests/Feature/AdministradorPrincipalTest.php` (y los ajustes a
 | Tasa de vehículo por tramo de plazo (posterior) | Automatizada — PP-250 a PP-256; falta la prueba manual en el navegador |
 | Primera cuota según el cierre de novedades (posterior) | Automatizada — PP-257 a PP-266; falta la prueba manual en el navegador |
 | Administrador principal, Acción y datos del empleado (posterior) | Automatizada — PP-267 a PP-275; falta la prueba manual en el navegador |
+| Lista de préstamos, hoja impresa y quincena en curso (posterior) | Automatizada — PP-276 a PP-284; falta la prueba manual en el navegador |
