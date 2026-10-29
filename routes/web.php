@@ -4,6 +4,7 @@ use App\Http\Controllers\AbonoCesantiasController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\SessionController;
+use App\Http\Controllers\CargaPrestamosVigentesController;
 use App\Http\Controllers\CuantiaSmmlvController;
 use App\Http\Controllers\DesembolsoController;
 use App\Http\Controllers\DocumentoSolicitudController;
@@ -155,6 +156,15 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
     Route::middleware('can:prestamos.ver')->group(function () {
         Route::get('prestamos', [PrestamoController::class, 'index'])->name('prestamos.index');
         Route::get('prestamos/{prestamo}', [PrestamoController::class, 'show'])->name('prestamos.show');
+    });
+    // Carga de la cartera vigente (prefijo propio para no chocar con prestamos/{prestamo})
+    Route::middleware('can:prestamos.cargar_vigentes')->prefix('cargar-prestamos-vigentes')->name('cargar-prestamos-vigentes.')->group(function () {
+        Route::get('/', [CargaPrestamosVigentesController::class, 'index'])->name('index');
+        Route::get('plantilla', [CargaPrestamosVigentesController::class, 'plantilla'])->name('plantilla');
+        Route::post('vista-previa', [CargaPrestamosVigentesController::class, 'vistaPrevia'])->name('vista-previa');
+        Route::post('confirmar', [CargaPrestamosVigentesController::class, 'confirmar'])->name('confirmar');
+        Route::get('lotes/{lote}', [CargaPrestamosVigentesController::class, 'lote'])->where('lote', '[A-Za-z0-9-]+')->name('lote');
+        Route::post('lotes/{lote}/revertir', [CargaPrestamosVigentesController::class, 'revertir'])->where('lote', '[A-Za-z0-9-]+')->name('revertir');
     });
     Route::get('prestamos/{prestamo}/desembolsos/primera-cuota', [DesembolsoController::class, 'primeraCuota'])->middleware('can:desembolsos.registrar')->name('desembolsos.primera-cuota');
     Route::post('prestamos/{prestamo}/desembolsos', [DesembolsoController::class, 'store'])->middleware('can:desembolsos.registrar')->name('desembolsos.store');

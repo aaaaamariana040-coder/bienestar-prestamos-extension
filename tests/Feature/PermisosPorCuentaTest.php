@@ -387,6 +387,7 @@ class PermisosPorCuentaTest extends TestCase
 
     public function test_la_migracion_rellena_las_cuentas_existentes_segun_su_rol(): void
     {
+        $this->artisan('migrate:rollback', ['--path' => 'database/migrations/2026_10_30_100100_agrega_permiso_de_carga_de_prestamos_vigentes_a_usuarios.php'])->assertSuccessful();
         $this->artisan('migrate:rollback', ['--path' => 'database/migrations/2026_10_26_100100_agrega_permisos_de_seguros_a_usuarios.php'])->assertSuccessful();
         $this->artisan('migrate:rollback', ['--path' => 'database/migrations/2026_10_22_100000_agrega_permisos_a_usuarios_table.php'])->assertSuccessful();
 
@@ -408,7 +409,7 @@ class PermisosPorCuentaTest extends TestCase
 
         // Esta migración es anterior a «principal»: el administrador no lo es y no recibe Usuarios ni Auditoría.
         $this->assertEqualsCanonicalizing(array_values(array_diff($todos, ['usuarios.gestionar', 'auditoria.ver'])), $administrador->permisosAsignados());
-        $this->assertEqualsCanonicalizing(array_values(array_diff($todos, ['usuarios.gestionar', 'auditoria.ver', 'seguros.gestionar'])), $funcionario->permisosAsignados());
+        $this->assertEqualsCanonicalizing(array_values(array_diff($todos, ['usuarios.gestionar', 'auditoria.ver', 'seguros.gestionar', 'prestamos.cargar_vigentes'])), $funcionario->permisosAsignados());
         $this->assertSame([], Usuario::findOrFail('0000000000')->permisos);
     }
 

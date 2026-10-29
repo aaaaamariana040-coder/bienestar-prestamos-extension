@@ -27,6 +27,8 @@ use RuntimeException;
     'pendiente_desembolso',
     'inicio_primera_cuota',
     'motivo_primera_cuota',
+    'origen',
+    'lote_carga',
 ])]
 class Prestamo extends Model
 {
@@ -52,6 +54,8 @@ class Prestamo extends Model
             'inicio_primera_cuota' => 'date',
         ];
     }
+
+    public const ORIGEN_CARGA_INICIAL = 'carga_inicial';
 
     public const MENSAJE_PENDIENTE_DESEMBOLSO = 'No se puede registrar: el préstamo aún no se ha desembolsado. Los pagos y abonos se registran después del desembolso.';
 

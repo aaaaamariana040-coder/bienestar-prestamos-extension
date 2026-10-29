@@ -490,6 +490,31 @@ Automatizados en `tests/Feature/ResumenPagosDetalleTest.php`. Pantallas: Reporte
 | PP-290 | Imprimir y volver | Detalle abierto | «Imprimir»; «Volver al resumen» | Hoja con logo, título, modalidad y periodo, tabla, totales y pie con fecha, hora y usuario, sin botones; el enlace conserva las fechas | ⬜ |
 | PP-291 | Permisos | Cuenta sin / con `reportes.ver` | Abrir el detalle | 403 / pantalla; invitado va al login | ⬜ |
 
+## 32. Carga de préstamos vigentes
+
+Automatizados en `tests/Feature/CargaPrestamosVigentesTest.php`. Pantalla: Solicitudes y préstamos → Cargar préstamos vigentes. Procedimiento: `docs/carga-prestamos-vigentes.md`.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-292 | Plantilla descargable | Cuenta con `prestamos.cargar_vigentes` | «Descargar plantilla» | CSV UTF-8 con BOM, punto y coma, con las 9 columnas y 3 filas de ejemplo con cédulas de demostración (1000000xxx) | ⬜ |
+| PP-293 | Vista previa sin guardar | Archivo con filas válidas | Subir y «Ver vista previa» | Cada fila Correcta / Con advertencia / Con error con su mensaje; no se crea ningún préstamo, cuota ni desembolso | ⬜ |
+| PP-294 | Errores de empleado y modalidad | Cédula inexistente; modalidad inexistente | Subir | Error con mensaje en cada fila; la modalidad se reconoce sin importar mayúsculas ni tildes | ⬜ |
+| PP-295 | Errores de monto, plazo y fecha | Monto 0 o con texto; plazo 0 o mayor al máximo; fecha `02/03/2026` o inexistente | Subir | Error con el mensaje de cada problema | ⬜ |
+| PP-296 | Cuotas pagadas y duplicados | `cuotas_pagadas` > plazo; fila repetida; préstamo igual ya existente | Subir | Error («Fila duplicada…», «Ya existe un préstamo igual…») | ⬜ |
+| PP-297 | Docente ocasional y año sin tasa | Empleado docente ocasional; desembolso en un año sin tasa | Subir | Error («Los docentes ocasionales no son beneficiarios…»; «No hay una tasa de interés registrada… (año del desembolso)»); con `tasa_anual` en la fila no hay error de tasa | ⬜ |
+| PP-298 | Advertencias | Monto sobre la cuantía; `saldo_actual` distinto en más de 1 peso; fecha anterior al registro de la tasa | Subir | Con advertencia, con el mensaje; no bloquea la carga | ⬜ |
+| PP-299 | Formatos colombianos | Monto `$ 4.500.000,50`, tasa `10,5`, puntos `2,5` | Subir | Se leen bien (monto 4500000,50; tasa 10,5; con tasa dada no se suman los puntos) | ⬜ |
+| PP-300 | Confirmar crea todo | Archivo sin errores | «Confirmar carga» | Préstamo Vigente, ya desembolsado, con el desembolso de la fecha dada, tabla de cuotas con la tasa del año del desembolso y fechas del calendario; las primeras N cuotas Pagada; ningún pago ni abono | ⬜ |
+| PP-301 | Saldo igual a la fórmula | Fila con `cuotas_pagadas` = 5 | Confirmar y mirar el detalle | El saldo (capital de las cuotas pendientes) coincide con la tabla de amortización y con el «Saldo calculado» de la vista previa | ⬜ |
+| PP-302 | Todo o nada | Archivo con una fila inválida | Intentar confirmar | No se carga nada; el botón está deshabilitado; si falla a mitad no queda nada a medias | ⬜ |
+| PP-303 | El presupuesto no cambia | Presupuesto del año de la modalidad | Cargar un préstamo por un monto mayor al disponible | Presupuesto y su historial sin cambios | ⬜ |
+| PP-304 | Origen y lote | Carga confirmada | Mirar el detalle del préstamo y los lotes | `origen = carga_inicial`, identificador de lote; los demás préstamos sin marca | ⬜ |
+| PP-305 | Resultado y auditoría | Carga confirmada | Mirar el resultado y la Auditoría | Cantidad, préstamos con enlace al detalle y lote; auditoría «Carga de préstamos vigentes» con archivo, lote y cantidad | ⬜ |
+| PP-306 | Quincena e informe | Préstamo cargado con una cuota pagada | Abrir la quincena de su próxima cuota y descargar el informe | Entra la próxima cuota; la cuota marcada Pagada no | ⬜ |
+| PP-307 | Revertir lote sin pagos | Lote sin pagos | «Revertir lote» | Se eliminan los préstamos del lote con sus cuotas y desembolsos; los demás no cambian; auditoría de la reversión | ⬜ |
+| PP-308 | Revertir con pagos | Un préstamo del lote con pago, abono, reliquidación o cancelación | «Revertir lote» | Se rechaza explicando el préstamo y el motivo; no se elimina nada | ⬜ |
+| PP-309 | Permisos | Funcionario (sin el permiso) / Administrador | Abrir cada ruta y el menú | Funcionario 403 y sin opción en el menú; Administrador con acceso; Usuarios y Auditoría siguen siendo solo del administrador principal | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -530,3 +555,4 @@ Automatizados en `tests/Feature/ResumenPagosDetalleTest.php`. Pantallas: Reporte
 | Administrador principal, Acción y datos del empleado (posterior) | Automatizada — PP-267 a PP-275; falta la prueba manual en el navegador |
 | Lista de préstamos, hoja impresa y quincena en curso (posterior) | Automatizada — PP-276 a PP-284; falta la prueba manual en el navegador |
 | Resumen de pagos: todas las modalidades y detalle (posterior) | Automatizada — PP-285 a PP-291; falta la prueba manual en el navegador |
+| Carga de préstamos vigentes (posterior) | Automatizada — PP-292 a PP-309; falta la prueba manual en el navegador |

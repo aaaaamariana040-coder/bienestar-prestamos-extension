@@ -58,6 +58,7 @@ return [
 
         // Préstamos y pagos
         'prestamos.ver' => ['grupo' => 'Préstamos y pagos', 'nombre' => 'Ver préstamos', 'descripcion' => 'Listar y consultar préstamos, cuotas y pagos.'],
+        'prestamos.cargar_vigentes' => ['grupo' => 'Préstamos y pagos', 'nombre' => 'Cargar préstamos vigentes', 'descripcion' => 'Cargar por archivo la cartera de préstamos ya vigentes y revertir un lote cargado.'],
         'desembolsos.registrar' => ['grupo' => 'Préstamos y pagos', 'nombre' => 'Registrar desembolsos', 'descripcion' => 'Registrar los tramos desembolsados de un préstamo.'],
         'pagos.registrar-cuota' => ['grupo' => 'Préstamos y pagos', 'nombre' => 'Registrar el pago de una cuota', 'descripcion' => 'Marcar una cuota como pagada.'],
         'pagos.registrar-abono' => ['grupo' => 'Préstamos y pagos', 'nombre' => 'Registrar abonos', 'descripcion' => 'Abonos extraordinarios y de cesantías, con reliquidación.'],
@@ -88,6 +89,7 @@ return [
         'solicitudes.rechazar' => ['solicitudes.ver'],
         'solicitudes.enviar-comite' => ['solicitudes.ver'],
         'proveedores.gestionar' => ['proveedores.ver'],
+        'prestamos.cargar_vigentes' => ['prestamos.ver'],
         'desembolsos.registrar' => ['prestamos.ver'],
         'pagos.registrar-cuota' => ['prestamos.ver'],
         'pagos.registrar-abono' => ['prestamos.ver'],
@@ -120,13 +122,13 @@ return [
      * botón «Restablecer a los permisos del perfil». No cambian las cuentas que ya
      * existen: cada una conserva su propia lista.
      *
-     * Hoy el Funcionario puede hacer todo menos Usuarios, Auditoría y gestionar las
-     * primas de seguros (solo las ve): fuera de esos tres, nada cambia respecto al
-     * sistema sin permisos por cuenta.
+     * Hoy el Funcionario puede hacer todo menos Usuarios, Auditoría, gestionar las
+     * primas de seguros (solo las ve) y cargar préstamos vigentes: fuera de esos cuatro,
+     * nada cambia respecto al sistema sin permisos por cuenta.
      */
     'defaults' => [
         'ADMINISTRADOR' => ['*'],
-        'FUNCIONARIO_BIENESTAR' => ['*', '!usuarios.gestionar', '!auditoria.ver', '!seguros.gestionar'],
+        'FUNCIONARIO_BIENESTAR' => ['*', '!usuarios.gestionar', '!auditoria.ver', '!seguros.gestionar', '!prestamos.cargar_vigentes'],
     ],
 
 ];

@@ -45,6 +45,7 @@
                 ['texto' => 'Registrar solicitud', 'ruta' => 'solicitudes.create', 'activo' => 'solicitudes.create', 'visible' => $usuario->can('solicitudes.registrar')],
                 ['texto' => 'Simulador de crédito', 'ruta' => 'simulador.index', 'activo' => 'simulador.*', 'visible' => $usuario->can('simulador.usar')],
                 ['texto' => 'Préstamos', 'ruta' => 'prestamos.index', 'activo' => 'prestamos.*', 'visible' => $usuario->can('prestamos.ver')],
+                ['texto' => 'Cargar préstamos vigentes', 'ruta' => 'cargar-prestamos-vigentes.index', 'activo' => 'cargar-prestamos-vigentes.*', 'visible' => $usuario->can('prestamos.cargar_vigentes')],
                 ['texto' => 'Proveedores', 'ruta' => 'proveedores.index', 'activo' => 'proveedores.*', 'visible' => $usuario->can('proveedores.ver')],
             ],
         ],
