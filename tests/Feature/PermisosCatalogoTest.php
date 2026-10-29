@@ -87,13 +87,13 @@ class PermisosCatalogoTest extends TestCase
 
     // ───────── Defaults ─────────
 
-    public function test_los_defaults_del_funcionario_son_el_catalogo_menos_usuarios_auditoria_gestionar_seguros_y_cargar_vigentes(): void
+    public function test_los_defaults_del_funcionario_son_el_catalogo_menos_usuarios_auditoria_gestionar_seguros_cargar_vigentes_y_cargar_empleados(): void
     {
-        $esperados = array_values(array_diff($this->permisos()->nombres(), ['usuarios.gestionar', 'auditoria.ver', 'seguros.gestionar', 'prestamos.cargar_vigentes']));
+        $esperados = array_values(array_diff($this->permisos()->nombres(), ['usuarios.gestionar', 'auditoria.ver', 'seguros.gestionar', 'prestamos.cargar_vigentes', 'empleados.cargar_masivo']));
 
         $this->assertSame($esperados, $this->permisos()->defaultsPara(RolUsuario::FuncionarioBienestar));
         $this->assertSame($esperados, Usuario::factory()->create()->permisosAsignados());
-        $this->assertCount(count($this->permisos()->nombres()) - 4, $esperados);
+        $this->assertCount(count($this->permisos()->nombres()) - 5, $esperados);
     }
 
     public function test_los_defaults_del_administrador_son_todos_los_permisos(): void

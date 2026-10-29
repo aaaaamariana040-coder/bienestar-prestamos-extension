@@ -16,10 +16,18 @@ class StoreEmpleadoRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         if (is_string($this->cedula)) {
-            $this->merge(['cedula' => preg_replace('/\s+/', '', $this->cedula)]);
+            $this->merge(['cedula' => self::normalizarCedula($this->cedula)]);
         }
 
         $this->merge(['de_carrera' => $this->boolean('de_carrera')]);
+    }
+
+    /**
+     * La cédula sin espacios; también la usa la carga masiva de empleados.
+     */
+    public static function normalizarCedula(string $cedula): string
+    {
+        return preg_replace('/\s+/', '', $cedula) ?? $cedula;
     }
 
     /**

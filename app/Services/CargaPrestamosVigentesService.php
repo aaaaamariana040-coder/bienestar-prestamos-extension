@@ -16,6 +16,8 @@ use App\Models\TasaInt;
 use App\Models\TipoPrestamo;
 use App\Models\Usuario;
 use App\Rules\MontoColombiano;
+use App\Services\Carga\LectorCsv;
+use App\Services\Carga\Lotes;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -70,9 +72,7 @@ class CargaPrestamosVigentesService
             ['1000000005', 'Educación', '4.500.000,50', $inicio->addDays(9)->toDateString(), '36', '1', '', '', ''],
         ];
 
-        $lineas = array_map(fn (array $fila): string => implode(';', $fila), $filas);
-
-        return "\xEF\xBB\xBF".implode("\r\n", $lineas)."\r\n";
+        return LectorCsv::escribir($filas);
     }
 
     /**
@@ -82,10 +82,10 @@ class CargaPrestamosVigentesService
      */
     public function analizar(string $contenido): array
     {
-        $lectura = $this->leer($contenido);
+        $lectura = LectorCsv::leer($contenido, self::COLUMNAS, self::COLUMNAS_OBLIGATORIAS, self::MAXIMO_FILAS, 'de préstamos');
 
         if ($lectura['errores'] !== []) {
-            return ['errores_archivo' => $lectura['errores'], 'filas' => [], 'resumen' => $this->resumir([])];
+            return ['errores_archivo' => $lectura['errores'], 'filas' => [], 'resumen' => Lotes::resumir([])];
         }
 
         $empleados = Empleado::whereIn('cedula', collect($lectura['filas'])->pluck('datos.cedula')->map(fn ($c) => trim((string) $c))->filter()->unique()->all())->get()->keyBy('cedula');
@@ -97,7 +97,7 @@ class CargaPrestamosVigentesService
             $filas[] = $this->analizarFila($fila['linea'], $fila['datos'], $empleados, $modalidades, $vistas);
         }
 
-        return ['errores_archivo' => [], 'filas' => $filas, 'resumen' => $this->resumir($filas)];
+        return ['errores_archivo' => [], 'filas' => $filas, 'resumen' => Lotes::resumir($filas)];
     }
 
     /**
@@ -233,64 +233,6 @@ class CargaPrestamosVigentesService
                     'motivos' => $motivos,
                 ];
             });
-    }
-
-    /**
-     * @return array{errores: list<string>, filas: list<array{linea: int, datos: array<string, string>}>}
-     */
-    private function leer(string $contenido): array
-    {
-        $contenido = preg_replace('/^\xEF\xBB\xBF/', '', $contenido) ?? $contenido;
-
-        if (! mb_check_encoding($contenido, 'UTF-8')) {
-            $contenido = mb_convert_encoding($contenido, 'UTF-8', 'ISO-8859-1');
-        }
-
-        $lineas = preg_split('/\r\n|\n|\r/', $contenido) ?: [];
-
-        while ($lineas !== [] && trim((string) end($lineas)) === '') {
-            array_pop($lineas);
-        }
-
-        if ($lineas === [] || trim($lineas[0]) === '') {
-            return ['errores' => ['El archivo está vacío.'], 'filas' => []];
-        }
-
-        $separador = substr_count($lineas[0], ';') >= substr_count($lineas[0], ',') ? ';' : ',';
-        $encabezado = array_map(fn (?string $c): string => Str::lower(trim((string) $c)), str_getcsv($lineas[0], $separador, '"', ''));
-        $faltantes = array_values(array_diff(self::COLUMNAS_OBLIGATORIAS, $encabezado));
-
-        if ($faltantes !== []) {
-            return ['errores' => ['Faltan columnas obligatorias en el encabezado: '.implode(', ', $faltantes).'. Descargue la plantilla y úsela tal cual.'], 'filas' => []];
-        }
-
-        $filas = [];
-
-        foreach (array_slice($lineas, 1, null, true) as $indice => $linea) {
-            if (trim($linea, " \t;,") === '') {
-                continue;
-            }
-
-            $celdas = str_getcsv($linea, $separador, '"', '');
-            $datos = [];
-
-            foreach (self::COLUMNAS as $columna) {
-                $posicion = array_search($columna, $encabezado, true);
-                $datos[$columna] = $posicion === false ? '' : trim((string) ($celdas[$posicion] ?? ''));
-            }
-
-            $filas[] = ['linea' => $indice + 1, 'datos' => $datos];
-        }
-
-        if ($filas === []) {
-            return ['errores' => ['El archivo no tiene filas de préstamos debajo del encabezado.'], 'filas' => []];
-        }
-
-        if (count($filas) > self::MAXIMO_FILAS) {
-            return ['errores' => ['El archivo tiene '.count($filas).' filas; el máximo por carga es '.self::MAXIMO_FILAS.'. Divídalo en varios archivos.'], 'filas' => []];
-        }
-
-        return ['errores' => [], 'filas' => $filas];
     }
 
     /**
@@ -564,11 +506,7 @@ class CargaPrestamosVigentesService
 
     private function nuevoLote(): string
     {
-        do {
-            $lote = 'CARGA-'.now()->format('Ymd-His').'-'.Str::upper(Str::random(4));
-        } while (Prestamo::where('lote_carga', $lote)->exists());
-
-        return $lote;
+        return Lotes::nuevo(fn (string $lote): bool => Prestamo::where('lote_carga', $lote)->exists());
     }
 
     private function llave(string $texto): string
@@ -626,21 +564,5 @@ class CargaPrestamosVigentesService
     private function pesos(float $valor): string
     {
         return number_format($valor, 2, ',', '.');
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $filas
-     * @return array{total: int, correctas: int, advertencias: int, errores: int}
-     */
-    private function resumir(array $filas): array
-    {
-        $estados = array_count_values(array_column($filas, 'estado'));
-
-        return [
-            'total' => count($filas),
-            'correctas' => $estados['correcta'] ?? 0,
-            'advertencias' => $estados['advertencia'] ?? 0,
-            'errores' => $estados['error'] ?? 0,
-        ];
     }
 }

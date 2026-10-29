@@ -21,11 +21,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'fecha_vinculacion',
     'estado',
     'capacidad_endeudamiento',
+    'origen',
+    'lote_carga',
 ])]
 class Empleado extends Model
 {
     /** @use HasFactory<EmpleadoFactory> */
     use HasFactory;
+
+    public const ORIGEN_CARGA_INICIAL = 'carga_inicial';
 
     protected $primaryKey = 'cedula';
 

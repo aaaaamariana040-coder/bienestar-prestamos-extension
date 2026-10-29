@@ -25,3 +25,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Datos reales de cargas (nunca se versionan)
+/storage/app/private/real/
+/docs/practica/real/

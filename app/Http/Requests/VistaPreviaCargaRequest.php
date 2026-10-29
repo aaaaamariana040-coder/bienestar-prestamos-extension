@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class VistaPreviaCargaPrestamosRequest extends FormRequest
+class VistaPreviaCargaRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -27,7 +27,7 @@ class VistaPreviaCargaPrestamosRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'archivo.required' => 'Elija el archivo CSV con los préstamos vigentes.',
+            'archivo.required' => 'Elija el archivo CSV (use la plantilla descargable).',
             'archivo.file' => 'El archivo no se pudo subir. Intente de nuevo.',
             'archivo.mimes' => 'El archivo debe ser un CSV (use la plantilla descargable).',
             'archivo.max' => 'El archivo no puede pesar más de 2 MB.',

@@ -25,11 +25,11 @@ class PermisosCaracterizacionTest extends TestCase
 
     /**
      * Rutas que el Funcionario no usa por defecto: Usuarios, Auditoría, gestionar las
-     * primas de seguros (solo las ve) y cargar préstamos vigentes.
+     * primas de seguros (solo las ve), cargar préstamos vigentes y cargar empleados por archivo.
      */
     private function esDeUsuariosOAuditoria(string $nombre): bool
     {
-        return str_starts_with($nombre, 'usuarios.') || str_starts_with($nombre, 'auditoria.') || str_starts_with($nombre, 'cargar-prestamos-vigentes.') || in_array($nombre, ['seguros.store', 'seguros.update'], true);
+        return str_starts_with($nombre, 'usuarios.') || str_starts_with($nombre, 'auditoria.') || str_starts_with($nombre, 'cargar-prestamos-vigentes.') || str_starts_with($nombre, 'cargar-empleados.') || in_array($nombre, ['seguros.store', 'seguros.update'], true);
     }
 
     public function test_el_funcionario_solo_es_rechazado_en_usuarios_auditoria_gestion_de_seguros_y_carga_de_vigentes(): void
