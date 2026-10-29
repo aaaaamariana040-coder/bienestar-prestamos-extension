@@ -17,13 +17,7 @@ class LectorCsv
      */
     public static function leer(string $contenido, array $columnas, array $obligatorias, int $maximoFilas, string $sujeto): array
     {
-        $contenido = preg_replace('/^\xEF\xBB\xBF/', '', $contenido) ?? $contenido;
-
-        if (! mb_check_encoding($contenido, 'UTF-8')) {
-            $contenido = mb_convert_encoding($contenido, 'UTF-8', 'ISO-8859-1');
-        }
-
-        $lineas = preg_split('/\r\n|\n|\r/', $contenido) ?: [];
+        $lineas = preg_split('/\r\n|\n|\r/', self::decodificar($contenido)) ?: [];
 
         while ($lineas !== [] && trim((string) end($lineas)) === '') {
             array_pop($lineas);
@@ -71,12 +65,30 @@ class LectorCsv
     }
 
     /**
+     * El texto en UTF-8 sin BOM; si no era UTF-8 se lee como Latin-1.
+     */
+    public static function decodificar(string $contenido): string
+    {
+        $contenido = preg_replace('/^\xEF\xBB\xBF/', '', $contenido) ?? $contenido;
+
+        return mb_check_encoding($contenido, 'UTF-8') ? $contenido : mb_convert_encoding($contenido, 'UTF-8', 'ISO-8859-1');
+    }
+
+    /**
      * Texto CSV con punto y coma, para las plantillas descargables (UTF-8 con BOM).
      *
      * @param  list<list<string>>  $filas
      */
     public static function escribir(array $filas): string
     {
-        return "\xEF\xBB\xBF".implode("\r\n", array_map(fn (array $fila): string => implode(';', $fila), $filas))."\r\n";
+        return "\xEF\xBB\xBF".implode("\r\n", array_map(fn (array $fila): string => implode(';', array_map(self::celda(...), $fila)), $filas))."\r\n";
+    }
+
+    /**
+     * Una celda entre comillas solo si lleva punto y coma, comillas o saltos de línea.
+     */
+    private static function celda(string $valor): string
+    {
+        return preg_match('/[;"\r\n]/', $valor) === 1 ? '"'.str_replace('"', '""', $valor).'"' : $valor;
     }
 }
