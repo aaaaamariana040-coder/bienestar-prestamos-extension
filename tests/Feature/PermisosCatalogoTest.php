@@ -41,7 +41,7 @@ class PermisosCatalogoTest extends TestCase
     public function test_cada_permiso_tiene_grupo_nombre_y_descripcion(): void
     {
         foreach ($this->permisos()->catalogo() as $permiso => $datos) {
-            $this->assertMatchesRegularExpression('/^[a-z]+(\.[a-z-]+)$/', $permiso);
+            $this->assertMatchesRegularExpression('/^[a-z]+(\.[a-z_-]+)$/', $permiso);
 
             foreach (['grupo', 'nombre', 'descripcion'] as $campo) {
                 $this->assertNotEmpty($datos[$campo] ?? null, "El permiso {$permiso} no tiene {$campo}.");
@@ -87,13 +87,13 @@ class PermisosCatalogoTest extends TestCase
 
     // ───────── Defaults ─────────
 
-    public function test_los_defaults_del_funcionario_son_el_catalogo_menos_usuarios_auditoria_y_gestionar_seguros(): void
+    public function test_los_defaults_del_funcionario_son_el_catalogo_menos_usuarios_auditoria_gestionar_seguros_y_cargar_vigentes(): void
     {
-        $esperados = array_values(array_diff($this->permisos()->nombres(), ['usuarios.gestionar', 'auditoria.ver', 'seguros.gestionar']));
+        $esperados = array_values(array_diff($this->permisos()->nombres(), ['usuarios.gestionar', 'auditoria.ver', 'seguros.gestionar', 'prestamos.cargar_vigentes']));
 
         $this->assertSame($esperados, $this->permisos()->defaultsPara(RolUsuario::FuncionarioBienestar));
         $this->assertSame($esperados, Usuario::factory()->create()->permisosAsignados());
-        $this->assertCount(count($this->permisos()->nombres()) - 3, $esperados);
+        $this->assertCount(count($this->permisos()->nombres()) - 4, $esperados);
     }
 
     public function test_los_defaults_del_administrador_son_todos_los_permisos(): void

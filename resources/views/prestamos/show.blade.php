@@ -32,6 +32,12 @@
                 <th>Modalidad</th>
                 <td>{{ $prestamo->tipoPrestamo->nombre }}</td>
             </tr>
+            @if ($prestamo->origen === \App\Models\Prestamo::ORIGEN_CARGA_INICIAL)
+                <tr>
+                    <th>Origen</th>
+                    <td>Carga inicial de cartera vigente (lote {{ $prestamo->lote_carga }})</td>
+                </tr>
+            @endif
             <tr>
                 <th>Monto aprobado</th>
                 <td>{{ number_format($prestamo->monto_aprobado, 2) }}</td>

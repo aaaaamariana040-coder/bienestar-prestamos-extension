@@ -97,6 +97,7 @@ trait RecorreLasRutas
                 'proceso' => ProcesoQuincena::factory()->create(['anio' => 3000 + self::$procesosCreados++, 'numero_quincena' => 1]),
                 'informe' => InformeGuardado::factory()->create(),
                 'cedula' => '1234567890',
+                'lote' => 'CARGA-20260101-000000-ABCD',
                 'anio' => 2026,
                 'quincena' => 1,
                 default => $this->fail("La prueba no sabe crear el parámetro «{$nombre}» de la ruta {$ruta->getName()}."),

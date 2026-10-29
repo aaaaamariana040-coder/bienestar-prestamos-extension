@@ -20,10 +20,18 @@ trait NormalizaTasas
             $valor = $this->input($campo);
 
             if (is_string($valor)) {
-                $normalizados[$campo] = str_replace(',', '.', trim($valor));
+                $normalizados[$campo] = self::normalizarTasaTexto($valor);
             }
         }
 
         $this->merge($normalizados);
+    }
+
+    /**
+     * La regla de una sola tasa, también usada fuera de los formularios (carga de archivo).
+     */
+    protected static function normalizarTasaTexto(string $valor): string
+    {
+        return str_replace(',', '.', trim($valor));
     }
 }

@@ -18,6 +18,11 @@ class PrestamoPolicy
         return $actor->tienePermiso('prestamos.ver');
     }
 
+    public function cargarVigentes(Usuario $actor): bool
+    {
+        return $actor->tienePermiso('prestamos.cargar_vigentes');
+    }
+
     public function registrarDesembolso(Usuario $actor, Prestamo $prestamo): bool
     {
         return $actor->tienePermiso('desembolsos.registrar') && $prestamo->estado === EstadoPrestamo::Vigente;
