@@ -515,6 +515,23 @@ Automatizados en `tests/Feature/CargaPrestamosVigentesTest.php`. Pantalla: Solic
 | PP-308 | Revertir con pagos | Un préstamo del lote con pago, abono, reliquidación o cancelación | «Revertir lote» | Se rechaza explicando el préstamo y el motivo; no se elimina nada | ⬜ |
 | PP-309 | Permisos | Funcionario (sin el permiso) / Administrador | Abrir cada ruta y el menú | Funcionario 403 y sin opción en el menú; Administrador con acceso; Usuarios y Auditoría siguen siendo solo del administrador principal | ⬜ |
 
+## 33. Datos de práctica
+
+Automatizados en `tests/Feature/PracticaSeederTest.php` y `tests/Feature/PracticaReiniciarTest.php`. Guía: `docs/guia-practica.md`.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-310 | Referencia completa | Base nueva, `PRACTICA_HABILITADA=true` | `php artisan db:seed --class=PracticaSeeder` | Modalidades con plazos y cuantías, SMMLV 2026 (1.750.905), IPC 2025 y 2026 por modalidad (vivienda con tope del 5 %), puntos de vehículo, presupuesto 2026 (vivienda 70 % con el reparto sugerido), primas de seguros de dos años, DTF 9,81 % con vigencia | ⬜ |
+| PP-311 | Usuarios | Datos cargados | Entrar con 1000000000 y 1000000001 | Administrador principal y funcionario con las contraseñas temporales de la guía; el funcionario no ve Usuarios, Auditoría ni la carga de vigentes | ⬜ |
+| PP-312 | Empleados ficticios | Datos cargados | Listar empleados | 20 empleados con cédulas 1000000101 a 1000000120 y nombres «… Prueba …»; Vinculado, Docente, Docente ocasional y Jubilado; de carrera y no; uno con salario mínimo; con y sin préstamos | ⬜ |
+| PP-313 | CSV de práctica | Datos de referencia y empleados | «Cargar préstamos vigentes» con `docs/practica/prestamos-practica.csv` | La vista previa no tiene errores (solo el aviso de vivienda por tramos); cubre todas las modalidades | ⬜ |
+| PP-314 | Quincenas con varios empleados | Datos cargados (finales de octubre a diciembre de 2026) | Abrir Quincenas | La quincena en curso y la siguiente muestran varios empleados; hay cuotas del 15 y de fin de mes | ⬜ |
+| PP-315 | Solicitud aprobable | Datos cargados | Aprobar la solicitud de 1000000105 | Se aprueba y genera el préstamo | ⬜ |
+| PP-316 | Solicitud sin capacidad | Datos cargados | Aprobar la solicitud de 1000000108 | Se rechaza por capacidad de endeudamiento | ⬜ |
+| PP-317 | Salario mínimo y docente ocasional | Datos cargados | Aprobar las solicitudes de 1000000120 y 1000000116 | Bloqueadas: salario mínimo y docente ocasional | ⬜ |
+| PP-318 | Comando sin la variable | `PRACTICA_HABILITADA=false` | `php artisan practica:reiniciar` | Falla sin preguntar ni borrar nada | ⬜ |
+| PP-319 | Comando en producción | `APP_ENV=production` | `php artisan practica:reiniciar` | Se niega aunque la variable sea true | ⬜ |
+| PP-320 | Confirmación | Variable en true | Ejecutar y responder algo distinto de REINICIAR | No cambia nada; con REINICIAR borra y recarga los datos de práctica | ⬜ |
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -556,3 +573,4 @@ Automatizados en `tests/Feature/CargaPrestamosVigentesTest.php`. Pantalla: Solic
 | Lista de préstamos, hoja impresa y quincena en curso (posterior) | Automatizada — PP-276 a PP-284; falta la prueba manual en el navegador |
 | Resumen de pagos: todas las modalidades y detalle (posterior) | Automatizada — PP-285 a PP-291; falta la prueba manual en el navegador |
 | Carga de préstamos vigentes (posterior) | Automatizada — PP-292 a PP-309; falta la prueba manual en el navegador |
+| Datos de práctica (posterior) | Automatizada — PP-310 a PP-320; falta la prueba manual en el navegador |
