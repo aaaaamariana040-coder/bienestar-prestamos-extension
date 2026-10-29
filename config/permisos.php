@@ -34,6 +34,7 @@ return [
         'empleados.gestionar' => ['grupo' => 'Empleados', 'nombre' => 'Crear y editar empleados', 'descripcion' => 'Registrar empleados y modificar sus datos.'],
         'empleados.eliminar' => ['grupo' => 'Empleados', 'nombre' => 'Eliminar empleados', 'descripcion' => 'Borrar un empleado (acción irreversible).'],
         'empleados.registrar-retiro' => ['grupo' => 'Empleados', 'nombre' => 'Registrar el retiro de un empleado', 'descripcion' => 'Retirar a un empleado y liquidar sus préstamos.'],
+        'empleados.cargar_masivo' => ['grupo' => 'Empleados', 'nombre' => 'Cargar empleados por archivo', 'descripcion' => 'Cargar empleados desde un CSV (vista previa, confirmación) y revertir un lote cargado.'],
 
         // Modalidades y presupuesto
         'modalidades.ver' => ['grupo' => 'Modalidades y presupuesto', 'nombre' => 'Ver modalidades y tasas', 'descripcion' => 'Consultar modalidades, tasas, cuantías y tasa de vehículo.'],
@@ -79,6 +80,7 @@ return [
         'empleados.gestionar' => ['empleados.ver'],
         'empleados.eliminar' => ['empleados.ver'],
         'empleados.registrar-retiro' => ['empleados.ver'],
+        'empleados.cargar_masivo' => ['empleados.ver'],
         'modalidades.gestionar' => ['modalidades.ver'],
         'presupuesto.gestionar' => ['presupuesto.ver'],
         'smmlv.gestionar' => ['smmlv.ver'],
@@ -123,12 +125,12 @@ return [
      * existen: cada una conserva su propia lista.
      *
      * Hoy el Funcionario puede hacer todo menos Usuarios, Auditoría, gestionar las
-     * primas de seguros (solo las ve) y cargar préstamos vigentes: fuera de esos cuatro,
-     * nada cambia respecto al sistema sin permisos por cuenta.
+     * primas de seguros (solo las ve), cargar préstamos vigentes y cargar empleados por
+     * archivo: fuera de esos cinco, nada cambia respecto al sistema sin permisos por cuenta.
      */
     'defaults' => [
         'ADMINISTRADOR' => ['*'],
-        'FUNCIONARIO_BIENESTAR' => ['*', '!usuarios.gestionar', '!auditoria.ver', '!seguros.gestionar', '!prestamos.cargar_vigentes'],
+        'FUNCIONARIO_BIENESTAR' => ['*', '!usuarios.gestionar', '!auditoria.ver', '!seguros.gestionar', '!prestamos.cargar_vigentes', '!empleados.cargar_masivo'],
     ],
 
 ];

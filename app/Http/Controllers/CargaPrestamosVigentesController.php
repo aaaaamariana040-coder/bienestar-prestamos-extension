@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ConfirmarCargaPrestamosRequest;
-use App\Http\Requests\VistaPreviaCargaPrestamosRequest;
+use App\Http\Requests\ConfirmarCargaRequest;
+use App\Http\Requests\VistaPreviaCargaRequest;
 use App\Models\Prestamo;
+use App\Services\Carga\ArchivoPendiente;
 use App\Services\CargaPrestamosVigentesService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use RuntimeException;
@@ -43,7 +43,7 @@ class CargaPrestamosVigentesController extends Controller
      * Valida el archivo y muestra la vista previa; no guarda ningún préstamo. El archivo queda
      * en una carpeta de pendientes hasta que se confirma la carga.
      */
-    public function vistaPrevia(VistaPreviaCargaPrestamosRequest $request, CargaPrestamosVigentesService $carga): View
+    public function vistaPrevia(VistaPreviaCargaRequest $request, CargaPrestamosVigentesService $carga): View
     {
         $this->authorize('cargarVigentes', Prestamo::class);
 
@@ -53,8 +53,7 @@ class CargaPrestamosVigentesController extends Controller
         $token = null;
 
         if ($analisis['errores_archivo'] === []) {
-            $token = Str::random(40);
-            Storage::disk('local')->put($this->rutaPendiente($token), $contenido);
+            $token = $this->pendientes()->guardar($contenido);
         }
 
         return view('cargar-prestamos-vigentes.vista-previa', [
@@ -64,24 +63,21 @@ class CargaPrestamosVigentesController extends Controller
         ]);
     }
 
-    public function confirmar(ConfirmarCargaPrestamosRequest $request, CargaPrestamosVigentesService $carga): RedirectResponse
+    public function confirmar(ConfirmarCargaRequest $request, CargaPrestamosVigentesService $carga): RedirectResponse
     {
         $this->authorize('cargarVigentes', Prestamo::class);
 
-        $ruta = $this->rutaPendiente($request->validated('token'));
-        $disco = Storage::disk('local');
-
-        if (! $disco->exists($ruta)) {
+        if (! $this->pendientes()->existe($request->validated('token'))) {
             return redirect()->route('cargar-prestamos-vigentes.index')->withErrors(['archivo' => 'La vista previa venció o ya se cargó. Suba el archivo de nuevo.']);
         }
 
         try {
-            $resultado = $carga->cargar($disco->get($ruta), (string) ($request->validated('nombre_archivo') ?? 'archivo.csv'), $request->user());
+            $resultado = $carga->cargar($this->pendientes()->leer($request->validated('token')), (string) ($request->validated('nombre_archivo') ?? 'archivo.csv'), $request->user());
         } catch (RuntimeException $excepcion) {
             return redirect()->route('cargar-prestamos-vigentes.index')->withErrors(['archivo' => $excepcion->getMessage()]);
         }
 
-        $disco->delete($ruta);
+        $this->pendientes()->borrar($request->validated('token'));
 
         return redirect()->route('cargar-prestamos-vigentes.lote', $resultado['lote'])
             ->with('status', "Carga confirmada: {$resultado['prestamos']->count()} préstamo(s) creado(s) en el lote {$resultado['lote']}.");
@@ -116,8 +112,8 @@ class CargaPrestamosVigentesController extends Controller
             ->with('status', "Lote {$lote} revertido: {$cantidad} préstamo(s) eliminado(s) con sus cuotas y desembolsos.");
     }
 
-    private function rutaPendiente(string $token): string
+    private function pendientes(): ArchivoPendiente
     {
-        return self::CARPETA_PENDIENTES.'/'.$token.'.csv';
+        return new ArchivoPendiente(self::CARPETA_PENDIENTES);
     }
 }

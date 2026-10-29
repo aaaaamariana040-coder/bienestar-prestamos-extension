@@ -532,6 +532,31 @@ Automatizados en `tests/Feature/PracticaSeederTest.php` y `tests/Feature/Practic
 | PP-318 | Comando sin la variable | `PRACTICA_HABILITADA=false` | `php artisan practica:reiniciar` | Falla sin preguntar ni borrar nada | ⬜ |
 | PP-319 | Comando en producción | `APP_ENV=production` | `php artisan practica:reiniciar` | Se niega aunque la variable sea true | ⬜ |
 | PP-320 | Confirmación | Variable en true | Ejecutar y responder algo distinto de REINICIAR | No cambia nada; con REINICIAR borra y recarga los datos de práctica | ⬜ |
+## 34. Carga de empleados
+
+Automatizados en `tests/Feature/CargaEmpleadosTest.php`. Pantalla: Empleados → Cargar empleados. Procedimiento: `docs/carga-empleados.md`.
+
+| ID | Caso de prueba | Precondición | Pasos | Resultado esperado | Resultado obtenido |
+|---|---|---|---|---|---|
+| PP-321 | Plantilla descargable | Cuenta con `empleados.cargar_masivo` | «Descargar plantilla» | CSV UTF-8 con BOM, punto y coma, con las 9 columnas del formulario y 3 filas de ejemplo con cédulas 9000000xxx y nombres «Ejemplo …» | ⬜ |
+| PP-322 | Vista previa sin guardar | Archivo con filas válidas | Subir y «Ver vista previa» | Cada fila Correcta, Con advertencia, Con error u Omitida con su motivo; resumen por estado; no se crea ningún empleado | ⬜ |
+| PP-323 | Cédula | Filas con cédula vacía, con puntos o letras, de más de 10 dígitos y repetida en el archivo | Subir | Error en cada una con su mensaje | ⬜ |
+| PP-324 | Campos obligatorios y tipo | Nombre, tipo de vinculación o salario vacíos; tipo «contratista» | Subir | Error; el tipo se acepta como valor o etiqueta («Docente ocasional») | ⬜ |
+| PP-325 | Fechas | `15/03/2018`, `2018-03-15`, `31/02/2018`, `15-03-2018` | Subir | Las dos primeras valen; las otras son error | ⬜ |
+| PP-326 | Salario | `abc`, `-5`, `4.850.000,50`, `$ 3.200.000` | Subir | Las dos primeras son error; las otras se leen bien | ⬜ |
+| PP-327 | Reglas del formulario manual | Nombre con números | Subir | Error igual al del formulario «Nuevo empleado» | ⬜ |
+| PP-328 | Advertencias | Docente ocasional, salario mínimo, sin fecha de ingreso, fecha futura | Subir | Con advertencia; no bloquea la carga | ⬜ |
+| PP-329 | Separador y codificación | Archivo con coma, sin BOM o en Latin-1 | Subir | Se lee igual que el de la plantilla | ⬜ |
+| PP-330 | Omitidas | Una cédula que ya existe en la base | Subir y confirmar | «Omitida (ya existe)», sin error; el empleado existente no cambia; si todas existen no hay nada que confirmar | ⬜ |
+| PP-331 | Confirmar crea | Archivo sin errores | «Confirmar carga» | Empleados Activos con `origen = carga_inicial` y lote; capacidad sugerida (50 %) si no viene; resumen con creados, omitidos y lote | ⬜ |
+| PP-332 | Todo o nada | Archivo con una fila con error; falla simulada a mitad de la carga | Intentar confirmar | No se crea ningún empleado | ⬜ |
+| PP-333 | Archivo pendiente | Vista previa confirmable | Confirmar; o cancelar | El archivo se borra del disco en ambos casos; con errores no se guarda; un token inválido no toca nada | ⬜ |
+| PP-334 | Auditoría sin datos personales | Carga y reversión hechas | Mirar la Auditoría | Quedan lote y cantidades; sin cédulas, nombres ni salarios | ⬜ |
+| PP-335 | Revertir lote | Lote sin solicitudes, préstamos ni usuarios asociados | «Revertir lote» | Se eliminan los empleados del lote; los demás no cambian; auditoría de la reversión | ⬜ |
+| PP-336 | Revertir bloqueado | Un empleado del lote con solicitud, préstamo o cuenta de usuario | «Revertir lote» | No se elimina ninguno; se explica qué empleados lo impiden; el mensaje de la excepción no lleva cédulas | ⬜ |
+| PP-337 | Permisos y menú | Funcionario / Administrador | Abrir las rutas y el menú Empleados | Funcionario 403 y sin acceso en el menú; Administrador con acceso; Usuarios y Auditoría siguen siendo del administrador principal | ⬜ |
+| PP-338 | Datos reales fuera de git | Repositorio | Revisar `.gitignore` | `storage/app/private/real/` y `docs/practica/real/` están ignoradas (prueba automática) | ⬜ |
+
 ## Pruebas no funcionales (verificación transversal)
 
 | ID | RNF relacionado | Caso de prueba | Resultado obtenido |
@@ -574,3 +599,4 @@ Automatizados en `tests/Feature/PracticaSeederTest.php` y `tests/Feature/Practic
 | Resumen de pagos: todas las modalidades y detalle (posterior) | Automatizada — PP-285 a PP-291; falta la prueba manual en el navegador |
 | Carga de préstamos vigentes (posterior) | Automatizada — PP-292 a PP-309; falta la prueba manual en el navegador |
 | Datos de práctica (posterior) | Automatizada — PP-310 a PP-320; falta la prueba manual en el navegador |
+| Carga de empleados (posterior) | Automatizada — PP-321 a PP-338; falta la prueba manual en el navegador |

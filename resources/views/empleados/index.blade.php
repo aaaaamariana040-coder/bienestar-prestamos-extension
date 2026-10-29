@@ -3,9 +3,14 @@
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Empleados</h1>
-        @can('empleados.gestionar')
-            <a href="{{ route('empleados.create') }}" class="btn btn-primary">Nuevo empleado</a>
-        @endcan
+        <div class="d-flex gap-2">
+            @can('empleados.cargar_masivo')
+                <a href="{{ route('cargar-empleados.index') }}" class="btn btn-outline-primary">Cargar empleados</a>
+            @endcan
+            @can('empleados.gestionar')
+                <a href="{{ route('empleados.create') }}" class="btn btn-primary">Nuevo empleado</a>
+            @endcan
+        </div>
     </div>
 
     <form method="GET" action="{{ route('empleados.index') }}" id="filtros-empleados" class="row g-2 align-items-end mb-3">

@@ -4,6 +4,7 @@ use App\Http\Controllers\AbonoCesantiasController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\SessionController;
+use App\Http\Controllers\CargaEmpleadosController;
 use App\Http\Controllers\CargaPrestamosVigentesController;
 use App\Http\Controllers\CuantiaSmmlvController;
 use App\Http\Controllers\DesembolsoController;
@@ -65,6 +66,17 @@ Route::middleware(['auth', 'habilitado'])->group(function () {
     });
 
     Route::get('auditoria', [AuditoriaController::class, 'index'])->middleware('can:auditoria.ver')->name('auditoria.index');
+
+    // Carga masiva de empleados (prefijo propio para no chocar con empleados/{empleado})
+    Route::middleware('can:empleados.cargar_masivo')->prefix('cargar-empleados')->name('cargar-empleados.')->group(function () {
+        Route::get('/', [CargaEmpleadosController::class, 'index'])->name('index');
+        Route::get('plantilla', [CargaEmpleadosController::class, 'plantilla'])->name('plantilla');
+        Route::post('vista-previa', [CargaEmpleadosController::class, 'vistaPrevia'])->name('vista-previa');
+        Route::post('confirmar', [CargaEmpleadosController::class, 'confirmar'])->name('confirmar');
+        Route::post('cancelar', [CargaEmpleadosController::class, 'cancelar'])->name('cancelar');
+        Route::get('lotes/{lote}', [CargaEmpleadosController::class, 'lote'])->where('lote', '[A-Za-z0-9-]+')->name('lote');
+        Route::post('lotes/{lote}/revertir', [CargaEmpleadosController::class, 'revertir'])->where('lote', '[A-Za-z0-9-]+')->name('revertir');
+    });
 
     // Empleados (las rutas de crear/editar van antes que empleados/{empleado})
     Route::resource('empleados', EmpleadoController::class)->only(['create', 'store', 'edit', 'update'])->middleware('can:empleados.gestionar');

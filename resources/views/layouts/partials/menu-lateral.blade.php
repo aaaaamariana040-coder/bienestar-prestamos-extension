@@ -21,6 +21,7 @@
             'items' => [
                 ['texto' => 'Lista de empleados', 'ruta' => 'empleados.index', 'activo' => ['empleados.index', 'empleados.show', 'empleados.edit', 'empleados.retiro'], 'visible' => $usuario->can('empleados.ver')],
                 ['texto' => 'Nuevo empleado', 'ruta' => 'empleados.create', 'activo' => 'empleados.create', 'visible' => $usuario->can('empleados.gestionar')],
+                ['texto' => 'Cargar empleados', 'ruta' => 'cargar-empleados.index', 'activo' => 'cargar-empleados.*', 'visible' => $usuario->can('empleados.cargar_masivo')],
             ],
         ],
         [
