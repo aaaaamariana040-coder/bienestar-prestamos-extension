@@ -29,7 +29,7 @@ class PracticaReiniciarTest extends TestCase
 
     public function test_el_valor_por_defecto_de_la_variable_es_false(): void
     {
-        $this->assertFalse((bool) config('practica.habilitada'));
+        $this->assertStringContainsString("env('PRACTICA_HABILITADA', false)", file_get_contents(config_path('practica.php')));
         $this->assertStringContainsString('PRACTICA_HABILITADA=false', file_get_contents(base_path('.env.example')));
     }
 
