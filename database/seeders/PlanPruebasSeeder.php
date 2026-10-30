@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\RolUsuario;
 use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\PresupuestoAnual;
@@ -24,7 +25,7 @@ use RuntimeException;
  * Prepara los estados de datos que necesita la ejecución manual de
  * docs/plan-pruebas.md (PP-001 a PP-058). No se llama desde DatabaseSeeder:
  *
- *     php artisan migrate:fresh --seed
+ *     php artisan migrate:fresh --seed   (catálogos; ya no crea administradores)
  *     php artisan db:seed --class=PlanPruebasSeeder
  *
  * Los préstamos se crean por el flujo real (SolicitudCreditoService::aprobar,
@@ -152,9 +153,7 @@ class PlanPruebasSeeder extends Seeder
             return false;
         }
 
-        $administrador = Usuario::find(self::CEDULA_ADMINISTRADOR);
-
-        if ($administrador === null || ! TipoPrestamo::where('nombre', self::MODALIDAD_VEHICULO)->exists()) {
+        if (! TipoPrestamo::where('nombre', self::MODALIDAD_VEHICULO)->exists()) {
             $this->command?->error('Falta el seeder base: corre primero php artisan migrate:fresh --seed.');
 
             return false;
@@ -166,7 +165,17 @@ class PlanPruebasSeeder extends Seeder
             return false;
         }
 
-        $this->administrador = $administrador;
+        $this->administrador = Usuario::firstOrCreate(
+            ['cedula' => self::CEDULA_ADMINISTRADOR],
+            [
+                'nombre' => 'Administrador',
+                'apellido' => 'Bienestar',
+                'contrasena_hash' => 'password',
+                'rol' => RolUsuario::Administrador,
+                'habilitado' => true,
+                'es_principal' => true,
+            ],
+        );
 
         return true;
     }

@@ -100,7 +100,7 @@ class DemoSeeder extends Seeder
         $administrador = Usuario::where('rol', RolUsuario::Administrador)->orderBy('cedula')->first();
 
         if ($administrador === null || TipoPrestamo::where('nombre', self::VEHICULO)->doesntExist()) {
-            $this->command?->error('Falta el seeder base: corre primero php artisan db:seed (usuario Administrador y modalidades).');
+            $this->command?->error('Falta el seeder base: corre primero php artisan app:preparar-instalacion (modalidades y administrador principal).');
 
             return;
         }
