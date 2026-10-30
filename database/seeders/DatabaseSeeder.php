@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Usuario;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -11,16 +10,12 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Carga solo los catálogos y el usuario «Sistema». NO crea ningún administrador ni usuario con
+     * contraseña conocida, en ningún entorno: el administrador principal se crea únicamente con
+     * `php artisan app:preparar-instalacion`, que pide la contraseña por consola.
      */
     public function run(): void
     {
-        Usuario::factory()->principal()->create([
-            'cedula' => '1000000000',
-            'nombre' => 'Administrador',
-            'apellido' => 'Bienestar',
-        ]);
-
         $this->call([
             TasaVehiculoSeeder::class,
             TipoPrestamoSeeder::class,
