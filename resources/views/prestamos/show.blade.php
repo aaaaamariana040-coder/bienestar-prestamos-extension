@@ -85,7 +85,7 @@
             </tr>
             <tr>
                 <th>Estado</th>
-                <td>{{ $prestamo->estado->value }}</td>
+                <td>{{ $prestamo->estado_legible }}</td>
             </tr>
         </tbody>
     </table>
@@ -129,6 +129,10 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <h3 class="h6 mb-3">Registrar desembolso — tramo {{ $siguienteTramo }}</h3>
+
+                    @if ($prestamo->pendiente_desembolso)
+                        <p class="small text-danger pago-bloqueado">Registre el desembolso para habilitar pagos y abonos.</p>
+                    @endif
 
                     <form method="POST" action="{{ route('desembolsos.store', $prestamo) }}" class="row g-2 align-items-end">
                         @csrf
@@ -232,11 +236,11 @@
                     </td>
                     @can('registrarPagoCuota', $prestamo)
                         <td class="text-end">
-                            @if ($cuota->estado->value === 'Pendiente')
+                            @if ($cuota->estado->value === 'Pendiente' && ! $prestamo->pendiente_desembolso)
                                 <form method="POST" action="{{ route('pagos.store-cuota', [$prestamo, $cuota]) }}" class="d-inline">
                                     @csrf
                                     <input type="hidden" name="fecha_pago" value="{{ now()->toDateString() }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-success" @disabled($prestamo->pendiente_desembolso) @if ($prestamo->pendiente_desembolso) title="Se puede pagar después del desembolso." @endif>Pagar</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Pagar</button>
                                 </form>
                             @endif
                         </td>
@@ -246,6 +250,7 @@
         </tbody>
     </table>
 
+    @if (! $prestamo->pendiente_desembolso)
     @canany(['registrarAbono', 'cancelar'], $prestamo)
         <div class="row">
             @can('registrarAbono', $prestamo)
@@ -261,12 +266,9 @@
                                 En esta modalidad todo abono baja el plazo con la misma cuota.
                             @endif
                         </p>
-                        @if ($prestamo->pendiente_desembolso)
-                            <p class="small text-danger pago-bloqueado">Disponible después del desembolso: el préstamo aún no se ha desembolsado.</p>
-                        @endif
                         <form method="POST" action="{{ route('pagos.store-abono', $prestamo) }}" id="form-abono" class="row g-2 align-items-end">
                             @csrf
-                            <fieldset class="row g-2 align-items-end" @disabled($prestamo->pendiente_desembolso)>
+                            <fieldset class="row g-2 align-items-end">
                             <div class="col-auto">
                                 <label for="monto" class="form-label">Monto</label>
                                 <input type="text" inputmode="decimal" id="monto" name="monto" class="form-control" required>
@@ -317,13 +319,10 @@
                     <div class="card-body">
                         <h3 class="h6 mb-3">Cancelación total</h3>
                         <p class="text-muted">Paga de una vez el saldo de todas las cuotas pendientes y cierra el préstamo.</p>
-                        @if ($prestamo->pendiente_desembolso)
-                            <p class="small text-danger pago-bloqueado">Disponible después del desembolso: el préstamo aún no se ha desembolsado.</p>
-                        @endif
                         <form method="POST" action="{{ route('pagos.store-cancelacion', $prestamo) }}">
                             @csrf
                             <input type="hidden" name="fecha_pago" value="{{ now()->toDateString() }}">
-                            <button type="submit" class="btn btn-danger" @disabled($prestamo->pendiente_desembolso)>Cancelar préstamo</button>
+                            <button type="submit" class="btn btn-danger">Cancelar préstamo</button>
                         </form>
                     </div>
                 </div>
@@ -336,12 +335,9 @@
                         <div class="card-body">
                             <h3 class="h6 mb-3">Registrar abono de cesantías</h3>
                             <p class="text-muted small">Bianual, solo vivienda: 50% de las cesantías del año anterior (Art. 13). Siempre reliquida.</p>
-                            @if ($prestamo->pendiente_desembolso)
-                                <p class="small text-danger pago-bloqueado">Disponible después del desembolso: el préstamo aún no se ha desembolsado.</p>
-                            @endif
                             <form method="POST" action="{{ route('cesantias.store', $prestamo) }}">
                                 @csrf
-                                <fieldset class="row g-2 align-items-end" @disabled($prestamo->pendiente_desembolso)>
+                                <fieldset class="row g-2 align-items-end">
                                 <div class="col-auto">
                                     <label for="anio_cesantias" class="form-label">Año de las cesantías</label>
                                     <input type="number" id="anio_cesantias" name="anio" class="form-control" value="{{ now()->subYear()->year }}" required>
@@ -376,6 +372,7 @@
             @endif
         </div>
     @endcanany
+    @endif
 
     <h2 class="h5 mb-3">Historial de reliquidaciones</h2>
 

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\MotivoReliquidacion;
+use App\Models\Auditoria;
 use App\Models\Empleado;
 use App\Models\Prestamo;
 use App\Models\TasaDtf;
@@ -92,6 +93,9 @@ class RetiroEmpleadoTest extends TestCase
             'cedula_usu' => $actor->cedula,
             'funcion_realizada' => 'Retiro de empleado',
         ]);
+
+        $detalle = Auditoria::where('funcion_realizada', 'Retiro de empleado')->sole()->detalle;
+        $this->assertStringNotContainsString($empleado->cedula, $detalle);
     }
 
     public function test_un_empleado_ya_retirado_no_se_puede_retirar_otra_vez(): void

@@ -36,7 +36,7 @@
                     <td>{{ number_format($prestamo->monto_aprobado, 2) }}</td>
                     <td>{{ \App\Models\TipoPrestamo::plazoEnQuincenas($prestamo->num_cuotas) }}</td>
                     <td>{{ $prestamo->fecha_autorizacion->format('Y-m-d') }}</td>
-                    <td>{{ $prestamo->estado->value }}</td>
+                    <td>{{ $prestamo->estado_legible }}</td>
                     <td class="text-end">
                         <a href="{{ route('prestamos.show', $prestamo) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
                     </td>

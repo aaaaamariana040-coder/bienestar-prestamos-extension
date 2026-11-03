@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\EstadoSolicitud;
+use App\Models\Auditoria;
 use App\Models\CuantiaSmmlv;
 use App\Models\Empleado;
 use App\Models\PresupuestoAnual;
@@ -62,6 +63,26 @@ class SolicitudCreditoTest extends TestCase
             'id_tipo' => $tipoPrestamo->id_tipo,
             'estado' => EstadoSolicitud::Radicada->value,
         ]);
+    }
+
+    public function test_el_detalle_de_auditoria_de_la_solicitud_no_lleva_la_cedula(): void
+    {
+        $funcionario = Usuario::factory()->create();
+        $empleado = Empleado::factory()->create();
+        $tipoPrestamo = TipoPrestamo::factory()->create();
+
+        $this->actingAs($funcionario)->post(route('solicitudes.store'), [
+            'cedula_empleado' => $empleado->cedula,
+            'id_tipo' => $tipoPrestamo->id_tipo,
+            'monto_solicitado' => 2_000_000,
+            'plazo_solicitado' => 24,
+            'fecha_solicitud' => '2026-01-15',
+        ])->assertRedirect();
+
+        $registro = Auditoria::where('funcion_realizada', 'Registro de solicitud de crédito')->sole();
+
+        $this->assertMatchesRegularExpression('/^Solicitud #\d+ — monto 2000000(\.00)?$/', $registro->detalle);
+        $this->assertStringNotContainsString($empleado->cedula, $registro->detalle);
     }
 
     public function test_aprobar_una_solicitud_valida_genera_un_prestamo_con_tabla_de_amortizacion(): void

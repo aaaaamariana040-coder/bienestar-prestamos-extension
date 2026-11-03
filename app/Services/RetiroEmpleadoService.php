@@ -61,7 +61,7 @@ class RetiroEmpleadoService
             $this->auditoriaService->registrar(
                 $actor,
                 'Retiro de empleado',
-                "Empleado {$empleado->cedula} retirado el {$fecha} — {$reliquidaciones->count()} préstamo(s) con reliquidación por retiro pendiente de cálculo",
+                "Empleado {$empleado->nombre_completo} retirado el {$fecha} — {$reliquidaciones->count()} préstamo(s) con reliquidación por retiro pendiente de cálculo",
             );
 
             return $reliquidaciones;

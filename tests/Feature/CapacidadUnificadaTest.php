@@ -350,24 +350,30 @@ class CapacidadUnificadaTest extends TestCase
 
     // ───────── Ficha del empleado ─────────
 
-    public function test_la_ficha_muestra_la_capacidad_calculada_con_la_guardada_como_referencia_si_difieren(): void
+    public function test_la_ficha_con_fuente_calculada_muestra_solo_la_capacidad_sobre_el_neto(): void
     {
         $empleado = $this->empleado(8_000_000, 1_000_000);
 
         $this->actingAs(Usuario::factory()->administrador()->create())->get(route('empleados.show', $empleado))
             ->assertOk()
-            ->assertSee('Capacidad calculada (referencia: la guardada es 1,000,000.00)', false)
-            ->assertSee('3,640,000.00');
+            ->assertSee('Capacidad de endeudamiento (50 % del salario neto)', false)
+            ->assertSee('3,640,000.00')
+            ->assertDontSee('1,000,000.00')
+            ->assertDontSee('valor registrado')
+            ->assertDontSee('Capacidad calculada');
     }
 
-    public function test_la_ficha_no_marca_referencia_si_coinciden(): void
+    public function test_la_ficha_con_fuente_guardada_muestra_solo_el_valor_registrado(): void
     {
-        $empleado = $this->empleado(8_000_000, 3_640_000);
+        config(['prestamos.capacidad.fuente' => 'guardada']);
+        $empleado = $this->empleado(8_000_000, 1_000_000);
 
         $this->actingAs(Usuario::factory()->administrador()->create())->get(route('empleados.show', $empleado))
             ->assertOk()
-            ->assertSee('Capacidad calculada')
-            ->assertDontSee('referencia: la guardada es');
+            ->assertSee('Capacidad de endeudamiento (valor registrado)', false)
+            ->assertSee('1,000,000.00')
+            ->assertDontSee('3,640,000.00')
+            ->assertDontSee('50 % del salario neto');
     }
 
     public function test_la_ficha_avisa_si_no_se_puede_calcular(): void

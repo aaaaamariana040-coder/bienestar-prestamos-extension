@@ -141,28 +141,42 @@ class PagosSinDesembolsoTest extends TestCase
         $this->assertDatabaseCount('pagos', 1);
     }
 
-    public function test_los_botones_aparecen_deshabilitados_con_motivo_mientras_esta_pendiente(): void
+    public function test_pendiente_de_desembolso_no_muestra_pagos_ni_abonos_y_avisa_junto_al_desembolso(): void
     {
         $prestamo = $this->prestamo(true, 'Vivienda — compra');
 
         $html = $this->actingAs($this->funcionario)->get(route('prestamos.show', $prestamo))->assertOk()->getContent();
 
-        $this->assertSame(3, substr_count($html, 'Se puede pagar después del desembolso.'));
-        $this->assertSame(3, substr_count($html, 'Disponible después del desembolso'));
-        $this->assertMatchesRegularExpression('/<button[^>]*disabled[^>]*>\s*Pagar/', $html);
-        $this->assertMatchesRegularExpression('/<fieldset[^>]*disabled/', $html);
-        $this->assertMatchesRegularExpression('/<button[^>]*disabled[^>]*>Cancelar préstamo/', $html);
+        $this->assertMatchesRegularExpression('/<th>Estado<\/th>\s*<td>Pendiente de desembolso<\/td>/', $html);
+        $this->assertSame(1, substr_count($html, 'Registre el desembolso para habilitar pagos y abonos.'));
+        $this->assertStringContainsString('Registrar desembolso', $html);
+        $this->assertStringNotContainsString('Confirmar abono', $html);
+        $this->assertStringNotContainsString('Cancelar préstamo', $html);
+        $this->assertStringNotContainsString('Registrar abono de cesantías', $html);
+        $this->assertDoesNotMatchRegularExpression('/<button[^>]*>\s*Pagar\s*<\/button>/', $html);
     }
 
-    public function test_los_botones_estan_habilitados_cuando_ya_se_desembolso(): void
+    public function test_pendiente_de_desembolso_se_rotula_en_el_listado(): void
     {
-        $prestamo = $this->prestamo(false);
+        $this->prestamo(true);
+
+        $this->actingAs($this->funcionario)->get(route('prestamos.index'))
+            ->assertOk()
+            ->assertSee('Pendiente de desembolso');
+    }
+
+    public function test_desembolsado_muestra_los_botones_y_la_etiqueta_vigente(): void
+    {
+        $prestamo = $this->prestamo(false, 'Vivienda — compra');
 
         $html = $this->actingAs($this->funcionario)->get(route('prestamos.show', $prestamo))->assertOk()->getContent();
 
-        $this->assertStringNotContainsString('pago-bloqueado', $html);
-        $this->assertDoesNotMatchRegularExpression('/<fieldset[^>]*disabled/', $html);
-        $this->assertDoesNotMatchRegularExpression('/<button[^>]*disabled[^>]*>\s*Pagar/', $html);
+        $this->assertMatchesRegularExpression('/<th>Estado<\/th>\s*<td>Vigente<\/td>/', $html);
+        $this->assertStringNotContainsString('Registre el desembolso para habilitar pagos y abonos.', $html);
+        $this->assertStringContainsString('Confirmar abono', $html);
+        $this->assertStringContainsString('Cancelar préstamo', $html);
+        $this->assertMatchesRegularExpression('/<button[^>]*>\s*Pagar\s*<\/button>/', $html);
+        $this->assertDoesNotMatchRegularExpression('/<button[^>]*disabled/', $html);
     }
 
     public function test_el_aviso_de_cuota_excluida_se_configura(): void

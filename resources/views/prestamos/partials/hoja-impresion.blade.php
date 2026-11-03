@@ -184,7 +184,7 @@
             <div><dt>Plazo</dt><dd>{{ \App\Models\TipoPrestamo::plazoEnQuincenas($prestamo->num_cuotas) }}</dd></div>
             <div><dt>Tasa efectiva anual</dt><dd>{{ $tasa['tasa'] !== null ? number_format($tasa['tasa'], 4, ',', '.').' %' : '—' }}</dd></div>
             <div><dt>Cuota periódica</dt><dd>{{ $dinero($prestamo->cuota_periodica) }}</dd></div>
-            <div><dt>Estado</dt><dd>{{ $prestamo->estado->value }}</dd></div>
+            <div><dt>Estado</dt><dd>{{ $prestamo->estado_legible }}</dd></div>
             <div><dt>Fecha de autorización</dt><dd>{{ $fecha($prestamo->fecha_autorizacion) }}</dd></div>
             <div><dt>Fecha de desembolso</dt><dd>{{ $primerDesembolso ? $fecha($primerDesembolso->fecha) : 'Pendiente de desembolso' }}</dd></div>
             <div><dt>Primera cuota</dt><dd>{{ $primeraCuota ? $fecha($primeraCuota) : 'Desde el desembolso' }}</dd></div>
