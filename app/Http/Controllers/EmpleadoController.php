@@ -68,9 +68,9 @@ class EmpleadoController extends Controller
 
     public function show(Empleado $empleado, CapacidadEndeudamientoService $capacidadService): View
     {
-        $capacidadCalculada = $capacidadService->paraEmpleado($empleado)['calculada']['capacidad'] ?? null;
+        $capacidad = $capacidadService->paraEmpleado($empleado);
 
-        return view('empleados.show', compact('empleado', 'capacidadCalculada'));
+        return view('empleados.show', compact('empleado', 'capacidad'));
     }
 
     public function edit(Empleado $empleado): View

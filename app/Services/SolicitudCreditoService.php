@@ -51,7 +51,7 @@ class SolicitudCreditoService
         $this->auditoriaService->registrar(
             $actor,
             'Registro de solicitud de crédito',
-            "Solicitud #{$solicitud->id_solicitud} — empleado {$solicitud->cedula_empleado}, monto {$solicitud->monto_solicitado}",
+            "Solicitud #{$solicitud->id_solicitud} — monto {$solicitud->monto_solicitado}",
         );
 
         return $solicitud;

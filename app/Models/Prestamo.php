@@ -153,6 +153,15 @@ class Prestamo extends Model
     }
 
     /**
+     * Etiqueta de estado para las pantallas: mientras espera su desembolso se muestra
+     * «Pendiente de desembolso»; el estado guardado (estado) no cambia.
+     */
+    public function getEstadoLegibleAttribute(): string
+    {
+        return $this->pendiente_desembolso ? 'Pendiente de desembolso' : $this->estado->value;
+    }
+
+    /**
      * «Cuota 2 de 36»: pagadas sobre el total de cuotas actual (num_cuotas, que
      * se ajusta al reliquidar). Un préstamo cancelado siempre muestra el total.
      */

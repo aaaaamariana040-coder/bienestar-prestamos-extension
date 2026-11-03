@@ -40,7 +40,7 @@
         <dl class="hoja-datos">
             <div><dt>Modalidad</dt><dd>{{ $e['modalidad'] }}</dd></div>
             <div><dt>Monto</dt><dd>{{ $pesos($e['monto']) }}</dd></div>
-            <div><dt>Plazo</dt><dd>{{ $e['periodos'] }} quincenas ({{ $e['plazo_legible'] }})</dd></div>
+            <div><dt>Plazo</dt><dd>{{ $e['plazo_legible'] }}</dd></div>
             <div><dt>Tasa efectiva anual</dt><dd>{{ $porcentaje($e['tasa_efectiva_anual'], 4) }}</dd></div>
             <div><dt>Puntos adicionales</dt><dd>{{ $porcentaje($e['puntos'], 4) }}</dd></div>
             <div><dt>Tasa total (E.A.)</dt><dd>{{ $porcentaje($e['tasa_total'], 4) }}</dd></div>

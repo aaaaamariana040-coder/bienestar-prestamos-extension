@@ -407,6 +407,19 @@ class SimuladorPantallaTest extends TestCase
         $this->assertStringContainsString('Sugerencias para que quepa', $html);
     }
 
+    public function test_el_plazo_se_rotula_una_sola_vez_en_el_resultado_y_en_la_hoja_impresa(): void
+    {
+        $empleado = $this->empleado();
+        $educacion = $this->modalidad('Educación', 72, 17.5);
+
+        $respuesta = $this->getJson(route('simulador.calcular', $this->parametros($empleado, $educacion)))->assertOk();
+
+        foreach (['html', 'html_impresion'] as $clave) {
+            $this->assertStringContainsString('72 quincenas (≈ 36 meses)', $respuesta->json($clave));
+            $this->assertStringNotContainsString('quincenas (72 quincenas', $respuesta->json($clave));
+        }
+    }
+
     public function test_el_boton_de_solicitud_lleva_cedula_modalidad_monto_y_plazo(): void
     {
         $empleado = $this->empleado();
