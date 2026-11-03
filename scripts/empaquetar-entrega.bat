@@ -7,8 +7,8 @@ rem  compilado). Se ejecuta en el equipo de desarrollo, que si necesita Internet
 rem  (o la cache de Composer y de npm) para preparar el paquete.
 rem
 rem  Uso:  scripts\empaquetar-entrega.bat [carpeta_destino]
-rem  Por defecto crea ..\bienestar-entrega-AAAAMMDD junto a la carpeta del
-rem  proyecto (fuera del repositorio). Si la carpeta ya existe, se detiene: no
+rem  Por defecto crea bienestar-entrega-AAAAMMDD en la carpeta PADRE del proyecto
+rem  (calculada desde la ubicacion del script; fuera del repositorio). Si la carpeta ya existe, se detiene: no
 rem  borra ni sobrescribe nada.
 rem
 rem  NO incluye: .git, .env, storage\app\private (datos reales y cargas), pruebas,
@@ -25,12 +25,11 @@ if "%FECHA%"=="" (
     exit /b 1
 )
 
-if "%~1"=="" (
-    for %%I in ("%RAIZ%\..") do set "PADRE=%%~fI"
-    set "DESTINO=%PADRE%\bienestar-entrega-%FECHA%"
-) else (
-    set "DESTINO=%~f1"
-)
+rem La carpeta PADRE se calcula fuera de cualquier bloque ( ): dentro de un
+rem bloque %PADRE% se expandiria vacio y el paquete caeria en la raiz de la unidad.
+for %%I in ("%RAIZ%\..") do set "PADRE=%%~fI"
+set "DESTINO=%PADRE%\bienestar-entrega-%FECHA%"
+if not "%~1"=="" set "DESTINO=%~f1"
 
 rem --- Herramientas necesarias ------------------------------------------------
 where php >nul 2>&1
@@ -55,7 +54,10 @@ if errorlevel 1 (
 )
 
 if exist "%DESTINO%" (
-    echo ERROR: la carpeta %DESTINO% ya existe. Cambiele el nombre, borrela usted mismo o indique otra: scripts\empaquetar-entrega.bat "otra\carpeta"
+    echo ERROR: la carpeta de destino ya existe y no se toca nada:
+    echo   %DESTINO%
+    echo Que hacer: cambiele el nombre a esa carpeta ^(o muevala^), o elija otro destino:
+    echo   scripts\empaquetar-entrega.bat "otra\carpeta"
     exit /b 1
 )
 
@@ -91,7 +93,7 @@ if errorlevel 1 (
 )
 
 robocopy "%RAIZ%" "%DESTINO%" /E /NFL /NDL /NJH /NJS /NP ^
-    /XD "%RAIZ%\.git" "%RAIZ%\.github" "%RAIZ%\.claude" "%RAIZ%\.ai" "%RAIZ%\.idea" "%RAIZ%\.vscode" ^
+    /XD .git real "%RAIZ%\.github" "%RAIZ%\.claude" "%RAIZ%\.ai" "%RAIZ%\.idea" "%RAIZ%\.vscode" ^
         "%RAIZ%\node_modules" "%RAIZ%\vendor" "%RAIZ%\tests" "%RAIZ%\storage" "%RAIZ%\bootstrap\cache" ^
         "%RAIZ%\docs" "%RAIZ%\scripts" ^
     /XF .env .env.* .gitignore .gitattributes .editorconfig .npmrc .mcp.json boost.json AGENTS.md CLAUDE.md README.md ^
@@ -163,6 +165,10 @@ for /f "delims=" %%P in ('dir /s /b /a:d "%DESTINO%\real" 2^>nul') do (
     echo   SOBRA: %%P
     set "PROBLEMAS=1"
 )
+for /f "delims=" %%P in ('dir /s /b /a "%DESTINO%\.git" 2^>nul') do (
+    echo   SOBRA: %%P
+    set "PROBLEMAS=1"
+)
 for /f "delims=" %%P in ('dir /s /b "%DESTINO%\*.csv" "%DESTINO%\*.xlsx" 2^>nul') do (
     echo   SOBRA: %%P
     set "PROBLEMAS=1"
@@ -191,7 +197,12 @@ if "%PROBLEMAS%"=="1" (
     exit /b 1
 )
 
+set "ESTADISTICAS="
+for /f "delims=" %%S in ('powershell -NoProfile -Command "$f = Get-ChildItem -LiteralPath $env:DESTINO -Recurse -File -Force; '{0} archivos, {1:N1} MB' -f $f.Count, (($f | Measure-Object Length -Sum).Sum / 1MB)"') do set "ESTADISTICAS=%%S"
+
 echo.
-echo Paquete listo: %DESTINO%
+echo Paquete listo:
+echo   Ruta completa: %DESTINO%
+echo   Contenido:     %ESTADISTICAS%
 echo Copie esa carpeta completa al equipo de destino ^(memoria USB, unidad de red^).
 exit /b 0
